@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  /* Định nghĩa các màu sắc tùy chỉnh từ Figma */
+  --color-brand: #10b981;
+  --color-brand-dark: #059669;
+  --color-sidebar: #111827;
+}
+
+body {
+  /* Mã màu tương đương #f8fafc */
+  background-color: var(--color-slate-50); 
+}
