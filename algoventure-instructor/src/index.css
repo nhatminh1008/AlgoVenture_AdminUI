@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  /* Design tokens trích từ AlgoVenture Admin Console */
+  --color-brand: #10b981;
+  --color-brand-dark: #059669;
+  --color-sidebar: #111827;
+}
+
+body {
+  background-color: var(--color-slate-50);
+}
