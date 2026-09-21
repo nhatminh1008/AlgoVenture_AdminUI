@@ -1,6 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
 import ChallengeSets from './pages/ChallengeSets';
 import Progress from './pages/Progress';
 import Analytics from './pages/Analytics';
@@ -11,11 +10,12 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
+          <Route index element={<ChallengeSets />} />
           <Route path="challenges" element={<ChallengeSets />} />
           <Route path="progress" element={<Progress />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="export" element={<ExportResults />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </Router>

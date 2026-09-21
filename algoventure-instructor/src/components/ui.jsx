@@ -47,16 +47,6 @@ export const StatCard = ({ title, value, trend, isUp, note = 'vs last month', ic
   </div>
 );
 
-// Thanh tiến độ nhỏ inline (dùng trong bảng)
-export const InlineBar = ({ value, color = 'bg-brand' }) => (
-  <div className="flex items-center gap-2">
-    <div className="w-16 bg-slate-100 rounded-full h-2">
-      <div className={`${color} h-2 rounded-full`} style={{ width: `${value}%` }}></div>
-    </div>
-    <span className="text-xs text-slate-600 font-medium w-8">{value}%</span>
-  </div>
-);
-
 // Header trang: breadcrumb + title + actions
 export const PageHeader = ({ breadcrumb, title, children }) => (
   <div className="flex justify-between items-end mb-8">

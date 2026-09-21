@@ -1,14 +1,10 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import {
-  LayoutDashboard, ClipboardList, TrendingUp,
-  BarChart2, Download, LogOut
-} from 'lucide-react';
+import { ClipboardList, TrendingUp, BarChart2, Download, LogOut } from 'lucide-react';
 
 const Layout = () => {
   const navItems = [
-    { path: '/', name: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-    { path: '/challenges', name: 'Challenge Sets', icon: <ClipboardList size={20} /> },
+    { path: '/', name: 'Challenge Sets', icon: <ClipboardList size={20} /> },
     { path: '/progress', name: 'Progress', icon: <TrendingUp size={20} /> },
     { path: '/analytics', name: 'Analytics', icon: <BarChart2 size={20} /> },
     { path: '/export', name: 'Export', icon: <Download size={20} /> },
