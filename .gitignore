@@ -1,0 +1,5 @@
+.runtime/
+.env
+backend/target/
+backend/data/
+backend/*.log

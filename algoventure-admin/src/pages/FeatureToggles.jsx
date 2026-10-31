@@ -1,61 +1,71 @@
-import React from 'react';
-
-const ToggleSwitch = ({ title, desc, isOn, isPrimary = true }) => (
-  <div className="flex justify-between items-center py-4 border-b border-slate-50 last:border-0">
-    <div>
-      <h4 className="font-bold text-slate-800 text-sm">{title}</h4>
-      <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
-    </div>
-    <div className={`w-11 h-6 rounded-full relative cursor-pointer transition-colors ${isOn ? (isPrimary ? 'bg-brand' : 'bg-blue-500') : 'bg-slate-200'}`}>
-      <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${isOn ? 'right-1' : 'left-1'}`}></div>
-    </div>
-  </div>
-);
-
-const FeatureToggles = () => {
+import { useState } from "react";
+import { api } from "../api/client";
+import { useApiData, ApiFeedback, AdminHeader } from "../components/ApiState";
+export default function FeatureToggles() {
+  const state = useApiData("/admin/features", []);
+  const [busy, setBusy] = useState("");
+  const [message, setMessage] = useState("");
+  async function toggle(feature) {
+    setBusy(feature.id);
+    setMessage("");
+    try {
+      state.setData(
+        await api(`/admin/features/${feature.id}`, {
+          method: "PUT",
+          body: { enabled: !feature.enabled },
+        }),
+      );
+      state.setError("");
+      setMessage("Đã lưu cấu hình tính năng.");
+    } catch (failure) {
+      state.setError(failure.message);
+    } finally {
+      setBusy("");
+    }
+  }
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <p className="text-sm text-slate-500 mb-1">Admin Console / Features</p>
-        <h1 className="text-3xl font-bold text-slate-900">Feature Toggles</h1>
-      </div>
-
-      <div className="space-y-6 mb-8">
-        {/* Group 1 */}
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-800">Learning Features</h3>
-          <p className="text-sm text-slate-500 mb-4 border-b pb-4">Control core learning experience and DSA visualization modules</p>
-          <ToggleSwitch title="Adaptive Difficulty" desc="Dynamically adjustments challenge levels based on student progress and performance" isOn={true} />
-          <ToggleSwitch title="Visualizer Sandbox" desc="Enables free-form playground where students can type custom input code to construct visualizer steps" isOn={true} />
-          <ToggleSwitch title="Gamified XP Rewards" desc="Grants instant XP points, levels, and animations upon complete visualization challenges" isOn={true} />
-          <ToggleSwitch title="Practice Mode" desc="Allows students to repeat completed levels without affecting current leaderboard rankings" isOn={true} />
-        </div>
-
-        {/* Group 2 */}
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-800">Social Features</h3>
-          <p className="text-sm text-slate-500 mb-4 border-b pb-4">Manage collaborative and competitive community gamification elements</p>
-          <ToggleSwitch title="Leaderboard" desc="Publicly displays top-performing learners based on weekly XP achievements" isOn={true} />
-          <ToggleSwitch title="Achievements & Badges" desc="Awards visual achievements and level progress indicators shown on public profile cards" isOn={true} />
-          <ToggleSwitch title="Study Groups" desc="Facilitates peer-to-peer visual execution sandbox sharing and workspace groups" isOn={false} />
-        </div>
-
-        {/* Group 3 */}
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-800">System Features</h3>
-          <p className="text-sm text-slate-500 mb-4 border-b pb-4">Platform-wide baseline modules and operational configurations</p>
-          <ToggleSwitch title="Offline Mode" desc="Allows caching of recently visited visualizations for spotty connectivity" isOn={true} />
-          <ToggleSwitch title="Bilingual Support" desc="Enables Vietnamese translation context mappings on UI and instructions" isOn={true} />
-          <ToggleSwitch title="Dark Mode" desc="Switches global learning portal style from default warm paper to slate" isOn={false} />
-          <ToggleSwitch title="Beta Features" desc="Exposes early stage visualizations still undergoing compiler testing" isOn={false} />
-        </div>
-      </div>
-
-      <div className="flex justify-end">
-        <button className="px-6 py-2 bg-brand text-white font-medium rounded-lg hover:bg-brand-dark">Save Changes</button>
+    <div className="mx-auto max-w-4xl">
+      <AdminHeader title="Feature Toggles" />
+      <ApiFeedback state={state} message={message} />
+      <p className="mb-5 text-sm text-slate-500">
+        Cấu hình được lưu trên server. Game và adaptive service cần đọc API cấu
+        hình khi tích hợp.
+      </p>
+      <div className="space-y-5">
+        {["Learning", "Social", "System"].map((category) => (
+          <section className="panel p-6" key={category}>
+            <h2 className="mb-3 text-lg font-bold">{category}</h2>
+            {state.data
+              .filter((f) => f.category === category)
+              .map((f) => (
+                <div
+                  className="flex items-center justify-between gap-4 border-b border-slate-100 py-4 last:border-0"
+                  key={f.id}
+                >
+                  <div>
+                    <h3 className="font-semibold">{f.title}</h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {f.description}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={f.enabled}
+                    aria-label={f.title}
+                    disabled={!!busy}
+                    className={`relative h-6 w-11 shrink-0 rounded-full ${f.enabled ? "bg-emerald-600" : "bg-slate-300"}`}
+                    onClick={() => toggle(f)}
+                  >
+                    <span
+                      className={`absolute top-1 h-4 w-4 rounded-full bg-white ${f.enabled ? "right-1" : "left-1"}`}
+                    />
+                  </button>
+                </div>
+              ))}
+          </section>
+        ))}
       </div>
     </div>
   );
-};
-
-export default FeatureToggles;
+}
