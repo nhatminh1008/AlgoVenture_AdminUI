@@ -1,7 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 import {
   GraduationCap,
-  ClipboardList,
   TrendingUp,
   BarChart2,
   Download,
@@ -9,112 +8,81 @@ import {
 } from "lucide-react";
 import { useClassrooms } from "../data/ClassroomContext";
 
-const Layout = () => {
-  const { instructor, storageError } = useClassrooms();
-  const navItems = [
-    {
-      path: "/classes",
-      name: "Lớp của tôi",
-      icon: <GraduationCap size={20} />,
-    },
-    {
-      path: "/challenges",
-      name: "Bộ thử thách",
-      icon: <ClipboardList size={20} />,
-    },
-    {
-      path: "/progress",
-      name: "Tiến độ học tập",
-      icon: <TrendingUp size={20} />,
-    },
-    {
-      path: "/analytics",
-      name: "Phân tích lớp học",
-      icon: <BarChart2 size={20} />,
-    },
-    { path: "/export", name: "Xuất kết quả", icon: <Download size={20} /> },
+export default function Layout() {
+  const { session, storageError, notices } = useClassrooms();
+  const nav = [
+    ["/classes", "Lớp học", GraduationCap],
+    ["/progress", "Tiến độ", TrendingUp],
+    ["/analytics", "Phân tích", BarChart2],
+    ["/export", "Xuất kết quả", Download],
   ];
-
   return (
     <div className="portal-shell">
-      {/* Sidebar */}
       <aside className="portal-sidebar text-slate-300">
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-8 h-8 bg-brand rounded flex items-center justify-center">
-            <BookOpen size={20} className="text-white" />
-          </div>
+        <div className="flex items-center gap-3 p-6">
+          <span className="rounded-lg bg-brand p-2 text-white">
+            <BookOpen size={22} />
+          </span>
           <div>
-            <p className="text-white font-bold text-lg leading-tight">
-              AlgoVenture
-            </p>
-            <p className="text-brand text-xs font-semibold tracking-wider">
+            <p className="text-lg font-bold text-white">AlgoVenture</p>
+            <p className="text-[10px] font-semibold tracking-widest text-brand">
               INSTRUCTOR PORTAL
             </p>
           </div>
         </div>
-
         <nav
           aria-label="Điều hướng chính"
-          className="flex-1 px-4 space-y-2 mt-4"
+          className="mt-4 flex-1 space-y-2 px-4"
         >
-          {navItems.map((item) => (
+          {nav.map(([path, title, Icon]) => (
             <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === "/"}
+              key={path}
+              to={path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-slate-800 text-brand border-l-4 border-brand"
-                    : "hover:bg-slate-800 hover:text-white border-l-4 border-transparent"
-                }`
+                `flex items-center gap-3 rounded-lg border-l-4 px-4 py-3 text-sm font-medium ${isActive ? "border-brand bg-slate-800 text-brand" : "border-transparent hover:bg-slate-800 hover:text-white"}`
               }
             >
-              {item.icon}
-              <span className="font-medium">{item.name}</span>
+              <Icon size={19} />
+              {title}
             </NavLink>
           ))}
         </nav>
-
-        {/* User Profile */}
-        <div className="p-4 border-t border-slate-700 m-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-full bg-slate-700 grid place-items-center text-white text-sm">
-              ER
-            </span>
-            <div>
-              <p className="text-white font-medium text-sm">
-                {instructor.name}
-              </p>
-              <p className="text-xs text-slate-400">Giảng viên mẫu</p>
-            </div>
-          </div>
+        <div className="m-4 border-t border-slate-700 p-4">
+          <p className="text-sm font-semibold text-white">{session.name}</p>
+          <p className="mt-1 text-xs text-slate-400">
+            Giảng viên · phiên giả lập
+          </p>
         </div>
       </aside>
-
-      {/* Main Content */}
       <div className="min-w-0 flex-1">
-        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-5 py-4 text-xs text-slate-500 sm:px-8">
+        <header className="no-print flex flex-wrap justify-between gap-2 border-b border-slate-200 bg-white px-5 py-4 text-xs text-slate-500 sm:px-8">
           <span>AlgoVenture / Không gian giảng viên</span>
-          <span className="flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-            Dữ liệu mẫu · Lưu trên trình duyệt · Chưa kết nối classroom API
-          </span>
+          <span>Lưu cục bộ · Chưa kết nối API</span>
         </header>
-        <main id="main-content" className="p-5 sm:p-8 lg:p-10">
+        <main className="p-5 sm:p-8 lg:p-10">
           {storageError && (
             <p
               role="alert"
-              className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+              className="no-print mb-5 rounded-xl bg-red-50 p-4 text-sm text-red-700"
             >
               {storageError}
             </p>
+          )}
+          {notices.length > 0 && (
+            <details className="no-print mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-900">
+              <summary className="cursor-pointer font-semibold">
+                Thông báo dữ liệu ({notices.length})
+              </summary>
+              <ul className="mt-2 list-disc space-y-1 pl-4">
+                {notices.map((notice) => (
+                  <li key={notice}>{notice}</li>
+                ))}
+              </ul>
+            </details>
           )}
           <Outlet />
         </main>
       </div>
     </div>
   );
-};
-
-export default Layout;
+}

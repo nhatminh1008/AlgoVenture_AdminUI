@@ -1,122 +1,153 @@
 import {
   BarChart,
   Bar,
+  ResponsiveContainer,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
+  CartesianGrid,
 } from "recharts";
-import { PageHeader } from "../components/ui";
 import ClassFilter, { useClassScope } from "../components/ClassFilter";
+import { PageHeader, StatCard, LoadState, EmptyState } from "../components/ui";
+import { TrendChart, QuestionErrorTable } from "../components/ReportViews";
+import {
+  assignmentStats,
+  scoreDistribution,
+  scoreTrend,
+  questionErrorStats,
+} from "../data/metrics.js";
+import { Link } from "react-router-dom";
 
 export default function Analytics() {
   const scope = useClassScope();
-  const graded = scope.rows.filter((row) => row.sampleScore !== null);
-  const average = graded.length
-    ? Math.round(
-        graded.reduce((sum, row) => sum + row.sampleScore, 0) / graded.length,
-      )
-    : null;
-  const chart = scope.classes
-    .filter((item) => !scope.selected || item.id === scope.selected)
-    .map((item) => ({
-      name: item.name,
-      students: scope.rows.filter((row) => row.classId === item.id).length,
-    }));
+  if (scope.loading || scope.error)
+    return <LoadState {...scope} retry={scope.refresh} />;
+  const stats = scope.selectedAssignments.map((assignment) =>
+    assignmentStats(assignment, scope.members, scope.history),
+  );
+  const best = stats.flatMap((item) => item.best);
+  const errors = scope.selectedAssignments
+    .flatMap((assignment) =>
+      questionErrorStats(assignment, scope.history, scope.members),
+    )
+    .sort(
+      (a, b) =>
+        b.missedPercent - a.missedPercent || b.missedCount - a.missedCount,
+    );
+  const distribution = scoreDistribution(best);
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader breadcrumb="Giảng viên / Phân tích" title="Phân tích lớp học">
-        <ClassFilter scope={scope} />
-      </PageHeader>
-      <p className="mb-6 text-sm leading-6 text-slate-500">
-        {scope.classroom
-          ? scope.classroom.name
-          : scope.invalid
-            ? "Lớp không khả dụng."
-            : "Tổng hợp các lớp bạn phụ trách."}{" "}
-        Các số liệu dưới đây là dữ liệu mẫu; chưa có dữ liệu Knowledge Tracing
-        từ game.
-      </p>
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        {[
-          ["Sinh viên trong lớp", scope.rows.length],
-          [
-            "Bộ bài đang giao",
-            scope.sets.filter((item) => item.status === "Active").length +
-              scope.quizzes.filter((item) => item.status === "Published")
-                .length,
-          ],
-          [
-            "Điểm minh họa trung bình",
-            average === null ? "Chưa có dữ liệu" : `${average}/100`,
-          ],
-        ].map(([label, value]) => (
-          <div key={label} className="panel p-6">
-            <p className="mb-3 text-sm text-slate-500">{label}</p>
-            <p className="text-2xl font-bold text-slate-900">{value}</p>
+      <PageHeader
+        breadcrumb="Giảng viên / Báo cáo học tập"
+        title="Phân tích lớp học"
+      />
+      <ClassFilter scope={scope} assignments />
+      {scope.invalid ? (
+        <div className="mt-6">
+          <EmptyState title="Không tìm thấy lớp hoặc bài tập được phép xem" />
+        </div>
+      ) : (
+        <div className="mt-6 space-y-6">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <StatCard title="Bài tập đã giao" value={stats.length} />
+            <StatCard title="Lượt nộp" value={scope.history.length} />
+            <StatCard
+              title="Điểm tốt nhất trung bình"
+              value={
+                best.length
+                  ? `${Math.round(best.reduce((sum, item) => sum + item.scorePercent, 0) / best.length)}%`
+                  : "—"
+              }
+              note="Theo cặp học viên–bài tập đã nộp"
+            />
           </div>
-        ))}
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="panel min-w-0 p-6">
-          <h2 className="font-bold text-slate-900">Sinh viên theo lớp</h2>
-          <p className="mt-1 text-xs text-slate-500">
-            Số thành viên từ danh sách lớp mẫu
-          </p>
-          {scope.rows.length ? (
-            <div className="mt-5 h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chart}
-                  margin={{ left: 0, right: 12, bottom: 15 }}
+          <section className="panel overflow-x-auto">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Bài tập</th>
+                  <th>Hoàn thành</th>
+                  <th>Học viên đã nộp</th>
+                  <th>Điểm tốt nhất TB</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.map((item) => (
+                  <tr key={item.id}>
+                    <td>{item.title}</td>
+                    <td>{item.completion}%</td>
+                    <td>
+                      {item.submitted}/{item.learners}
+                    </td>
+                    <td>{item.average === null ? "—" : `${item.average}%`}</td>
+                  </tr>
+                ))}
+                {!stats.length && (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-slate-500">
+                      Chưa có bài tập đã giao.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </section>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <section className="panel min-w-0 p-6">
+              <h2 className="font-bold">Phân bố điểm tốt nhất</h2>
+              <p className="mt-2 text-xs text-slate-500">
+                Mỗi học viên–bài tập có lượt nộp đóng góp một điểm tốt nhất.
+              </p>
+              {best.length ? (
+                <div className="mt-5 h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={distribution}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                      <YAxis allowDecimals={false} width={30} />
+                      <Tooltip />
+                      <Bar
+                        dataKey="count"
+                        name="Số kết quả"
+                        fill="#10b981"
+                        radius={[5, 5, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <p className="py-16 text-center text-sm text-slate-400">
+                  Chưa có điểm để thống kê.
+                </p>
+              )}
+            </section>
+            <TrendChart data={scoreTrend(scope.history)} />
+          </div>
+          <QuestionErrorTable rows={errors} />
+          <section className="panel p-6">
+            <h2 className="font-bold">Phân tích từng học viên</h2>
+            <div className="mt-4 flex flex-wrap gap-3">
+              {scope.members.map((member) => (
+                <Link
+                  className="btn-secondary"
+                  key={member.id}
+                  to={`/classes/${scope.classId}/learners/${member.learnerId}`}
                 >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis
-                    dataKey="name"
-                    tickFormatter={(name) =>
-                      name.length > 20 ? `${name.slice(0, 18)}…` : name
-                    }
-                    tick={{ fontSize: 10 }}
-                    interval={0}
-                  />
-                  <YAxis allowDecimals={false} width={25} />
-                  <Tooltip />
-                  <Bar
-                    dataKey="students"
-                    name="Sinh viên"
-                    fill="#10b981"
-                    radius={[5, 5, 0, 0]}
-                    maxBarSize={55}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+                  {member.learnerName}
+                </Link>
+              ))}
+              {!scope.members.length && (
+                <p className="text-sm text-slate-500">Lớp chưa có học viên.</p>
+              )}
             </div>
-          ) : (
-            <p className="py-20 text-center text-sm text-slate-400">
-              Chưa có sinh viên để thống kê.
-            </p>
-          )}
-        </section>
-        <section className="panel p-6">
-          <h2 className="font-bold text-slate-900">
-            Mức thành thạo theo khái niệm
-          </h2>
-          <div className="my-6 rounded-xl border border-dashed border-slate-200 p-8 text-center">
-            <p className="font-medium text-slate-600">
-              Chưa có dữ liệu ước lượng
-            </p>
-            <p className="mt-3 text-sm leading-6 text-slate-500">
-              Khi tích hợp adaptive engine, giảng viên có thể xem mức thành thạo
-              theo khái niệm và nhận diện nội dung sinh viên cần luyện thêm.
-            </p>
-          </div>
-          <p className="text-xs leading-5 text-slate-500">
-            Điểm thực hành và mức thành thạo do mô hình ước lượng là hai chỉ số
-            riêng. Không dùng điểm mẫu để suy ra mastery.
+          </section>
+          <p className="rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm leading-6 text-indigo-800">
+            Các biểu đồ này tính từ lượt làm và điểm số. Mức thành thạo theo
+            Knowledge Tracing sẽ do adaptive engine cung cấp sau; portal không
+            suy diễn mastery từ điểm.
           </p>
-        </section>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

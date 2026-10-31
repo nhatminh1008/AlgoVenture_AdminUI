@@ -1,277 +1,280 @@
+import { useRef, useState } from "react";
 import {
   Link,
   useLocation,
+  useNavigate,
   useParams,
   useSearchParams,
 } from "react-router-dom";
-import { ArrowLeft, Plus, Pencil, Users, BookOpen, Layers } from "lucide-react";
-import { PageHeader } from "../components/ui";
+import { Copy, Pencil, Trash2 } from "lucide-react";
 import { useClassrooms } from "../data/ClassroomContext";
-import { getTopic, getLevel, lessonName } from "../data/curriculum";
-import ClassMaterials from "../components/ClassMaterials";
-import ClassQuizzes from "../components/ClassQuizzes";
+import { formatDate } from "../data/dates.js";
+import {
+  PageHeader,
+  LoadState,
+  EmptyState,
+  ErrorNotice,
+} from "../components/ui";
+import AssignmentList from "../components/AssignmentList";
 
-export const assignmentStatus = {
-  Draft: "Bản nháp",
-  Active: "Đang giao",
-  Closed: "Đã đóng",
-};
 export default function ClassDetail() {
+  const data = useClassrooms();
   const { classId } = useParams();
-  const { classes, students, assignments, quizzes } = useClassrooms();
-  const [params, setParams] = useSearchParams();
-  const location = useLocation();
-  const classroom = classes.find((item) => item.id === classId);
+  if (data.loading || data.error)
+    return <LoadState {...data} retry={data.refresh} />;
+  const classroom = data.classrooms.find((item) => item.id === classId);
   if (!classroom)
     return (
-      <div className="panel p-8">
-        <h1 className="text-xl font-bold">Không tìm thấy lớp học</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Lớp không tồn tại trong danh sách bạn phụ trách.
-        </p>
-        <Link to="/classes" className="btn-secondary mt-5">
-          Về lớp của tôi
-        </Link>
-      </div>
+      <EmptyState
+        title="Không tìm thấy lớp học"
+        action={
+          <Link to="/classes" className="btn-secondary">
+            Về lớp học
+          </Link>
+        }
+      />
     );
-  const topic = getTopic(classroom.topicId);
-  const members = students.filter((item) => item.classId === classId);
-  const sets = assignments.filter((item) => item.classId === classId);
-  const classQuizzes = quizzes.filter((item) => item.classId === classId);
-  const tab = [
-    "assignments",
-    "quizzes",
-    "materials",
-    "students",
-    "lessons",
-  ].includes(params.get("tab"))
-    ? params.get("tab")
-    : "assignments";
+  return <Detail key={classId} classroom={classroom} />;
+}
+function Detail({ classroom }) {
+  const data = useClassrooms();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const input = useRef(null);
+  const [message, setMessage] = useState(location.state?.message || "");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [search, setSearch] = useState("");
+  const tab = params.get("tab") === "learners" ? "learners" : "assignments";
+  const members = data.enrollments.filter(
+    (item) => item.classroomId === classroom.id,
+  );
+  const assignments = data.assignments.filter(
+    (item) => item.classroomId === classroom.id,
+  );
+  const history = data.attempts.filter((item) =>
+    assignments.some((assignment) => assignment.id === item.assignmentId),
+  );
+  async function copy() {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error();
+      await navigator.clipboard.writeText(classroom.inviteCode);
+      setMessage("Đã sao chép mã mời.");
+    } catch {
+      input.current.focus();
+      input.current.select();
+      let copied = false;
+      try {
+        copied = document.execCommand("copy");
+      } catch {
+        /* Manual selection remains available. */
+      }
+      setMessage(
+        copied
+          ? "Đã sao chép mã mời."
+          : "Đã chọn mã mời. Nhấn Ctrl+C / Command+C hoặc chạm giữ để sao chép.",
+      );
+    }
+  }
+  async function remove() {
+    if (
+      !window.confirm(
+        `Xóa lớp “${classroom.title}”? Thao tác này xóa ${members.length} lượt tham gia, ${assignments.length} bài tập và ${history.length} lượt làm. Không thể hoàn tác.`,
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      await data.deleteClassroom(classroom.id);
+      navigate("/classes");
+    } catch (failure) {
+      setError(failure.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  function selectTab(next, focus = false) {
+    setParams({ tab: next });
+    if (focus) document.getElementById(`tab-${next}`)?.focus();
+  }
   return (
     <div className="mx-auto max-w-6xl">
-      <Link
-        to="/classes"
-        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-emerald-700"
-      >
-        <ArrowLeft size={16} />
-        Lớp của tôi
-      </Link>
-      <PageHeader
-        breadcrumb={`Lớp của tôi / ${topic.name}`}
-        title={classroom.name}
-      >
-        <Link to={`/classes/${classId}/edit`} className="btn-secondary">
+      <PageHeader breadcrumb="Lớp học / Chi tiết" title={classroom.title}>
+        <Link className="btn-secondary" to={`/classes/${classroom.id}/edit`}>
           <Pencil size={16} />
-          Sửa thông tin
+          Sửa lớp
         </Link>
-        <Link to={`/classes/${classId}/quizzes/new`} className="btn-secondary">
-          <Plus size={17} />
-          Tạo bộ câu hỏi
-        </Link>
-        <Link to={`/challenges?classId=${classId}`} className="btn-primary">
-          <Plus size={17} />
-          Tạo bộ thử thách
-        </Link>
+        <button
+          className="btn-secondary text-red-600"
+          disabled={busy}
+          onClick={remove}
+        >
+          <Trash2 size={16} />
+          Xóa lớp
+        </button>
       </PageHeader>
-      {location.state?.message && (
+      <ErrorNotice error={error} />
+      {message && (
         <p
           role="status"
-          className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+          className="mb-5 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800"
         >
-          {location.state.message}
+          {message}
         </p>
       )}
       <section className="panel mb-6 p-6">
-        <div className="flex flex-wrap gap-2">
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-            {topic.name}
-          </span>
-          <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-            {getLevel(classroom.level).name}
-          </span>
-        </div>
-        <p className="mt-4 max-w-3xl whitespace-pre-wrap break-words text-sm leading-6 text-slate-500">
-          {classroom.description || topic.description}
+        <p className="mb-5 whitespace-pre-wrap break-words text-sm leading-6 text-slate-500">
+          {classroom.description || "Chào mừng đến với lớp học DSA."}
         </p>
-        <div className="mt-6 flex flex-wrap gap-6 text-sm text-slate-600">
-          <span className="flex items-center gap-2">
-            <Users size={17} />
-            {members.length} sinh viên
-          </span>
-          <span className="flex items-center gap-2">
-            <Layers size={17} />
-            {sets.length + classQuizzes.length} bộ bài
-          </span>
-          <span className="flex items-center gap-2">
-            <BookOpen size={17} />
-            {topic.lessons.length} bài học
-          </span>
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-emerald-100 bg-emerald-50/70 p-5">
+          <div>
+            <label
+              className="mb-2 block text-xs font-semibold uppercase tracking-widest text-emerald-700"
+              htmlFor="invite-code"
+            >
+              Mã mời tham gia lớp
+            </label>
+            <input
+              id="invite-code"
+              ref={input}
+              readOnly
+              className="w-48 bg-transparent font-mono text-2xl font-bold tracking-widest text-slate-900"
+              value={classroom.inviteCode}
+            />
+            <p className="mt-2 text-xs text-slate-500">
+              Học viên nhập mã này trong game để tham gia.
+            </p>
+          </div>
+          <button className="btn-secondary" onClick={copy}>
+            <Copy size={16} />
+            Sao chép mã
+          </button>
         </div>
+        <p className="mt-5 text-xs text-slate-500">
+          {members.length} học viên · {assignments.length} bài tập ·{" "}
+          {classroom.instructorName}
+        </p>
       </section>
       <div
-        className="mb-5 flex flex-wrap gap-2 border-b border-slate-200"
+        className="mb-5 flex gap-3 border-b border-slate-200"
         role="tablist"
         aria-label="Nội dung lớp"
+        onKeyDown={(event) => {
+          if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+            event.preventDefault();
+            selectTab(
+              event.key === "Home"
+                ? "assignments"
+                : event.key === "End"
+                  ? "learners"
+                  : tab === "assignments"
+                    ? "learners"
+                    : "assignments",
+              true,
+            );
+          }
+        }}
       >
         {[
-          ["assignments", "Bộ thử thách", sets.length],
-          ["quizzes", "Trắc nghiệm", classQuizzes.length],
-          ["materials", "Tài liệu", null],
-          ["students", "Sinh viên", members.length],
-          ["lessons", "Nội dung học tập", topic.lessons.length],
-        ].map(([id, label, count]) => (
+          ["assignments", "Bài tập"],
+          ["learners", "Học viên"],
+        ].map(([id, label]) => (
           <button
-            key={id}
             id={`tab-${id}`}
+            key={id}
             role="tab"
             aria-selected={tab === id}
             aria-controls="class-panel"
-            onClick={() => setParams({ tab: id })}
-            className={`border-b-2 px-4 pb-4 pt-2 text-sm font-medium ${tab === id ? "border-emerald-500 text-emerald-700" : "border-transparent text-slate-500"}`}
+            tabIndex={tab === id ? 0 : -1}
+            className={`border-b-2 px-4 py-3 text-sm font-semibold ${tab === id ? "border-emerald-500 text-emerald-700" : "border-transparent text-slate-500"}`}
+            onClick={() => selectTab(id)}
           >
-            {label}{" "}
-            {count !== null && (
-              <span className="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
-                {count}
-              </span>
-            )}
+            {label}
           </button>
         ))}
       </div>
       <section id="class-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
-        {tab === "quizzes" && <ClassQuizzes key={classId} classId={classId} />}
-        {tab === "materials" && (
-          <ClassMaterials key={classId} classId={classId} />
-        )}
-        {tab === "assignments" && (
-          <div className="space-y-4">
-            {sets.map((set) => (
-              <article className="panel p-5 sm:p-6" key={set.id}>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h2 className="font-semibold text-slate-900">
-                      {set.title}
-                    </h2>
-                    <p className="mt-2 text-xs text-slate-500">
-                      {set.lessonIds.length} bài · Hạn: {set.due || "Chưa đặt"}
-                    </p>
-                  </div>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${set.status === "Active" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}
-                  >
-                    {assignmentStatus[set.status]}
-                  </span>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {set.lessonIds.map((id) => (
-                    <span
-                      key={id}
-                      className="rounded-md bg-slate-50 px-2.5 py-1 text-xs text-slate-600"
-                    >
-                      {lessonName(id)}
-                    </span>
-                  ))}
-                </div>
-                <Link
-                  to={`/challenges?classId=${classId}&assignmentId=${set.id}`}
-                  className="mt-4 inline-flex text-sm font-semibold text-emerald-700"
-                >
-                  {set.status === "Draft"
-                    ? "Chỉnh sửa bộ bài →"
-                    : "Xem bộ bài →"}
-                </Link>
-              </article>
-            ))}
-            {!sets.length && (
-              <div className="panel p-10 text-center">
-                <Layers size={32} className="mx-auto mb-3 text-slate-300" />
-                <h2 className="font-semibold">Lớp chưa có bộ thử thách</h2>
-                <p className="mt-2 text-sm text-slate-500">
-                  Chọn các bài thuộc chủ đề {topic.name} để chuẩn bị bài giao
-                  đầu tiên.
-                </p>
-                <Link
-                  className="btn-primary mt-5"
-                  to={`/challenges?classId=${classId}`}
-                >
-                  Tạo bộ thử thách
-                </Link>
-              </div>
-            )}
-          </div>
-        )}
-        {tab === "students" && (
+        {tab === "assignments" ? (
+          <AssignmentList classroomId={classroom.id} />
+        ) : (
           <div className="panel overflow-hidden">
-            {members.length ? (
-              <>
-                <div className="overflow-x-auto">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Sinh viên</th>
-                        <th>Email</th>
-                        <th>Điểm minh họa / 100</th>
+            <div className="p-5">
+              <input
+                aria-label="Tìm học viên"
+                className="field"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Tìm tên hoặc email..."
+              />
+            </div>
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Học viên</th>
+                    <th>Email</th>
+                    <th>Tham gia (giờ Việt Nam)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members
+                    .filter((item) =>
+                      `${item.learnerName} ${item.learnerEmail}`
+                        .toLocaleLowerCase()
+                        .includes(search.toLocaleLowerCase()),
+                    )
+                    .map((item) => (
+                      <tr key={item.id}>
+                        <td>
+                          <Link
+                            className="font-semibold text-emerald-700"
+                            to={`/classes/${classroom.id}/learners/${item.learnerId}`}
+                          >
+                            {item.learnerName}
+                          </Link>
+                        </td>
+                        <td>{item.learnerEmail}</td>
+                        <td className="whitespace-nowrap">
+                          {formatDate(item.joinedAt)}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {members.map((member) => (
-                        <tr key={member.id}>
-                          <td className="font-medium">{member.name}</td>
-                          <td>{member.email}</td>
-                          <td>{member.sampleScore ?? "Chưa có dữ liệu"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <Link
-                  className="m-5 inline-flex text-sm font-semibold text-emerald-700"
-                  to={`/progress?classId=${classId}`}
-                >
-                  Xem dữ liệu học tập →
-                </Link>
-              </>
-            ) : (
-              <div className="p-10 text-center">
-                <Users size={32} className="mx-auto mb-3 text-slate-300" />
-                <h2 className="font-semibold">Chưa có sinh viên tham gia</h2>
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-                  Lớp mới bắt đầu với danh sách trống. Chức năng tham gia lớp
-                  cần được kết nối với backend và game.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-        {tab === "lessons" && (
-          <div>
-            <p className="mb-4 text-sm text-slate-500">
-              Danh mục bài trong game cho chủ đề này. Chỉ những bài được chọn
-              vào bộ thử thách mới trở thành bài giao của lớp.
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {topic.lessons.map(([id, name], index) => (
-                <div key={id} className="panel flex items-center gap-4 p-4">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-emerald-50 text-sm font-semibold text-emerald-700">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className="text-sm font-medium">{name}</span>
-                </div>
-              ))}
+                    ))}
+                  {!members.some((item) =>
+                    `${item.learnerName} ${item.learnerEmail}`
+                      .toLocaleLowerCase()
+                      .includes(search.toLocaleLowerCase()),
+                  ) && (
+                    <tr>
+                      <td
+                        colSpan={3}
+                        className="p-8 text-center text-slate-500"
+                      >
+                        Chưa có học viên phù hợp. Học viên tham gia bằng mã mời
+                        trong game.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
       </section>
       <div className="mt-6 flex flex-wrap gap-3">
-        <Link className="btn-secondary" to={`/progress?classId=${classId}`}>
-          Theo dõi tiến độ
-        </Link>
-        <Link className="btn-secondary" to={`/analytics?classId=${classId}`}>
-          Phân tích lớp
-        </Link>
-        <Link className="btn-secondary" to={`/export?classId=${classId}`}>
-          Xuất kết quả
-        </Link>
+        {[
+          ["progress", "Tiến độ"],
+          ["analytics", "Phân tích"],
+          ["export", "Xuất kết quả"],
+        ].map(([path, label]) => (
+          <Link
+            key={path}
+            className="btn-secondary"
+            to={`/${path}?classId=${classroom.id}`}
+          >
+            {label}
+          </Link>
+        ))}
       </div>
     </div>
   );

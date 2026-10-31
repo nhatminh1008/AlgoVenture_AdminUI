@@ -144,3 +144,56 @@ button:disabled {
     font-size: 0.75rem;
   }
 }
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+  .no-print,
+  .portal-sidebar,
+  button {
+    display: none !important;
+  }
+  html,
+  body,
+  .portal-shell {
+    display: block;
+    background: white;
+    color: black;
+    min-height: 0;
+  }
+  main {
+    padding: 0 !important;
+  }
+  .report {
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+  }
+  .print-table {
+    overflow: visible !important;
+  }
+  .data-table {
+    width: 100%;
+    table-layout: auto;
+    font-size: 9pt;
+  }
+  .data-table th,
+  .data-table td {
+    padding: 6px;
+    overflow-wrap: anywhere;
+    border: 1px solid #cbd5e1;
+    color: black;
+  }
+  .data-table thead {
+    display: table-header-group;
+  }
+  .data-table tr {
+    break-inside: avoid;
+  }
+  a {
+    color: black;
+    text-decoration: none;
+  }
+}

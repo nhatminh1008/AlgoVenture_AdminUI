@@ -1,99 +1,115 @@
 import { useState } from "react";
-import { Download } from "lucide-react";
-import { PageHeader } from "../components/ui";
+import { Download, Printer } from "lucide-react";
 import ClassFilter, { useClassScope } from "../components/ClassFilter";
-import { downloadFile, exportStudentRows } from "../data/classroom";
+import { PageHeader, LoadState, EmptyState } from "../components/ui";
+import { PrintTable } from "../components/ReportViews";
+import { gradebookRows, questionErrorStats } from "../data/metrics.js";
+import { buildWorkbookRows, downloadCSV } from "../data/exports.js";
+import { formatDate } from "../data/dates.js";
 
 export default function ExportResults() {
   const scope = useClassScope();
-  const [format, setFormat] = useState("CSV");
+  const [kind, setKind] = useState("gradebook");
   const [message, setMessage] = useState("");
-  function handleExport() {
-    if (!scope.rows.length) return;
-    if (format === "CSV")
-      downloadFile(
-        exportStudentRows(scope.rows, scope.classes),
-        "class-results-demo.csv",
-      );
-    else
-      downloadFile(
-        JSON.stringify(
-          {
-            dataSource: "demo",
-            classId: scope.classroom?.id ?? null,
-            students: scope.rows.map((row) => ({
-              ...row,
-              className: scope.classes.find((item) => item.id === row.classId)
-                .name,
-            })),
-          },
-          null,
-          2,
-        ),
-        "class-results-demo.json",
-        "application/json",
-      );
-    setMessage("Đã tạo tệp dữ liệu minh họa theo bộ lọc lớp hiện tại.");
-  }
+  if (scope.loading || scope.error)
+    return <LoadState {...scope} retry={scope.refresh} />;
+  const gradebook = gradebookRows(
+    scope.classrooms,
+    scope.members,
+    scope.selectedAssignments,
+    scope.history,
+    scope.now,
+  );
+  const errors = scope.selectedAssignments.flatMap((assignment) =>
+    questionErrorStats(assignment, scope.history, scope.members),
+  );
+  const tables = buildWorkbookRows(gradebook, errors);
+  const table = kind === "gradebook" ? tables.gradebook : tables.questionErrors;
+  const title =
+    kind === "gradebook" ? "Bảng điểm lớp học" : "Báo cáo lỗi theo câu hỏi";
   return (
-    <div className="mx-auto max-w-3xl">
-      <PageHeader breadcrumb="Giảng viên / Báo cáo" title="Xuất kết quả" />
-      <section className="panel space-y-6 p-6 sm:p-8">
-        <div>
-          <h2 className="font-bold text-slate-900">Phạm vi báo cáo</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Xuất danh sách sinh viên và điểm minh họa trong các lớp bạn phụ
-            trách. Kết quả thực tế cần đồng bộ từ game.
-          </p>
-        </div>
-        <div>
-          <p className="field-label">Lớp học</p>
-          <ClassFilter scope={scope} />
-        </div>
-        <fieldset>
-          <legend className="field-label">Định dạng tệp</legend>
-          <div className="flex gap-4">
-            {["CSV", "JSON"].map((value) => (
-              <label
-                key={value}
-                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-5 py-3 text-sm ${format === value ? "border-emerald-400 bg-emerald-50 text-emerald-800" : "border-slate-200"}`}
-              >
-                <input
-                  type="radio"
-                  name="format"
-                  className="accent-emerald-600"
-                  checked={format === value}
-                  onChange={() => {
-                    setFormat(value);
-                    setMessage("");
-                  }}
-                />
-                {value}
-              </label>
-            ))}
+    <div className="mx-auto max-w-7xl">
+      <div className="no-print">
+        <PageHeader breadcrumb="Giảng viên / Báo cáo" title="Xuất kết quả" />
+        <ClassFilter scope={scope} assignments />
+        {scope.invalid && (
+          <div className="mt-6">
+            <EmptyState title="Không tìm thấy lớp hoặc bài tập được phép xem" />
           </div>
-        </fieldset>
-        <div className="rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-500">
-          <p>{scope.rows.length} bản ghi được chọn.</p>
-          <p>
-            {scope.rows.length
-              ? "Gồm họ tên, email, lớp và điểm minh họa. Không bao gồm kết quả mastery."
-              : scope.invalid
-                ? "Lớp không thuộc danh sách bạn phụ trách."
-                : "Chưa có sinh viên trong phạm vi này để xuất báo cáo."}
+        )}
+        <section className="panel my-6 flex flex-wrap items-end gap-4 p-5">
+          <label className="min-w-56 flex-1">
+            <span className="field-label">Loại báo cáo</span>
+            <select
+              className="field"
+              value={kind}
+              onChange={(event) => {
+                setKind(event.target.value);
+                setMessage("");
+              }}
+            >
+              <option value="gradebook">Bảng điểm học viên</option>
+              <option value="questionErrors">Lỗi theo câu hỏi</option>
+            </select>
+          </label>
+          <button
+            className="btn-primary"
+            disabled={scope.invalid || table.length < 2}
+            onClick={() => {
+              downloadCSV(
+                table,
+                kind === "gradebook"
+                  ? "classroom-gradebook.csv"
+                  : "classroom-question-errors.csv",
+              );
+              setMessage("Đã tải báo cáo CSV theo bộ lọc hiện tại.");
+            }}
+          >
+            <Download size={16} />
+            Tải CSV
+          </button>
+          <button
+            className="btn-secondary"
+            disabled={scope.invalid || table.length < 2}
+            onClick={() => window.print()}
+          >
+            <Printer size={16} />
+            Lưu thành PDF
+          </button>
+          <p className="w-full text-xs leading-5 text-slate-500">
+            PDF dùng hộp thoại in của trình duyệt: chọn “Lưu dưới dạng PDF”.
+            Xuất XLSX chưa hỗ trợ; bạn có thể mở CSV bằng Excel.
           </p>
+          {message && (
+            <p role="status" className="w-full text-sm text-emerald-700">
+              {message}
+            </p>
+          )}
+        </section>
+      </div>
+      <section className="report panel overflow-hidden">
+        <div className="p-6">
+          <h2 className="text-xl font-bold">{title}</h2>
+          <p className="mt-2 text-sm text-slate-500">
+            {scope.classroom?.title || "Chưa chọn lớp"} ·{" "}
+            {scope.assignmentId
+              ? scope.selectedAssignments[0]?.title
+              : "Tất cả bài tập đã giao"}
+          </p>
+          <p className="mt-2 text-xs text-slate-400">
+            Xuất lúc {formatDate(scope.now().toISOString())} · Asia/Ho_Chi_Minh
+          </p>
+          {kind !== "gradebook" && (
+            <p className="mt-2 text-xs text-slate-500">
+              Sai/bỏ trống trong lượt tốt nhất; mẫu số là học viên đã nộp.
+            </p>
+          )}
         </div>
-        <button
-          className="btn-primary w-full"
-          disabled={!scope.rows.length}
-          onClick={handleExport}
-        >
-          <Download size={17} />
-          Tải báo cáo {format}
-        </button>
-        {message && (
-          <p role="status" className="text-sm text-emerald-700">
-            {message}
+        {!scope.invalid && table.length > 1 ? (
+          <PrintTable table={table} />
+        ) : (
+          <p className="p-8 text-center text-sm text-slate-500">
+            Chưa có dữ liệu để xuất theo bộ lọc này.
           </p>
         )}
       </section>
