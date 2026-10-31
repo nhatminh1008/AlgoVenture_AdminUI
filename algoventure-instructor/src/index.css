@@ -9,4 +9,138 @@
 
 body {
   background-color: var(--color-slate-50);
+  margin: 0;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled),
+select {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+:focus-visible {
+  outline: 3px solid #059669;
+  outline-offset: 3px;
+}
+.portal-shell {
+  display: flex;
+  min-height: 100dvh;
+  color: #334155;
+}
+.portal-sidebar {
+  width: 248px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #111827;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
+}
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.65rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+}
+.btn-primary {
+  background: #059669;
+  color: white;
+}
+.btn-primary:hover {
+  background: #047857;
+}
+.btn-secondary {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+.btn-secondary:hover {
+  background: #f8fafc;
+}
+@layer components {
+  .field {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.65rem;
+    background: white;
+    font-size: 0.875rem;
+  }
+}
+.field-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.5rem;
+}
+.panel {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+}
+.data-table {
+  width: 100%;
+  text-align: left;
+  font-size: 0.875rem;
+}
+.data-table th {
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 500;
+}
+.data-table th,
+.data-table td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+@media (max-width: 900px) {
+  .portal-shell {
+    flex-direction: column;
+  }
+  .portal-sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+  }
+  .portal-sidebar > div {
+    display: none;
+  }
+  .portal-sidebar > div:first-child {
+    display: flex;
+    padding: 1rem 1.25rem;
+  }
+  .portal-sidebar nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0 0.75rem 0.75rem;
+    margin-top: 0;
+  }
+  .portal-sidebar nav a {
+    margin: 0;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.75rem;
+  }
 }

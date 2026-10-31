@@ -1,312 +1,360 @@
-import React, { useState } from 'react';
-import { Plus, X, Pencil, Trash2 } from 'lucide-react';
-import { PageHeader, StatusBadge, DifficultyBadge } from '../components/ui';
-import { algorithmsByTopic, existingChallengeSets, classOptions, currentClass } from '../data/mockData';
+import { useState } from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Plus, Check, BookOpen } from "lucide-react";
+import { PageHeader } from "../components/ui";
+import { useClassrooms } from "../data/ClassroomContext";
+import { getTopic, getLevel, lessonName } from "../data/curriculum";
 
-const TABS = Object.keys(algorithmsByTopic);
-
-const emptyForm = {
-  title: '',
-  description: '',
-  className: currentClass,
-  difficulty: 'Easy',
-  due: '',
-  timeLimit: 30,
-  hints: true,
-  algorithms: [],
-  status: 'Draft',
+const statusLabels = {
+  Draft: "Bản nháp",
+  Active: "Đang giao",
+  Closed: "Đã đóng",
 };
-
-const ChallengeSets = () => {
-  const [sets, setSets] = useState(existingChallengeSets);
-  const [form, setForm] = useState(emptyForm);
-  const [editingId, setEditingId] = useState(null); // null = tạo mới
-  const [activeTab, setActiveTab] = useState('Sorting');
-
-  const isEditing = editingId !== null;
-
-  const setField = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
-
-  const toggleAlgorithm = (name) =>
-    setForm((prev) => ({
-      ...prev,
-      algorithms: prev.algorithms.includes(name)
-        ? prev.algorithms.filter((n) => n !== name)
-        : [...prev.algorithms, name],
-    }));
-
-  const resetForm = () => {
-    setForm(emptyForm);
-    setEditingId(null);
-  };
-
-  const handleSave = () => {
-    if (!form.title.trim()) {
-      alert('Vui lòng nhập tên Challenge Set.');
-      return;
-    }
-    if (isEditing) {
-      setSets((prev) => prev.map((s) => (s.id === editingId ? { ...s, ...form } : s)));
-    } else {
-      const nextId = sets.length ? Math.max(...sets.map((s) => s.id)) + 1 : 1;
-      setSets((prev) => [...prev, { id: nextId, ...form }]);
-    }
-    resetForm();
-  };
-
-  const handleEdit = (set) => {
-    setForm({
-      title: set.title || '',
-      description: set.description || '',
-      className: set.className || currentClass,
-      difficulty: set.difficulty || 'Easy',
-      due: set.due || '',
-      timeLimit: set.timeLimit ?? 30,
-      hints: set.hints ?? true,
-      algorithms: set.algorithms || [],
-      status: set.status || 'Draft',
-    });
-    setEditingId(set.id);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleDelete = (set) => {
-    if (!window.confirm(`Xóa challenge set "${set.title}"?`)) return;
-    setSets((prev) => prev.filter((s) => s.id !== set.id));
-    if (editingId === set.id) resetForm();
-  };
-
+export default function ChallengeSets() {
+  const { classes, assignments, saveAssignment } = useClassrooms();
+  const [params, setParams] = useSearchParams();
+  const location = useLocation();
+  const classId = params.get("classId") ?? classes[0]?.id ?? "";
+  const editingId = params.get("assignmentId");
+  const existing = assignments.find(
+    (item) => item.id === editingId && item.classId === classId,
+  );
+  const classroom = classes.find((item) => item.id === classId);
+  if (editingId && !existing)
+    return (
+      <div className="panel p-8">
+        <h1 className="text-xl font-bold">
+          Không tìm thấy bộ thử thách trong lớp này
+        </h1>
+        <Link className="btn-secondary mt-4" to="/challenges">
+          Về bộ thử thách
+        </Link>
+      </div>
+    );
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <ChallengeEditor
+      key={`${classId}:${editingId ?? "new"}`}
+      notice={location.state?.message ?? ""}
+      {...{
+        classes,
+        assignments,
+        saveAssignment,
+        setParams,
+        classId,
+        existing,
+        classroom,
+      }}
+    />
+  );
+}
+
+function ChallengeEditor({
+  classes,
+  assignments,
+  saveAssignment,
+  setParams,
+  classId,
+  existing,
+  classroom,
+  notice,
+}) {
+  const [form, setForm] = useState(
+    () =>
+      existing ?? {
+        classId,
+        title: "",
+        description: "",
+        due: "",
+        status: "Draft",
+        lessonIds: [],
+      },
+  );
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState(notice);
+  const topic = classroom && getTopic(classroom.topicId);
+  const readOnly = Boolean(existing && existing.status !== "Draft");
+  const sets = assignments.filter((item) => item.classId === classId);
+  function newSet() {
+    setForm({
+      classId,
+      title: "",
+      description: "",
+      due: "",
+      status: "Draft",
+      lessonIds: [],
+    });
+    setError("");
+    setMessage("");
+    setParams({ classId });
+  }
+  function update(field, value) {
+    setForm((previous) => ({ ...previous, [field]: value }));
+    setError("");
+    setMessage("");
+  }
+  function save(event) {
+    event.preventDefault();
+    try {
+      const item = saveAssignment(form, existing?.id);
+      const message =
+        item.status === "Active"
+          ? "Đã lưu bài giao cho lớp trên trình duyệt. Việc gửi bài sang game cần kết nối API."
+          : "Đã lưu bản nháp trên trình duyệt.";
+      setMessage(message);
+      setError("");
+      setParams({ classId, assignmentId: item.id }, { state: { message } });
+    } catch (failure) {
+      setError(failure.message);
+    }
+  }
+  return (
+    <div className="mx-auto max-w-6xl">
       <PageHeader
-        breadcrumb={`Instructor / Challenge Sets / ${isEditing ? 'Edit' : 'New'}`}
-        title={isEditing ? 'Edit Challenge Set' : 'Create Challenge Set'}
+        breadcrumb="Giảng viên / Bộ thử thách"
+        title={
+          readOnly
+            ? "Chi tiết bộ thử thách"
+            : existing
+              ? "Chỉnh sửa bản nháp"
+              : "Tạo bộ thử thách"
+        }
       >
-        <button
-          onClick={resetForm}
-          className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-700 font-medium hover:bg-slate-50"
-        >
-          {isEditing ? 'Cancel' : 'Discard'}
-        </button>
-        <button
-          onClick={handleSave}
-          className="px-4 py-2 bg-brand text-white rounded-lg font-medium hover:bg-brand-dark"
-        >
-          {isEditing ? 'Update' : 'Save & Assign'}
-        </button>
+        <Link to="/classes" className="btn-secondary">
+          Lớp của tôi
+        </Link>
       </PageHeader>
-
-      <div className="grid grid-cols-2 gap-6">
-        {/* Form */}
-        <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1">Challenge Set Name</label>
-            <input
-              type="text"
-              value={form.title}
-              onChange={(e) => setField('title', e.target.value)}
-              placeholder="e.g. Sorting Sprint Week 4"
-              className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-brand"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1">Description</label>
-            <textarea
-              rows={3}
-              value={form.description}
-              onChange={(e) => setField('description', e.target.value)}
-              placeholder="Short description of this challenge set..."
-              className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-brand"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1">Assign to Class</label>
-              <select
-                value={form.className}
-                onChange={(e) => setField('className', e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-4 py-2 bg-white text-slate-600"
-              >
-                {classOptions.map((c) => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1">Difficulty</label>
-              <select
-                value={form.difficulty}
-                onChange={(e) => setField('difficulty', e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-4 py-2 bg-white text-slate-600"
-              >
-                <option>Easy</option>
-                <option>Medium</option>
-                <option>Hard</option>
-              </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1">Due Date</label>
-              <input
-                type="date"
-                value={form.due}
-                onChange={(e) => setField('due', e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-brand text-slate-600"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1">Time Limit (minutes)</label>
-              <input
-                type="number"
-                value={form.timeLimit}
-                onChange={(e) => setField('timeLimit', Number(e.target.value))}
-                className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-brand"
-              />
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">Hints Allowed</p>
-              <p className="text-xs text-slate-400">Let students reveal hints during challenges</p>
-            </div>
-            <button
-              onClick={() => setField('hints', !form.hints)}
-              className={`w-11 h-6 rounded-full transition-colors relative ${form.hints ? 'bg-brand' : 'bg-slate-300'}`}
-            >
-              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all ${form.hints ? 'left-5' : 'left-0.5'}`}></span>
-            </button>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1">Status</label>
+      {!classes.length && (
+        <p className="panel mb-6 p-6 text-sm">
+          Bạn cần{" "}
+          <Link to="/classes/new" className="font-semibold text-emerald-700">
+            tạo lớp học
+          </Link>{" "}
+          trước khi giao bài.
+        </p>
+      )}
+      {!classroom && classes.length > 0 && (
+        <p
+          role="alert"
+          className="mb-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-800"
+        >
+          Lớp không tồn tại trong danh sách bạn phụ trách. Hãy chọn một lớp
+          khác.
+        </p>
+      )}
+      <form onSubmit={save} className="grid items-start gap-6 lg:grid-cols-2">
+        <section className="panel space-y-5 p-6">
+          <h2 className="font-bold text-slate-900">Thông tin bộ bài</h2>
+          <label className="block">
+            <span className="field-label">Lớp nhận bài</span>
             <select
-              value={form.status}
-              onChange={(e) => setField('status', e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-4 py-2 bg-white text-slate-600"
+              className="field"
+              value={classId}
+              disabled={Boolean(existing)}
+              required
+              onChange={(e) => setParams({ classId: e.target.value })}
             >
-              <option>Draft</option>
-              <option>Active</option>
-              <option>Closed</option>
+              <option value="" disabled>
+                Chọn lớp
+              </option>
+              {!classroom && classId && (
+                <option value={classId}>Lớp không khả dụng</option>
+              )}
+              {classes.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
             </select>
-          </div>
-        </div>
-
-        {/* Algorithm picker */}
-        <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
-          <h3 className="font-bold text-lg text-slate-800 mb-4">Select Algorithms</h3>
-          <div className="flex gap-6 border-b border-slate-100 mb-4">
-            {TABS.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`pb-3 text-sm font-medium transition-colors ${
-                  activeTab === tab ? 'text-brand border-b-2 border-brand' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-          <div className="space-y-2">
-            {algorithmsByTopic[activeTab].map((algo) => (
+          </label>
+          {classroom && (
+            <p className="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800">
+              {topic.name} · {getLevel(classroom.level).name}
+            </p>
+          )}
+          <fieldset disabled={readOnly} className="space-y-5">
+            <label className="block">
+              <span className="field-label">Tên bộ thử thách *</span>
+              <input
+                className="field"
+                required
+                maxLength={100}
+                value={form.title}
+                onChange={(e) => update("title", e.target.value)}
+                placeholder="VD: Luyện tập Sorting — Tuần 1"
+              />
+            </label>
+            <label className="block">
+              <span className="field-label">Hướng dẫn cho sinh viên</span>
+              <textarea
+                rows={3}
+                className="field"
+                maxLength={1000}
+                value={form.description}
+                onChange={(e) => update("description", e.target.value)}
+              />
+            </label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label>
+                <span className="field-label">Hạn hoàn thành</span>
+                <input
+                  type="date"
+                  className="field"
+                  required={form.status === "Active"}
+                  value={form.due}
+                  onChange={(e) => update("due", e.target.value)}
+                />
+              </label>
+              <label>
+                <span className="field-label">Trạng thái</span>
+                <select
+                  className="field"
+                  value={form.status}
+                  onChange={(e) => update("status", e.target.value)}
+                >
+                  <option value="Draft">Bản nháp</option>
+                  <option value="Active">Giao cho lớp</option>
+                  {readOnly && <option value="Closed">Đã đóng</option>}
+                </select>
+              </label>
+            </div>
+          </fieldset>
+          {readOnly && (
+            <p className="text-xs leading-5 text-slate-500">
+              Bộ bài đã công bố được giữ nguyên nội dung. Tạo bộ mới để thay đổi
+              yêu cầu.
+            </p>
+          )}
+          {error && (
+            <p
+              role="alert"
+              className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
+            >
+              {error}
+            </p>
+          )}
+          {message && (
+            <p
+              role="status"
+              className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800"
+            >
+              {message}
+            </p>
+          )}
+          {!readOnly && (
+            <button type="submit" className="btn-primary" disabled={!classroom}>
+              <Check size={17} />
+              {form.status === "Active"
+                ? "Lưu và giao cho lớp"
+                : "Lưu bản nháp"}
+            </button>
+          )}
+        </section>
+        <section className="panel p-6">
+          <h2 className="flex items-center gap-2 font-bold text-slate-900">
+            <BookOpen size={19} />
+            Chọn bài học{" "}
+            <span className="ml-auto text-xs font-normal text-slate-500">
+              {form.lessonIds.length} đã chọn
+            </span>
+          </h2>
+          <p className="mb-5 mt-2 text-sm leading-6 text-slate-500">
+            Các bài thuộc chủ đề của lớp, tương ứng với màn thử thách trong
+            game.
+          </p>
+          <fieldset disabled={readOnly} className="space-y-2">
+            {topic?.lessons.map(([id, name]) => (
               <label
-                key={algo.name}
-                className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer"
+                key={id}
+                className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 text-sm ${form.lessonIds.includes(id) ? "border-emerald-300 bg-emerald-50/60 text-emerald-900" : "border-slate-100 text-slate-600"}`}
               >
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={form.algorithms.includes(algo.name)}
-                    onChange={() => toggleAlgorithm(algo.name)}
-                    className="w-4 h-4 accent-[#10b981]"
-                  />
-                  <span className="text-sm font-medium text-slate-700">{algo.name}</span>
-                </div>
-                <DifficultyBadge level={algo.difficulty} />
+                <input
+                  className="h-4 w-4 accent-emerald-600"
+                  type="checkbox"
+                  checked={form.lessonIds.includes(id)}
+                  onChange={() =>
+                    update(
+                      "lessonIds",
+                      form.lessonIds.includes(id)
+                        ? form.lessonIds.filter((value) => value !== id)
+                        : [...form.lessonIds, id],
+                    )
+                  }
+                />
+                {name}
               </label>
             ))}
-          </div>
-
-          <div className="mt-5">
-            <p className="text-sm font-medium text-slate-600 mb-2">Selected ({form.algorithms.length})</p>
-            <div className="flex flex-wrap gap-2">
-              {form.algorithms.map((name) => (
-                <span key={name} className="flex items-center gap-1 bg-green-50 text-brand text-xs font-medium px-3 py-1 rounded-full">
-                  {name}
-                  <button onClick={() => toggleAlgorithm(name)}><X size={12} /></button>
-                </span>
-              ))}
-              {form.algorithms.length === 0 && <span className="text-xs text-slate-400">No algorithms selected yet.</span>}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Existing challenge sets */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-6 pb-4 flex items-center justify-between">
+          </fieldset>
+          {!topic && (
+            <p className="py-6 text-center text-sm text-slate-400">
+              Chọn lớp để xem bài học.
+            </p>
+          )}
+        </section>
+      </form>
+      <section className="panel mt-8 overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-6">
           <div>
-            <h3 className="font-bold text-lg text-slate-800">Existing Challenge Sets</h3>
-            <p className="text-sm text-slate-500">Manage assignments you have created</p>
+            <h2 className="font-bold text-slate-900">Bộ thử thách của lớp</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              {classroom?.name ?? "Chưa chọn lớp"}
+            </p>
           </div>
           <button
-            onClick={resetForm}
-            className="px-3 py-2 bg-brand text-white rounded-lg text-sm font-medium hover:bg-brand-dark flex items-center gap-1"
+            className="btn-secondary"
+            disabled={!classroom}
+            onClick={newSet}
           >
-            <Plus size={16} /> New
+            <Plus size={16} />
+            Tạo bộ mới
           </button>
         </div>
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50">
-            <tr className="text-slate-500 border-y border-slate-100">
-              <th className="p-4 font-medium">Title</th>
-              <th className="p-4 font-medium">Class</th>
-              <th className="p-4 font-medium">Difficulty</th>
-              <th className="p-4 font-medium">Due Date</th>
-              <th className="p-4 font-medium">Algorithms</th>
-              <th className="p-4 font-medium">Status</th>
-              <th className="p-4 font-medium text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sets.map((c) => (
-              <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50 last:border-0">
-                <td className="p-4 font-medium text-slate-700">{c.title}</td>
-                <td className="p-4 text-slate-500">{c.className}</td>
-                <td className="p-4"><DifficultyBadge level={c.difficulty} /></td>
-                <td className="p-4 text-slate-500">{c.due || '—'}</td>
-                <td className="p-4 text-slate-500">{(c.algorithms || []).length}</td>
-                <td className="p-4"><StatusBadge status={c.status} /></td>
-                <td className="p-4">
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => handleEdit(c)}
-                      className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-brand"
-                      title="Edit"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(c)}
-                      className="p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600"
-                      title="Delete"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {sets.length === 0 && (
+        <div className="overflow-x-auto">
+          <table className="data-table">
+            <thead>
               <tr>
-                <td colSpan={7} className="p-8 text-center text-slate-400">
-                  Chưa có challenge set nào. Tạo mới ở form phía trên.
-                </td>
+                <th>Tên bộ bài</th>
+                <th>Nội dung</th>
+                <th>Hạn hoàn thành</th>
+                <th>Trạng thái</th>
+                <th>
+                  <span className="sr-only">Thao tác</span>
+                </th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {sets.map((item) => (
+                <tr key={item.id}>
+                  <td className="font-medium">{item.title}</td>
+                  <td className="max-w-64 text-xs leading-5 text-slate-500">
+                    {item.lessonIds.map(lessonName).join(", ")}
+                  </td>
+                  <td className="whitespace-nowrap">
+                    {item.due || "Chưa đặt"}
+                  </td>
+                  <td>{statusLabels[item.status]}</td>
+                  <td>
+                    <button
+                      className="font-semibold text-emerald-700"
+                      onClick={() =>
+                        setParams({ classId, assignmentId: item.id })
+                      }
+                    >
+                      {item.status === "Draft" ? "Chỉnh sửa" : "Xem"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {!sets.length && (
+                <tr>
+                  <td colSpan={5} className="py-10 text-center text-slate-400">
+                    Chưa có bộ thử thách cho lớp này.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
-};
-
-export default ChallengeSets;
+}

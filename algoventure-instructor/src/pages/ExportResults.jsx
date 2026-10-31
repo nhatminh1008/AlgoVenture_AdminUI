@@ -1,153 +1,102 @@
-import React, { useMemo, useState } from 'react';
-import { Download } from 'lucide-react';
-import { PageHeader } from '../components/ui';
-import { progressRows, classOptions } from '../data/mockData';
+import { useState } from "react";
+import { Download } from "lucide-react";
+import { PageHeader } from "../components/ui";
+import ClassFilter, { useClassScope } from "../components/ClassFilter";
+import { downloadFile, exportStudentRows } from "../data/classroom";
 
-const FORMATS = ['CSV', 'JSON'];
-const INCLUDE_OPTS = [
-  { key: 'details', label: 'Student details' },
-  { key: 'mastery', label: 'Per-topic mastery' },
-  { key: 'overall', label: 'Overall & status' },
-];
-
-const enrich = (r) => {
-  const overall = Math.round((r.sorting + r.searching + r.ds + r.graphs) / 4);
-  const status = overall >= 60 ? 'On Track' : overall >= 30 ? 'At Risk' : 'Inactive';
-  return { ...r, overall, status };
-};
-
-const ExportResults = () => {
-  const [format, setFormat] = useState('CSV');
-  const [classFilter, setClassFilter] = useState('All');
-  const [include, setInclude] = useState(['details', 'mastery', 'overall']);
-
-  const toggleInclude = (key) =>
-    setInclude((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
-
-  const rows = useMemo(
-    () => progressRows.map(enrich).filter((r) => classFilter === 'All' || r.className === classFilter),
-    [classFilter]
-  );
-
-  const buildRecord = (r) => {
-    const rec = {};
-    if (include.includes('details')) {
-      rec.name = r.name;
-      rec.email = r.email;
-      rec.class = r.className;
-    }
-    if (include.includes('mastery')) {
-      rec.sorting = r.sorting;
-      rec.searching = r.searching;
-      rec.dataStructures = r.ds;
-      rec.graphs = r.graphs;
-    }
-    if (include.includes('overall')) {
-      rec.overall = r.overall;
-      rec.status = r.status;
-    }
-    return rec;
-  };
-
-  const download = (content, filename, type) => {
-    const blob = new Blob([content], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleExport = () => {
-    if (include.length === 0) {
-      alert('Chọn ít nhất một nhóm dữ liệu để export.');
-      return;
-    }
-    const records = rows.map(buildRecord);
-    if (records.length === 0) {
-      alert('Không có dữ liệu phù hợp bộ lọc.');
-      return;
-    }
-
-    if (format === 'JSON') {
-      download(JSON.stringify(records, null, 2), 'class_results.json', 'application/json');
-    } else {
-      const headers = Object.keys(records[0]);
-      const csv = [
-        headers.join(','),
-        ...records.map((rec) => headers.map((h) => rec[h]).join(',')),
-      ].join('\n');
-      download(csv, 'class_results.csv', 'text/csv;charset=utf-8;');
-    }
-  };
-
+export default function ExportResults() {
+  const scope = useClassScope();
+  const [format, setFormat] = useState("CSV");
+  const [message, setMessage] = useState("");
+  function handleExport() {
+    if (!scope.rows.length) return;
+    if (format === "CSV")
+      downloadFile(
+        exportStudentRows(scope.rows, scope.classes),
+        "class-results-demo.csv",
+      );
+    else
+      downloadFile(
+        JSON.stringify(
+          {
+            dataSource: "demo",
+            classId: scope.classroom?.id ?? null,
+            students: scope.rows.map((row) => ({
+              ...row,
+              className: scope.classes.find((item) => item.id === row.classId)
+                .name,
+            })),
+          },
+          null,
+          2,
+        ),
+        "class-results-demo.json",
+        "application/json",
+      );
+    setMessage("Đã tạo tệp dữ liệu minh họa theo bộ lọc lớp hiện tại.");
+  }
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <PageHeader breadcrumb="Instructor / Export" title="Export Results" />
-
-      <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm space-y-5">
-        <h3 className="font-bold text-lg text-slate-800">Export Configuration</h3>
-
+    <div className="mx-auto max-w-3xl">
+      <PageHeader breadcrumb="Giảng viên / Báo cáo" title="Xuất kết quả" />
+      <section className="panel space-y-6 p-6 sm:p-8">
         <div>
-          <label className="block text-sm font-medium text-slate-600 mb-1">Class</label>
-          <select
-            value={classFilter}
-            onChange={(e) => setClassFilter(e.target.value)}
-            className="w-full border border-slate-200 rounded-lg px-4 py-2 bg-white text-slate-600"
-          >
-            <option value="All">All classes</option>
-            {classOptions.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <h2 className="font-bold text-slate-900">Phạm vi báo cáo</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Xuất danh sách sinh viên và điểm minh họa trong các lớp bạn phụ
+            trách. Kết quả thực tế cần đồng bộ từ game.
+          </p>
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-slate-600 mb-2">Format</label>
-          <div className="flex gap-2">
-            {FORMATS.map((f) => (
-              <button
-                key={f}
-                onClick={() => setFormat(f)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                  format === f ? 'bg-brand text-white border-brand' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                }`}
+          <p className="field-label">Lớp học</p>
+          <ClassFilter scope={scope} />
+        </div>
+        <fieldset>
+          <legend className="field-label">Định dạng tệp</legend>
+          <div className="flex gap-4">
+            {["CSV", "JSON"].map((value) => (
+              <label
+                key={value}
+                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-5 py-3 text-sm ${format === value ? "border-emerald-400 bg-emerald-50 text-emerald-800" : "border-slate-200"}`}
               >
-                {f}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-600 mb-2">Include</label>
-          <div className="space-y-2">
-            {INCLUDE_OPTS.map((opt) => (
-              <label key={opt.key} className="flex items-center gap-3 cursor-pointer">
                 <input
-                  type="checkbox"
-                  checked={include.includes(opt.key)}
-                  onChange={() => toggleInclude(opt.key)}
-                  className="w-4 h-4 accent-[#10b981]"
+                  type="radio"
+                  name="format"
+                  className="accent-emerald-600"
+                  checked={format === value}
+                  onChange={() => {
+                    setFormat(value);
+                    setMessage("");
+                  }}
                 />
-                <span className="text-sm text-slate-700">{opt.label}</span>
+                {value}
               </label>
             ))}
           </div>
+        </fieldset>
+        <div className="rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-500">
+          <p>{scope.rows.length} bản ghi được chọn.</p>
+          <p>
+            {scope.rows.length
+              ? "Gồm họ tên, email, lớp và điểm minh họa. Không bao gồm kết quả mastery."
+              : scope.invalid
+                ? "Lớp không thuộc danh sách bạn phụ trách."
+                : "Chưa có sinh viên trong phạm vi này để xuất báo cáo."}
+          </p>
         </div>
-
-        <div className="text-sm text-slate-500 bg-slate-50 rounded-lg px-4 py-3">
-          {rows.length} bản ghi sẽ được xuất theo bộ lọc hiện tại.
-        </div>
-
         <button
+          className="btn-primary w-full"
+          disabled={!scope.rows.length}
           onClick={handleExport}
-          className="w-full px-4 py-2.5 bg-brand text-white rounded-lg font-medium hover:bg-brand-dark flex items-center justify-center gap-2"
         >
-          <Download size={16} /> Generate Export
+          <Download size={17} />
+          Tải báo cáo {format}
         </button>
-      </div>
+        {message && (
+          <p role="status" className="text-sm text-emerald-700">
+            {message}
+          </p>
+        )}
+      </section>
     </div>
   );
-};
-
-export default ExportResults;
+}

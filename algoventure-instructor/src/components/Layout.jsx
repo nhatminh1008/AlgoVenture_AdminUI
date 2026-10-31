@@ -1,40 +1,72 @@
-import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
-import { ClipboardList, TrendingUp, BarChart2, Download, LogOut } from 'lucide-react';
+import { NavLink, Outlet } from "react-router-dom";
+import {
+  GraduationCap,
+  ClipboardList,
+  TrendingUp,
+  BarChart2,
+  Download,
+  BookOpen,
+} from "lucide-react";
+import { useClassrooms } from "../data/ClassroomContext";
 
 const Layout = () => {
+  const { instructor, storageError } = useClassrooms();
   const navItems = [
-    { path: '/', name: 'Challenge Sets', icon: <ClipboardList size={20} /> },
-    { path: '/progress', name: 'Progress', icon: <TrendingUp size={20} /> },
-    { path: '/analytics', name: 'Analytics', icon: <BarChart2 size={20} /> },
-    { path: '/export', name: 'Export', icon: <Download size={20} /> },
+    {
+      path: "/classes",
+      name: "Lớp của tôi",
+      icon: <GraduationCap size={20} />,
+    },
+    {
+      path: "/challenges",
+      name: "Bộ thử thách",
+      icon: <ClipboardList size={20} />,
+    },
+    {
+      path: "/progress",
+      name: "Tiến độ học tập",
+      icon: <TrendingUp size={20} />,
+    },
+    {
+      path: "/analytics",
+      name: "Phân tích lớp học",
+      icon: <BarChart2 size={20} />,
+    },
+    { path: "/export", name: "Xuất kết quả", icon: <Download size={20} /> },
   ];
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-800">
+    <div className="portal-shell">
       {/* Sidebar */}
-      <aside className="w-64 bg-sidebar text-slate-300 flex flex-col">
+      <aside className="portal-sidebar text-slate-300">
         <div className="p-6 flex items-center gap-3">
           <div className="w-8 h-8 bg-brand rounded flex items-center justify-center">
-            <span className="text-white font-bold text-lg">∴</span>
+            <BookOpen size={20} className="text-white" />
           </div>
           <div>
-            <h1 className="text-white font-bold text-lg leading-tight">AlgoVenture</h1>
-            <p className="text-brand text-xs font-semibold tracking-wider">INSTRUCTOR PORTAL</p>
+            <p className="text-white font-bold text-lg leading-tight">
+              AlgoVenture
+            </p>
+            <p className="text-brand text-xs font-semibold tracking-wider">
+              INSTRUCTOR PORTAL
+            </p>
           </div>
         </div>
 
-        <nav className="flex-1 px-4 space-y-2 mt-4">
+        <nav
+          aria-label="Điều hướng chính"
+          className="flex-1 px-4 space-y-2 mt-4"
+        >
           {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
-              end={item.path === '/'}
+              end={item.path === "/"}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-slate-800 text-brand border-l-4 border-brand'
-                    : 'hover:bg-slate-800 hover:text-white border-l-4 border-transparent'
+                    ? "bg-slate-800 text-brand border-l-4 border-brand"
+                    : "hover:bg-slate-800 hover:text-white border-l-4 border-transparent"
                 }`
               }
             >
@@ -47,22 +79,40 @@ const Layout = () => {
         {/* User Profile */}
         <div className="p-4 border-t border-slate-700 m-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="https://i.pravatar.cc/150?img=47" alt="Instructor" className="w-10 h-10 rounded-full" />
+            <span className="w-10 h-10 rounded-full bg-slate-700 grid place-items-center text-white text-sm">
+              ER
+            </span>
             <div>
-              <p className="text-white font-medium text-sm">Elena Rostova</p>
-              <p className="text-xs text-slate-400">Instructor</p>
+              <p className="text-white font-medium text-sm">
+                {instructor.name}
+              </p>
+              <p className="text-xs text-slate-400">Giảng viên mẫu</p>
             </div>
           </div>
-          <button className="text-slate-400 hover:text-white">
-            <LogOut size={18} />
-          </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto p-8">
-        <Outlet />
-      </main>
+      <div className="min-w-0 flex-1">
+        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-5 py-4 text-xs text-slate-500 sm:px-8">
+          <span>AlgoVenture / Không gian giảng viên</span>
+          <span className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+            Dữ liệu mẫu · Lưu trên trình duyệt · Chưa kết nối classroom API
+          </span>
+        </header>
+        <main id="main-content" className="p-5 sm:p-8 lg:p-10">
+          {storageError && (
+            <p
+              role="alert"
+              className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+            >
+              {storageError}
+            </p>
+          )}
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 };

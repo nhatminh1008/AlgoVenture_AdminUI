@@ -1,176 +1,114 @@
-import React, { useMemo, useState } from 'react';
-import { Search, Download } from 'lucide-react';
-import { PageHeader, StatusBadge } from '../components/ui';
-import { progressRows, classOptions } from '../data/mockData';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Download, Search } from "lucide-react";
+import { PageHeader } from "../components/ui";
+import ClassFilter, { useClassScope } from "../components/ClassFilter";
+import { exportStudentRows, downloadFile } from "../data/classroom";
+import { getTopic } from "../data/curriculum";
 
-const topicColor = (v) => (v >= 70 ? 'bg-brand' : v >= 40 ? 'bg-orange-500' : 'bg-red-500');
-
-const TopicCell = ({ value }) => (
-  <div className="flex items-center gap-2">
-    <div className="w-14 bg-slate-100 rounded-full h-1.5">
-      <div className={`${topicColor(value)} h-1.5 rounded-full`} style={{ width: `${value}%` }}></div>
-    </div>
-    <span className="text-xs text-slate-500 w-6">{value}</span>
-  </div>
-);
-
-// Tính overall + status từ mastery các topic (không dùng số liệu cứng).
-const enrich = (r) => {
-  const overall = Math.round((r.sorting + r.searching + r.ds + r.graphs) / 4);
-  const status = overall >= 60 ? 'On Track' : overall >= 30 ? 'At Risk' : 'Inactive';
-  return { ...r, overall, status };
-};
-
-const STATUS_OPTS = ['All', 'On Track', 'At Risk', 'Inactive'];
-
-const Progress = () => {
-  const [query, setQuery] = useState('');
-  const [classFilter, setClassFilter] = useState('All');
-  const [statusFilter, setStatusFilter] = useState('All');
-
-  const rows = useMemo(() => progressRows.map(enrich), []);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return rows.filter((r) => {
-      const matchQuery = !q || r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q);
-      const matchClass = classFilter === 'All' || r.className === classFilter;
-      const matchStatus = statusFilter === 'All' || r.status === statusFilter;
-      return matchQuery && matchClass && matchStatus;
-    });
-  }, [rows, query, classFilter, statusFilter]);
-
-  const summary = useMemo(() => {
-    const count = (s) => rows.filter((r) => r.status === s).length;
-    return [
-      { label: 'On Track', value: count('On Track'), color: 'text-green-700', bg: 'bg-green-100' },
-      { label: 'At Risk', value: count('At Risk'), color: 'text-yellow-700', bg: 'bg-yellow-100' },
-      { label: 'Inactive', value: count('Inactive'), color: 'text-red-700', bg: 'bg-red-100' },
-    ];
-  }, [rows]);
-
-  const exportCsv = () => {
-    const header = ['Name', 'Email', 'Class', 'Sorting', 'Searching', 'Data Structures', 'Graphs', 'Overall', 'Status'];
-    const lines = filtered.map((r) =>
-      [r.name, r.email, r.className, r.sorting, r.searching, r.ds, r.graphs, r.overall, r.status].join(',')
-    );
-    const csv = [header.join(','), ...lines].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'class_progress.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
+export default function Progress() {
+  const scope = useClassScope();
+  const [query, setQuery] = useState("");
+  const rows = scope.rows.filter((row) =>
+    `${row.name} ${row.email}`
+      .toLocaleLowerCase()
+      .includes(query.trim().toLocaleLowerCase()),
+  );
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <PageHeader breadcrumb="Instructor / Progress" title="Progress Tracking">
+    <div className="mx-auto max-w-6xl">
+      <PageHeader
+        breadcrumb="Giảng viên / Theo dõi lớp"
+        title="Tiến độ học tập"
+      >
         <button
-          onClick={exportCsv}
-          className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-700 font-medium hover:bg-slate-50 flex items-center gap-2"
+          disabled={!rows.length}
+          className="btn-secondary"
+          onClick={() =>
+            downloadFile(
+              exportStudentRows(rows, scope.classes),
+              "class-progress-demo.csv",
+            )
+          }
         >
-          <Download size={16} /> Export CSV
+          <Download size={16} />
+          Xuất CSV
         </button>
       </PageHeader>
-
-      {/* Summary */}
-      <div className="grid grid-cols-3 gap-6">
-        {summary.map((s) => (
-          <div key={s.label} className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-500 font-medium">{s.label}</p>
-              <p className="text-3xl font-bold text-slate-800">{s.value}</p>
-            </div>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold ${s.bg} ${s.color}`}>{s.label}</span>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        {/* Filter */}
-        <div className="p-4 border-b border-slate-100 flex gap-4 bg-slate-50">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
+      <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+        Đang hiển thị dữ liệu minh họa. Tiến độ hoàn thành, số lượt làm và mức
+        thành thạo sẽ xuất hiện khi game gửi kết quả lên backend.
+      </p>
+      <div className="panel overflow-hidden">
+        <div className="flex flex-wrap gap-3 border-b border-slate-100 p-5">
+          <label className="relative min-w-48 flex-1">
+            <span className="sr-only">Tìm sinh viên</span>
+            <Search
+              size={17}
+              className="absolute left-3 top-3.5 text-slate-400"
+            />
             <input
-              type="text"
+              className="field pl-10"
+              placeholder="Tìm tên hoặc email..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search students by name, email..."
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-brand"
             />
-          </div>
-          <select
-            value={classFilter}
-            onChange={(e) => setClassFilter(e.target.value)}
-            className="border border-slate-200 rounded-lg px-4 py-2 text-slate-600 bg-white"
-          >
-            <option value="All">Class: All</option>
-            {classOptions.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="border border-slate-200 rounded-lg px-4 py-2 text-slate-600 bg-white"
-          >
-            {STATUS_OPTS.map((s) => <option key={s} value={s}>Status: {s}</option>)}
-          </select>
+          </label>
+          <ClassFilter scope={scope} />
         </div>
-
-        <table className="w-full text-left text-sm">
-          <thead className="bg-white">
-            <tr className="text-slate-500 border-b border-slate-100">
-              <th className="p-4 font-medium">Student</th>
-              <th className="p-4 font-medium">Sorting</th>
-              <th className="p-4 font-medium">Searching</th>
-              <th className="p-4 font-medium">Data Struct.</th>
-              <th className="p-4 font-medium">Graphs</th>
-              <th className="p-4 font-medium">Overall</th>
-              <th className="p-4 font-medium">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((r, i) => (
-              <tr key={i} className="border-b border-slate-50 hover:bg-slate-50 last:border-0">
-                <td className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-300"></div>
-                    <div>
-                      <p className="font-bold text-slate-800">{r.name}</p>
-                      <p className="text-xs text-slate-400">{r.email}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="p-4"><TopicCell value={r.sorting} /></td>
-                <td className="p-4"><TopicCell value={r.searching} /></td>
-                <td className="p-4"><TopicCell value={r.ds} /></td>
-                <td className="p-4"><TopicCell value={r.graphs} /></td>
-                <td className="p-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 bg-slate-100 rounded-full h-2">
-                      <div className="bg-brand h-2 rounded-full" style={{ width: `${r.overall}%` }}></div>
-                    </div>
-                    <span className="text-xs font-medium text-slate-700 w-8">{r.overall}%</span>
-                  </div>
-                </td>
-                <td className="p-4"><StatusBadge status={r.status} /></td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
+        <div className="overflow-x-auto">
+          <table className="data-table">
+            <thead>
               <tr>
-                <td colSpan={7} className="p-8 text-center text-slate-400">Không tìm thấy học viên phù hợp bộ lọc.</td>
+                <th>Sinh viên</th>
+                <th>Lớp học</th>
+                <th>Chủ đề</th>
+                <th>Điểm minh họa / 100</th>
+                <th>Tiến độ thực tế</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-
-        <div className="p-4 border-t border-slate-100 text-sm text-slate-500">
-          Showing {filtered.length} of {rows.length} students
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const classroom = scope.classes.find(
+                  (item) => item.id === row.classId,
+                );
+                return (
+                  <tr key={row.id}>
+                    <td>
+                      <p className="font-medium text-slate-800">{row.name}</p>
+                      <p className="mt-1 text-xs text-slate-400">{row.email}</p>
+                    </td>
+                    <td>
+                      <Link
+                        className="text-emerald-700"
+                        to={`/classes/${row.classId}`}
+                      >
+                        {classroom.name}
+                      </Link>
+                    </td>
+                    <td>{getTopic(classroom.topicId).name}</td>
+                    <td>{row.sampleScore ?? "Chưa có dữ liệu"}</td>
+                    <td className="text-xs text-slate-400">Chưa đồng bộ</td>
+                  </tr>
+                );
+              })}
+              {!rows.length && (
+                <tr>
+                  <td colSpan={5} className="p-10 text-center text-slate-500">
+                    {scope.invalid
+                      ? "Không tìm thấy lớp bạn phụ trách."
+                      : scope.rows.length
+                        ? "Không tìm thấy sinh viên phù hợp."
+                        : "Lớp chưa có sinh viên và kết quả học tập."}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
+        <p className="border-t border-slate-100 p-4 text-xs text-slate-500">
+          {rows.length} sinh viên trong phạm vi đã chọn
+        </p>
       </div>
     </div>
   );
-};
-
-export default Progress;
+}

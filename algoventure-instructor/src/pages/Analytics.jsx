@@ -1,131 +1,122 @@
-import React, { useMemo, useState } from 'react';
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  BarChart, Bar, CartesianGrid,
-} from 'recharts';
-import { Download } from 'lucide-react';
-import { PageHeader, StatCard } from '../components/ui';
-import { engagementByMonth, progressRows } from '../data/mockData';
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { PageHeader } from "../components/ui";
+import ClassFilter, { useClassScope } from "../components/ClassFilter";
 
-// Các khoảng thời gian lọc thật trên dữ liệu theo tháng.
-const RANGES = [
-  { key: '3m', label: 'Last 3 months', months: 3 },
-  { key: '6m', label: 'Last 6 months', months: 6 },
-  { key: 'ytd', label: 'This year', months: 12 },
-];
-
-const Analytics = () => {
-  const [rangeKey, setRangeKey] = useState('6m');
-
-  const range = RANGES.find((r) => r.key === rangeKey);
-
-  const data = useMemo(
-    () => engagementByMonth.slice(-range.months),
-    [range]
-  );
-
-  // Stat cards tính từ khoảng đang chọn + dữ liệu học viên thật.
-  const stats = useMemo(() => {
-    const last = data[data.length - 1] || {};
-    const first = data[0] || {};
-    const delta = (a, b) => (b ? +(((a - b) / b) * 100).toFixed(1) : 0);
-
-    const avgMasteryStudents = Math.round(
-      progressRows.reduce((sum, r) => sum + (r.sorting + r.searching + r.ds + r.graphs) / 4, 0) /
-        progressRows.length
-    );
-
-    return [
-      { title: 'Avg. Mastery', value: `${avgMasteryStudents}%`, trend: `${delta(last.avgMastery, first.avgMastery)}%`, isUp: last.avgMastery >= first.avgMastery, note: 'in range' },
-      { title: 'Completion Rate', value: `${last.completion ?? 0}%`, trend: `${delta(last.completion, first.completion)}%`, isUp: last.completion >= first.completion, note: 'in range' },
-      { title: 'Active Learners', value: `${last.dau ?? 0}`, trend: `${delta(last.dau, first.dau)}%`, isUp: last.dau >= first.dau, note: 'in range' },
-      { title: 'Students', value: `${progressRows.length}`, trend: '0%', isUp: true, note: 'total' },
-    ];
-  }, [data]);
-
-  // Độ khó thuật toán tính bằng số học viên có mastery topic < 50 (đại diện "struggle").
-  const difficulty = useMemo(() => {
-    const topics = [
-      { name: 'Sorting', key: 'sorting' },
-      { name: 'Searching', key: 'searching' },
-      { name: 'Data Struct.', key: 'ds' },
-      { name: 'Graphs', key: 'graphs' },
-    ];
-    return topics.map((t) => ({
-      name: t.name,
-      struggling: progressRows.filter((r) => r[t.key] < 50).length,
-      avg: Math.round(progressRows.reduce((s, r) => s + r[t.key], 0) / progressRows.length),
+export default function Analytics() {
+  const scope = useClassScope();
+  const graded = scope.rows.filter((row) => row.sampleScore !== null);
+  const average = graded.length
+    ? Math.round(
+        graded.reduce((sum, row) => sum + row.sampleScore, 0) / graded.length,
+      )
+    : null;
+  const chart = scope.classes
+    .filter((item) => !scope.selected || item.id === scope.selected)
+    .map((item) => ({
+      name: item.name,
+      students: scope.rows.filter((row) => row.classId === item.id).length,
     }));
-  }, []);
-
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <PageHeader breadcrumb="Instructor / Analytics" title="Class Analytics">
-        <select
-          value={rangeKey}
-          onChange={(e) => setRangeKey(e.target.value)}
-          className="border border-slate-200 rounded-lg px-4 py-2 text-slate-600 bg-white"
-        >
-          {RANGES.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
-        </select>
-        <button className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-700 font-medium hover:bg-slate-50 flex items-center gap-2">
-          <Download size={16} /> Download Report
-        </button>
+    <div className="mx-auto max-w-6xl">
+      <PageHeader breadcrumb="Giảng viên / Phân tích" title="Phân tích lớp học">
+        <ClassFilter scope={scope} />
       </PageHeader>
-
-      {/* Stat cards */}
-      <div className="grid grid-cols-4 gap-6">
-        {stats.map((stat, i) => <StatCard key={i} {...stat} />)}
-      </div>
-
-      {/* Engagement */}
-      <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
-        <div className="flex justify-between mb-4">
-          <div>
-            <h3 className="font-bold text-lg text-slate-800">Class Engagement</h3>
-            <p className="text-sm text-slate-500">Active learners per month · {range.label.toLowerCase()}</p>
+      <p className="mb-6 text-sm leading-6 text-slate-500">
+        {scope.classroom
+          ? scope.classroom.name
+          : scope.invalid
+            ? "Lớp không khả dụng."
+            : "Tổng hợp các lớp bạn phụ trách."}{" "}
+        Các số liệu dưới đây là dữ liệu mẫu; chưa có dữ liệu Knowledge Tracing
+        từ game.
+      </p>
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        {[
+          ["Sinh viên trong lớp", scope.rows.length],
+          [
+            "Bộ bài đang giao",
+            scope.sets.filter((item) => item.status === "Active").length +
+              scope.quizzes.filter((item) => item.status === "Published")
+                .length,
+          ],
+          [
+            "Điểm minh họa trung bình",
+            average === null ? "Chưa có dữ liệu" : `${average}/100`,
+          ],
+        ].map(([label, value]) => (
+          <div key={label} className="panel p-6">
+            <p className="mb-3 text-sm text-slate-500">{label}</p>
+            <p className="text-2xl font-bold text-slate-900">{value}</p>
           </div>
-          <span className="text-xs font-medium text-brand bg-green-50 px-3 py-1 rounded-full h-fit flex items-center gap-1">
-            ● Active Users
-          </span>
-        </div>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data}>
-              <defs>
-                <linearGradient id="colorDau" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} width={30} />
-              <Tooltip />
-              <Area type="monotone" dataKey="dau" stroke="#10b981" strokeWidth={3} fill="url(#colorDau)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+        ))}
       </div>
-
-      {/* Topic mastery */}
-      <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
-        <h3 className="font-bold text-lg text-slate-800">Average Mastery by Topic</h3>
-        <p className="text-sm text-slate-500 mb-4">Tính từ điểm mastery hiện tại của lớp</p>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={difficulty} margin={{ left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} width={30} />
-              <Tooltip />
-              <Bar dataKey="avg" name="Avg mastery" fill="#10b981" radius={[6, 6, 0, 0]} barSize={40} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section className="panel min-w-0 p-6">
+          <h2 className="font-bold text-slate-900">Sinh viên theo lớp</h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Số thành viên từ danh sách lớp mẫu
+          </p>
+          {scope.rows.length ? (
+            <div className="mt-5 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chart}
+                  margin={{ left: 0, right: 12, bottom: 15 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    tickFormatter={(name) =>
+                      name.length > 20 ? `${name.slice(0, 18)}…` : name
+                    }
+                    tick={{ fontSize: 10 }}
+                    interval={0}
+                  />
+                  <YAxis allowDecimals={false} width={25} />
+                  <Tooltip />
+                  <Bar
+                    dataKey="students"
+                    name="Sinh viên"
+                    fill="#10b981"
+                    radius={[5, 5, 0, 0]}
+                    maxBarSize={55}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <p className="py-20 text-center text-sm text-slate-400">
+              Chưa có sinh viên để thống kê.
+            </p>
+          )}
+        </section>
+        <section className="panel p-6">
+          <h2 className="font-bold text-slate-900">
+            Mức thành thạo theo khái niệm
+          </h2>
+          <div className="my-6 rounded-xl border border-dashed border-slate-200 p-8 text-center">
+            <p className="font-medium text-slate-600">
+              Chưa có dữ liệu ước lượng
+            </p>
+            <p className="mt-3 text-sm leading-6 text-slate-500">
+              Khi tích hợp adaptive engine, giảng viên có thể xem mức thành thạo
+              theo khái niệm và nhận diện nội dung sinh viên cần luyện thêm.
+            </p>
+          </div>
+          <p className="text-xs leading-5 text-slate-500">
+            Điểm thực hành và mức thành thạo do mô hình ước lượng là hai chỉ số
+            riêng. Không dùng điểm mẫu để suy ra mastery.
+          </p>
+        </section>
       </div>
     </div>
   );
-};
-
-export default Analytics;
+}
