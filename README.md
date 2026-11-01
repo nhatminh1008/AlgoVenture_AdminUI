@@ -2,6 +2,10 @@
 
 Web chung cho Admin và Instructor dùng React cùng Java Spring Boot và PostgreSQL. Frontend chính nằm trong `algoventure-admin`, backend trong `backend`. `algoventure-instructor` là bản standalone cũ dùng dữ liệu cục bộ, giữ để tham chiếu.
 
+## Backend chung hiện tại
+
+Admin, Instructor và Learner dùng chung backend `backend` ở cổng 8081 và bảng `app_users`. Learner tự đăng ký trong web game, tham gia lớp bằng mã mời và nộp quiz. Hồ sơ, tiến trình game và bảng xếp hạng lấy dữ liệu server. Không cần backend game 8080. Xem [API và luồng tích hợp hiện tại](INTEGRATION.md).
+
 ## Chạy trên máy Windows hiện tại
 
 Mở terminal tại thư mục repo và chạy backend:
@@ -20,7 +24,7 @@ npm install
 npm run dev -- --host 127.0.0.1
 ```
 
-Mở URL Vite hiển thị, thường là http://127.0.0.1:5173. Vite chuyển `/api` đến Spring Boot ở `127.0.0.1:8081`. Dùng cùng một hostname trong suốt phiên đăng nhập.
+Mở URL Vite hiển thị, hiện tại là http://127.0.0.1:5174. Vite chuyển `/api` đến Spring Boot ở `127.0.0.1:8081`. Dùng cùng một hostname trong suốt phiên đăng nhập.
 
 | Vai trò | Email | Mật khẩu khởi tạo cho môi trường local |
 | --- | --- | --- |
@@ -50,9 +54,9 @@ Dữ liệu localStorage/IndexedDB cũ không tự nhập lên server. Database 
 
 ## Phạm vi còn lại
 
-Game chưa đọc bài giao hoặc gửi kết quả. Vì vậy điểm, lượt hoàn thành và mastery chưa có dữ liệu. Làm thử quiz chỉ dành cho giảng viên, không ghi kết quả học viên. Các feature toggle và cờ bảo trì được lưu để client/game đọc khi tích hợp; chưa tự thay đổi hành vi game. Catalog giữ 25 mã bài hiện có, chưa tạo thêm thuật toán thực thi mới. Xuất dữ liệu portal không phải backup database đầy đủ.
+Game đã đọc quiz/bộ thử thách và lưu sự kiện hoàn thành bài học. Điểm quiz và tiến độ bài giao hiển thị trong Instructor; mastery chưa có mô hình ước lượng. Làm thử quiz chỉ dành cho giảng viên, không ghi kết quả học viên. Các feature toggle và cờ bảo trì được lưu để client/game đọc khi tích hợp; chưa tự thay đổi hành vi game. Catalog giữ 25 mã bài hiện có, chưa tạo thêm thuật toán thực thi mới. Xuất dữ liệu portal không phải backup database đầy đủ.
 
-Google OAuth, đăng ký công khai, quên/đổi mật khẩu, JWT dành cho game, đồng bộ offline, Redis và FastAPI/Knowledge Tracing chưa được triển khai. Xác thực web hiện dùng session phía server. Chưa kiểm thử tải 2.000 người dùng hoặc cấu hình mã hóa ổ đĩa theo yêu cầu triển khai trong đặc tả.
+Đăng ký công khai Learner và Bearer session dành cho game đã có. Google OAuth, quên/đổi mật khẩu, đồng bộ offline đầy đủ, Redis và FastAPI/Knowledge Tracing chưa được triển khai. Xác thực web hiện dùng session phía server. Chưa kiểm thử tải 2.000 người dùng hoặc cấu hình mã hóa ổ đĩa theo yêu cầu triển khai trong đặc tả.
 
 ## Kiểm tra
 

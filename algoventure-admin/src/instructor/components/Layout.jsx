@@ -55,7 +55,7 @@ const Layout = () => {
               AlgoVenture
             </p>
             <p className="text-brand text-xs font-semibold tracking-wider">
-              INSTRUCTOR PORTAL
+              GIẢNG VIÊN
             </p>
           </div>
         </div>
@@ -87,7 +87,7 @@ const Layout = () => {
         <div className="p-4 border-t border-slate-700 m-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="w-10 h-10 rounded-full bg-slate-700 grid place-items-center text-white text-sm">
-              ER
+              {user.name?.trim().split(/\s+/).map((part) => part[0]).slice(-2).join("")}
             </span>
             <div>
               <p className="text-white font-medium text-sm">{user.name}</p>
@@ -110,13 +110,6 @@ const Layout = () => {
 
       {/* Main Content */}
       <div className="min-w-0 flex-1">
-        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-5 py-4 text-xs text-slate-500 sm:px-8">
-          <span>AlgoVenture / Không gian giảng viên</span>
-          <span className="flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-            Đã kết nối Spring Boot API
-          </span>
-        </header>
         <main id="main-content" className="p-5 sm:p-8 lg:p-10">
           {storageError && (
             <p

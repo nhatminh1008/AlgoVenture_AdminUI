@@ -64,7 +64,6 @@ export default function ClassForm() {
         Quay lại
       </Link>
       <PageHeader
-        breadcrumb={`Lớp của tôi / ${classId ? "Chỉnh sửa" : "Tạo lớp"}`}
         title={classId ? "Chỉnh sửa lớp học" : "Tạo lớp học mới"}
       />
       <div className="grid items-start gap-6 lg:grid-cols-[1.4fr_1fr]">

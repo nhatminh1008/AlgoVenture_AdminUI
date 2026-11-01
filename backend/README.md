@@ -2,6 +2,10 @@
 
 Java 21, Spring Boot 3.5.16, Spring Security, Bean Validation, Spring JDBC, Flyway 11.20.3 và PostgreSQL. Maven Wrapper đi kèm, không cần Maven hệ thống. Cách chạy Windows local và tài khoản bootstrap ở [README gốc](../README.md).
 
+## Backend chung cho Learner
+
+Game đã chuyển về backend này. API tài khoản, hồ sơ, tiến trình, bảng xếp hạng và Classroom được mô tả trong [INTEGRATION.md](../INTEGRATION.md). Portal dùng cookie + CSRF; Learner dùng Bearer session do backend này cấp.
+
 ## Cấu trúc
 
 - `SecurityConfig`, `AuthController`, `UserStore`: xác thực session, BCrypt, CSRF, kiểm tra vai trò và trạng thái tài khoản ở mỗi request.
@@ -86,7 +90,7 @@ Config bài học: `name`, `difficulty` (Easy/Medium/Hard), `status` (Draft/Publ
 
 `app_users` dùng chung cho ba vai trò. `classrooms` tham chiếu Instructor; `enrollments` nối Learner và lớp. `assignments` lưu stable lesson IDs; `quizzes` lưu phiên bản nội dung câu hỏi trong cột text JSON; `quiz_materials` nối quiz và tài liệu. `materials` lưu metadata cùng bytea, giới hạn mỗi tệp 10 MB. `algorithms`, `feature_toggles`, `system_settings` giữ cấu hình. `audit_events` ghi ID người thao tác, hành động và thời điểm.
 
-Không lưu điểm giả, submission hoặc knowledge state chưa có nguồn từ game. `score` trong payload thành viên hiện là null. Nếu cần kho file lớn, thay bytea bằng object storage và giữ kiểm tra quyền cho tải xuống. FK/index có trong migration; không dùng ORM tự sửa schema.
+Không lưu điểm giả hoặc knowledge state. `quiz_attempts` lưu bài nộp do server chấm; `score` thành viên là trung bình các điểm quiz cao nhất, null khi chưa nộp quiz. Nếu cần kho file lớn, thay bytea bằng object storage và giữ kiểm tra quyền cho tải xuống. FK/index có trong migration; không dùng ORM tự sửa schema.
 
 ## Môi trường ngoài local
 

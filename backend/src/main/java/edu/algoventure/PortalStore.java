@@ -69,6 +69,7 @@ public class PortalStore {
     return map(
         "id",
         r.getString("id"),
+        "inviteCode", r.getString("invite_code"),
         "instructorId",
         r.getString("instructor_id"),
         "name",
@@ -163,22 +164,22 @@ public class PortalStore {
             owner),
         "students",
         db.query(
-            "SELECT e.id,e.class_id,u.name,u.email FROM enrollments e JOIN app_users u ON"
+            "SELECT e.id,e.class_id,e.user_id,u.name,u.email FROM enrollments e JOIN app_users u ON"
                 + " u.id=e.user_id JOIN classrooms c ON c.id=e.class_id WHERE c.instructor_id=?"
                 + " ORDER BY u.name",
-            (r, n) ->
-                map(
-                    "id",
-                    r.getString("id"),
-                    "classId",
-                    r.getString("class_id"),
-                    "name",
-                    r.getString("name"),
-                    "email",
-                    r.getString("email"),
-                    "score",
-                    null),
+            (r, n) -> student(r.getString("id"),r.getString("user_id"),r.getString("class_id"),r.getString("name"),r.getString("email")),
             owner));
+  }
+
+  Map<String,Object> student(String enrollmentId,String uid,String cid,String name,String email) {
+    var scores=db.query("SELECT q.id,MAX(a.score) AS best FROM quizzes q JOIN quiz_attempts a ON a.quiz_id=q.id WHERE q.class_id=? AND a.user_id=? GROUP BY q.id",(r,n)->r.getInt("best"),cid,uid);
+    Double score=scores.isEmpty()?null:scores.stream().mapToInt(Integer::intValue).average().orElse(0);
+    int required=0,finished=0;
+    for(var assignment:db.query("SELECT * FROM assignments WHERE class_id=? AND status='Active'",(r,n)->assignment(r),cid)) {
+      required+=((java.util.List<?>)assignment.get("lessonIds")).size();
+      finished+=db.queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=?",Integer.class,assignment.get("id"),uid);
+    }
+    return map("id",enrollmentId,"classId",cid,"name",name,"email",email,"score",score==null?null:Math.round(score),"quizzesSubmitted",scores.size(),"completedLessons",finished,"assignedLessons",required,"progressPercent",required==0?null:Math.round(finished*100.0/required));
   }
 
   public Map<String, Object> saveClass(String owner, String classId, Classroom v) {
@@ -204,15 +205,16 @@ public class PortalStore {
     } else {
       classId = id();
       db.update(
-          "INSERT INTO classrooms(id,instructor_id,name,name_key,description,topic_id,level) VALUES"
-              + " (?,?,?,?,?,?,?)",
+          "INSERT INTO classrooms(id,instructor_id,name,name_key,description,topic_id,level,invite_code) VALUES"
+              + " (?,?,?,?,?,?,?,?)",
           classId,
           owner,
           v.name().trim(),
           v.name().trim().toLowerCase(Locale.ROOT),
           v.description().trim(),
           v.topicId(),
-          v.level());
+          v.level(),
+          classId.replace("-", "").substring(0,8).toUpperCase(Locale.ROOT));
     }
     audit(owner, "classroom.save");
     return ownedClass(classId, owner);

@@ -1,3 +1,4 @@
+import ClassNavigation from "../components/ClassNavigation";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Download, Search } from "lucide-react";
@@ -17,7 +18,6 @@ export default function Progress() {
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
-        breadcrumb="Giảng viên / Theo dõi lớp"
         title="Tiến độ học tập"
       >
         <button
@@ -34,9 +34,9 @@ export default function Progress() {
           Xuất CSV
         </button>
       </PageHeader>
+      {scope.classroom && <ClassNavigation classId={scope.classroom.id} active="progress" />}
       <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
-        Danh sách sinh viên được tải từ server. Tiến độ hoàn thành, số lượt làm
-        và mức thành thạo sẽ xuất hiện khi game gửi kết quả lên backend.
+        Điểm là trung bình điểm cao nhất của từng quiz đã nộp. Tiến độ là số bài thực hành được giao đã hoàn thành.
       </p>
       <div className="panel overflow-hidden">
         <div className="flex flex-wrap gap-3 border-b border-slate-100 p-5">
@@ -87,7 +87,7 @@ export default function Progress() {
                     </td>
                     <td>{getTopic(classroom.topicId).name}</td>
                     <td>{row.score ?? "Chưa có dữ liệu"}</td>
-                    <td className="text-xs text-slate-400">Chưa đồng bộ</td>
+                    <td className="text-xs text-slate-500">{row.assignedLessons ? `${row.completedLessons}/${row.assignedLessons} bài (${row.progressPercent}%)` : "Chưa giao bài thực hành"}</td>
                   </tr>
                 );
               })}

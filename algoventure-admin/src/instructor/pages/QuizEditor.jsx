@@ -9,13 +9,11 @@ import {
   Send,
   ArrowUp,
   ArrowDown,
-  FileText,
 } from "lucide-react";
 import { PageHeader } from "../components/ui";
 import { useClassrooms } from "../data/ClassroomContext";
 import { createQuestion, validateQuiz, MAX_QUESTIONS } from "../data/quizzes";
 import { getTopic } from "../data/curriculum";
-import { useMaterialList } from "../components/ClassMaterials";
 import QuizPreview from "../components/QuizPreview";
 
 export default function QuizEditor() {
@@ -63,12 +61,6 @@ export default function QuizEditor() {
 function Editor({ classroom, existing }) {
   const { saveQuiz } = useClassrooms();
   const navigate = useNavigate();
-  const {
-    materials,
-    loading: materialLoading,
-    error: materialError,
-    refresh: refreshMaterials,
-  } = useMaterialList(classroom.id);
   const [form, setForm] = useState(() =>
     existing
       ? structuredClone(existing)
@@ -122,7 +114,7 @@ function Editor({ classroom, existing }) {
         state: {
           message:
             status === "Published"
-              ? "Đã công bố bộ câu hỏi trên server. Game cần tích hợp API để sinh viên nhận bài."
+              ? "Đã giao bộ câu hỏi cho lớp. Kết quả sẽ cập nhật khi sinh viên làm bài trong game."
               : "Đã lưu bản nháp bộ câu hỏi.",
         },
       });
@@ -153,7 +145,6 @@ function Editor({ classroom, existing }) {
         Trắc nghiệm của lớp
       </Link>
       <PageHeader
-        breadcrumb={`${classroom.name} / Trắc nghiệm`}
         title={
           preview
             ? "Làm thử bộ câu hỏi"
@@ -472,72 +463,6 @@ function Editor({ classroom, existing }) {
                 Có thể lưu bản nháp khi chưa hoàn thiện. Khi giao cho lớp, mọi
                 câu hỏi phải có nội dung và một đáp án đúng.
               </p>
-            </section>
-            <section className="panel p-5">
-              <h2 className="flex items-center gap-2 font-bold text-slate-900">
-                <FileText size={17} />
-                Tài liệu tham khảo
-              </h2>
-              <p className="my-3 text-xs leading-5 text-slate-500">
-                Chọn tài liệu đã tải lên trong lớp này.
-              </p>
-              {materialLoading ? (
-                <p className="text-xs text-slate-400">Đang tải tài liệu…</p>
-              ) : materialError ? (
-                <p role="alert" className="text-xs text-red-600">
-                  {materialError}
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {materials.map((material) => (
-                    <label
-                      key={material.id}
-                      className="flex items-start gap-2 text-sm text-slate-600"
-                    >
-                      <input
-                        disabled={busy}
-                        type="checkbox"
-                        className="mt-1 accent-emerald-600"
-                        checked={form.materialIds.includes(material.id)}
-                        onChange={() =>
-                          update(
-                            "materialIds",
-                            form.materialIds.includes(material.id)
-                              ? form.materialIds.filter(
-                                  (id) => id !== material.id,
-                                )
-                              : [...form.materialIds, material.id],
-                          )
-                        }
-                      />
-                      <span className="min-w-0 break-words">
-                        {material.title}
-                      </span>
-                    </label>
-                  ))}
-                  {!materials.length && (
-                    <p className="text-xs text-slate-400">
-                      Lớp chưa có tài liệu.
-                    </p>
-                  )}
-                </div>
-              )}
-              <button
-                type="button"
-                className="mt-3 block text-xs font-semibold text-emerald-700"
-                disabled={materialLoading}
-                onClick={refreshMaterials}
-              >
-                Làm mới danh sách tài liệu
-              </button>
-              <Link
-                className="mt-4 inline-flex text-xs font-semibold text-emerald-700"
-                target="_blank"
-                rel="noreferrer"
-                to={`/instructor/classes/${classroom.id}?tab=materials`}
-              >
-                Mở tài liệu của lớp ↗
-              </Link>
             </section>
           </aside>
         </div>

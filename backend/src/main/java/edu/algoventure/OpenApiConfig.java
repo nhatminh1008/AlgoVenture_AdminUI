@@ -39,6 +39,7 @@ public class OpenApiConfig {
   @Bean
   OpenApiCustomizer portalOperations() {
     return api -> {
+      api.schemaRequirement("game", new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("bearer").description("Bearer token returned by /api/game/auth/login or register; revocable server session."));
       // Logout is handled by Spring Security's filter, so controller scanning cannot discover it.
       api.path(
           "/api/auth/logout",
@@ -60,13 +61,13 @@ public class OpenApiConfig {
                             String tag =
                                 path.startsWith("/api/admin/")
                                     ? "Admin"
-                                    : path.startsWith("/api/instructor/") ? "Instructor" : "Auth";
+                                    : path.startsWith("/api/instructor/") ? "Instructor" : (path.startsWith("/api/learner/") || path.startsWith("/api/game/")) ? "Learner" : "Auth";
                             operation.setTags(java.util.List.of(tag));
                             if (!java.util.Set.of(
-                                    "/api/health", "/api/auth/csrf", "/api/auth/login")
+                                    "/api/health", "/api/auth/csrf", "/api/auth/login", "/api/game/auth/login", "/api/game/auth/register")
                                 .contains(path)) {
                               operation.addSecurityItem(
-                                  new SecurityRequirement().addList("session"));
+                                  new SecurityRequirement().addList((path.startsWith("/api/learner/") || path.startsWith("/api/game/")) ? "game" : "session"));
                             }
                           }));
     };

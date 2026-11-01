@@ -4,11 +4,12 @@ import {
   useParams,
   useSearchParams,
 } from "react-router-dom";
-import { ArrowLeft, Plus, Pencil, Users, BookOpen, Layers } from "lucide-react";
+import { Plus, Pencil, Users, Layers, Download } from "lucide-react";
 import { PageHeader } from "../components/ui";
 import { useClassrooms } from "../data/ClassroomContext";
 import { getTopic, getLevel, lessonName } from "../data/curriculum";
-import ClassMaterials from "../components/ClassMaterials";
+import ClassNavigation from "../components/ClassNavigation";
+import { downloadFile, exportStudentRows } from "../data/classroom";
 import ClassQuizzes from "../components/ClassQuizzes";
 
 export const assignmentStatus = {
@@ -18,8 +19,8 @@ export const assignmentStatus = {
 };
 export default function ClassDetail() {
   const { classId } = useParams();
-  const { classes, students, assignments, quizzes } = useClassrooms();
-  const [params, setParams] = useSearchParams();
+  const { classes, students, assignments } = useClassrooms();
+  const [params] = useSearchParams();
   const location = useLocation();
   const classroom = classes.find((item) => item.id === classId);
   if (!classroom)
@@ -37,27 +38,16 @@ export default function ClassDetail() {
   const topic = getTopic(classroom.topicId);
   const members = students.filter((item) => item.classId === classId);
   const sets = assignments.filter((item) => item.classId === classId);
-  const classQuizzes = quizzes.filter((item) => item.classId === classId);
   const tab = [
     "assignments",
     "quizzes",
-    "materials",
     "students",
-    "lessons",
   ].includes(params.get("tab"))
     ? params.get("tab")
     : "assignments";
   return (
     <div className="mx-auto max-w-6xl">
-      <Link
-        to="/instructor/classes"
-        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-emerald-700"
-      >
-        <ArrowLeft size={16} />
-        Lớp của tôi
-      </Link>
       <PageHeader
-        breadcrumb={`Lớp của tôi / ${topic.name}`}
         title={classroom.name}
       >
         <Link
@@ -67,20 +57,7 @@ export default function ClassDetail() {
           <Pencil size={16} />
           Sửa thông tin
         </Link>
-        <Link
-          to={`/instructor/classes/${classId}/quizzes/new`}
-          className="btn-secondary"
-        >
-          <Plus size={17} />
-          Tạo bộ câu hỏi
-        </Link>
-        <Link
-          to={`/instructor/challenges?classId=${classId}`}
-          className="btn-primary"
-        >
-          <Plus size={17} />
-          Tạo bộ thử thách
-        </Link>
+        <button className="btn-secondary" disabled={!members.length} onClick={() => downloadFile(exportStudentRows(members, classes), "class-results.csv")}><Download size={16} />Xuất CSV</button>
       </PageHeader>
       {location.state?.message && (
         <p
@@ -90,70 +67,15 @@ export default function ClassDetail() {
           {location.state.message}
         </p>
       )}
-      <section className="panel mb-6 p-6">
-        <div className="flex flex-wrap gap-2">
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-            {topic.name}
-          </span>
-          <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-            {getLevel(classroom.level).name}
-          </span>
-        </div>
-        <p className="mt-4 max-w-3xl whitespace-pre-wrap break-words text-sm leading-6 text-slate-500">
-          {classroom.description || topic.description}
-        </p>
-        <div className="mt-6 flex flex-wrap gap-6 text-sm text-slate-600">
-          <span className="flex items-center gap-2">
-            <Users size={17} />
-            {members.length} sinh viên
-          </span>
-          <span className="flex items-center gap-2">
-            <Layers size={17} />
-            {sets.length + classQuizzes.length} bộ bài
-          </span>
-          <span className="flex items-center gap-2">
-            <BookOpen size={17} />
-            {topic.lessons.length} bài học
-          </span>
-        </div>
-      </section>
-      <div
-        className="mb-5 flex flex-wrap gap-2 border-b border-slate-200"
-        role="tablist"
-        aria-label="Nội dung lớp"
-      >
-        {[
-          ["assignments", "Bộ thử thách", sets.length],
-          ["quizzes", "Trắc nghiệm", classQuizzes.length],
-          ["materials", "Tài liệu", null],
-          ["students", "Sinh viên", members.length],
-          ["lessons", "Nội dung học tập", topic.lessons.length],
-        ].map(([id, label, count]) => (
-          <button
-            key={id}
-            id={`tab-${id}`}
-            role="tab"
-            aria-selected={tab === id}
-            aria-controls="class-panel"
-            onClick={() => setParams({ tab: id })}
-            className={`border-b-2 px-4 pb-4 pt-2 text-sm font-medium ${tab === id ? "border-emerald-500 text-emerald-700" : "border-transparent text-slate-500"}`}
-          >
-            {label}{" "}
-            {count !== null && (
-              <span className="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
-                {count}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-      <section id="class-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
+      <p className="mb-5 text-sm text-slate-500">{topic.name} · {getLevel(classroom.level).name} · {members.length} sinh viên</p>
+      {classroom.description && <p className="mb-5 whitespace-pre-wrap text-sm text-slate-600">{classroom.description}</p>}
+      <p className="mb-5 text-sm text-emerald-800">Mã tham gia trong game: <strong className="font-mono text-lg">{classroom.inviteCode}</strong></p>
+      <ClassNavigation classId={classId} active={tab} />
+      <section id="class-panel">
         {tab === "quizzes" && <ClassQuizzes key={classId} classId={classId} />}
-        {tab === "materials" && (
-          <ClassMaterials key={classId} classId={classId} />
-        )}
         {tab === "assignments" && (
           <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">Bộ thử thách ({sets.length})</h2><Link className="btn-primary" to={`/instructor/challenges?classId=${classId}`}><Plus size={17} />Giao thử thách</Link></div>
             {sets.map((set) => (
               <article className="panel p-5 sm:p-6" key={set.id}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -252,45 +174,7 @@ export default function ClassDetail() {
             )}
           </div>
         )}
-        {tab === "lessons" && (
-          <div>
-            <p className="mb-4 text-sm text-slate-500">
-              Danh mục bài trong game cho chủ đề này. Chỉ những bài được chọn
-              vào bộ thử thách mới trở thành bài giao của lớp.
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {topic.lessons.map(([id, name], index) => (
-                <div key={id} className="panel flex items-center gap-4 p-4">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-emerald-50 text-sm font-semibold text-emerald-700">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className="text-sm font-medium">{name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </section>
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link
-          className="btn-secondary"
-          to={`/instructor/progress?classId=${classId}`}
-        >
-          Theo dõi tiến độ
-        </Link>
-        <Link
-          className="btn-secondary"
-          to={`/instructor/analytics?classId=${classId}`}
-        >
-          Phân tích lớp
-        </Link>
-        <Link
-          className="btn-secondary"
-          to={`/instructor/export?classId=${classId}`}
-        >
-          Xuất kết quả
-        </Link>
-      </div>
     </div>
   );
 }

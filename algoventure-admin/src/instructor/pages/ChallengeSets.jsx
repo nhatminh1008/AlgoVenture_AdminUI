@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, Check, BookOpen } from "lucide-react";
 import { PageHeader } from "../components/ui";
 import { useClassrooms } from "../data/ClassroomContext";
@@ -58,6 +58,7 @@ function ChallengeEditor({
   classroom,
   notice,
 }) {
+  const navigate = useNavigate();
   const [form, setForm] = useState(
     () =>
       existing ?? {
@@ -96,16 +97,21 @@ function ChallengeEditor({
   async function save(event) {
     event.preventDefault();
     if (busy) return;
+    const status = event.nativeEvent.submitter?.value === "Active" ? "Active" : "Draft";
+    if (status === "Active" && !form.due) {
+      setError("Chọn hạn hoàn thành trước khi giao cho lớp.");
+      return;
+    }
     setBusy(true);
     try {
-      const item = await saveAssignment(form, existing?.id);
+      const item = await saveAssignment({ ...form, status }, existing?.id);
       const message =
         item.status === "Active"
-          ? "Đã lưu bài giao cho lớp trên server. Game cần tích hợp API để nhận bài."
-          : "Đã lưu bản nháp trên server.";
+          ? "Đã giao bộ thử thách. Kết quả sẽ cập nhật khi sinh viên làm bài trong game."
+          : "Đã lưu bản nháp.";
       setMessage(message);
       setError("");
-      setParams({ classId, assignmentId: item.id }, { state: { message } });
+      navigate(`/instructor/classes/${classId}?tab=assignments`, { state: { message } });
     } catch (failure) {
       setError(failure.message);
     } finally {
@@ -115,7 +121,6 @@ function ChallengeEditor({
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
-        breadcrumb="Giảng viên / Bộ thử thách"
         title={
           readOnly
             ? "Chi tiết bộ thử thách"
@@ -124,8 +129,8 @@ function ChallengeEditor({
               : "Tạo bộ thử thách"
         }
       >
-        <Link to="/instructor/classes" className="btn-secondary">
-          Lớp của tôi
+        <Link to={classroom ? `/instructor/classes/${classId}` : "/instructor/classes"} className="btn-secondary">
+          {classroom ? "Về lớp học" : "Lớp của tôi"}
         </Link>
       </PageHeader>
       {!classes.length && (
@@ -157,7 +162,7 @@ function ChallengeEditor({
             <select
               className="field"
               value={classId}
-              disabled={Boolean(existing)}
+              disabled={Boolean(existing) || busy}
               required
               onChange={(e) => setParams({ classId: e.target.value })}
             >
@@ -179,7 +184,7 @@ function ChallengeEditor({
               {topic.name} · {getLevel(classroom.level).name}
             </p>
           )}
-          <fieldset disabled={readOnly} className="space-y-5">
+          <fieldset disabled={readOnly || busy} className="space-y-5">
             <label className="block">
               <span className="field-label">Tên bộ thử thách *</span>
               <input
@@ -207,22 +212,9 @@ function ChallengeEditor({
                 <input
                   type="date"
                   className="field"
-                  required={form.status === "Active"}
                   value={form.due}
                   onChange={(e) => update("due", e.target.value)}
                 />
-              </label>
-              <label>
-                <span className="field-label">Trạng thái</span>
-                <select
-                  className="field"
-                  value={form.status}
-                  onChange={(e) => update("status", e.target.value)}
-                >
-                  <option value="Draft">Bản nháp</option>
-                  <option value="Active">Giao cho lớp</option>
-                  {readOnly && <option value="Closed">Đã đóng</option>}
-                </select>
               </label>
             </div>
           </fieldset>
@@ -249,16 +241,10 @@ function ChallengeEditor({
             </p>
           )}
           {!readOnly && (
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={!classroom || busy}
-            >
-              <Check size={17} />
-              {form.status === "Active"
-                ? "Lưu và giao cho lớp"
-                : "Lưu bản nháp"}
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <button type="submit" name="status" value="Draft" className="btn-secondary" disabled={!classroom || busy}>Lưu bản nháp</button>
+              <button type="submit" name="status" value="Active" className="btn-primary" disabled={!classroom || busy}><Check size={17} />{busy ? "Đang lưu…" : "Giao cho lớp"}</button>
+            </div>
           )}
         </section>
         <section className="panel p-6">
@@ -273,7 +259,8 @@ function ChallengeEditor({
             Các bài thuộc chủ đề của lớp, tương ứng với màn thử thách trong
             game.
           </p>
-          <fieldset disabled={readOnly} className="space-y-2">
+          {!readOnly && topic && <button disabled={busy} type="button" className="mb-3 text-sm font-semibold text-emerald-700" onClick={() => update("lessonIds", form.lessonIds.length === topic.lessons.length ? [] : topic.lessons.map(([id]) => id))}>{form.lessonIds.length === topic.lessons.length ? "Bỏ chọn tất cả" : "Chọn tất cả bài"}</button>}
+          <fieldset disabled={readOnly || busy} className="space-y-2">
             {topic?.lessons.map(([id, name]) => (
               <label
                 key={id}

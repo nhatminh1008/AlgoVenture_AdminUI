@@ -31,8 +31,7 @@ export default function Dashboard() {
           <section className="panel p-6">
             <h2 className="mb-3 font-bold">Kết nối dữ liệu</h2>
             <p className="text-sm leading-6 text-slate-500">
-              Số liệu được lấy từ database. Kết quả học tập, lượt hoàn thành và
-              Knowledge Tracing sẽ có sau khi game tích hợp API gửi kết quả.
+              Số liệu được lấy từ database. Kết quả quiz và tiến độ game được lưu chung trên server. Mức thành thạo từ mô hình Knowledge Tracing chưa có dữ liệu.
             </p>
           </section>
         </>

@@ -17,10 +17,14 @@ export function exportStudentRows(rows, classes) {
     row.email,
     classes.find((c) => c.id === row.classId)?.name,
     row.score,
+    row.quizzesSubmitted,
+    row.completedLessons,
+    row.assignedLessons,
+    row.progressPercent,
   ]);
   return (
     "\uFEFF" +
-    [["Họ tên", "Email", "Lớp", "Điểm học tập / 100"], ...records]
+    [["Họ tên", "Email", "Lớp", "Điểm quiz / 100", "Quiz đã nộp", "Bài thực hành đã xong", "Bài thực hành được giao", "Tiến độ (%)"], ...records]
       .map((row) => row.map(csvCell).join(","))
       .join("\r\n")
   );

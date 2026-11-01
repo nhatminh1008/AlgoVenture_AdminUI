@@ -35,13 +35,15 @@ class ApiErrors {
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
   @ResponseStatus(HttpStatus.BAD_REQUEST)
-  Map<String, String> validation(MethodArgumentNotValidException ex) {
+  Map<String, Object> validation(MethodArgumentNotValidException ex) {
+    var errors = new java.util.LinkedHashMap<String,String>();
+    ex.getBindingResult().getFieldErrors().forEach(error -> errors.putIfAbsent(error.getField(), error.getDefaultMessage()));
     return Map.of(
         "message",
         ex.getBindingResult().getFieldErrors().stream()
             .map(e -> e.getField() + ": " + e.getDefaultMessage())
             .findFirst()
-            .orElse("Dữ liệu không hợp lệ."));
+            .orElse("Dữ liệu không hợp lệ."), "errors", errors);
   }
 
   @ExceptionHandler(DataIntegrityViolationException.class)

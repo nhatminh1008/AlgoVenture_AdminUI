@@ -60,11 +60,10 @@ export const StatCard = ({
   </div>
 );
 
-// Header trang: breadcrumb + title + actions
-export const PageHeader = ({ breadcrumb, title, children }) => (
+// Header trang: title + actions
+export const PageHeader = ({ title, children }) => (
   <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
     <div>
-      <p className="text-sm text-slate-500 mb-1">{breadcrumb}</p>
       <h1 className="text-3xl font-bold text-slate-900">{title}</h1>
     </div>
     {children && <div className="flex flex-wrap gap-3">{children}</div>}

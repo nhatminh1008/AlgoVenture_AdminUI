@@ -1,10 +1,7 @@
-import { useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { ArrowLeft, Pencil, FileText, Download } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { PageHeader } from "../components/ui";
 import { useClassrooms } from "../data/ClassroomContext";
-import { useMaterialList } from "../components/ClassMaterials";
-import { downloadMaterial } from "../data/materials";
 import QuizPreview from "../components/QuizPreview";
 
 export default function QuizDetail() {
@@ -28,26 +25,7 @@ export default function QuizDetail() {
   return <Detail key={quiz.id} classroom={classroom} quiz={quiz} />;
 }
 function Detail({ classroom, quiz }) {
-  const { instructor } = useClassrooms();
   const location = useLocation();
-  const {
-    materials,
-    loading,
-    error: materialError,
-  } = useMaterialList(classroom.id);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  async function download(id) {
-    setBusy(true);
-    setError("");
-    try {
-      await downloadMaterial(id, classroom.id, instructor.id);
-    } catch (failure) {
-      setError(failure.message);
-    } finally {
-      setBusy(false);
-    }
-  }
   return (
     <div className="mx-auto max-w-4xl">
       <Link
@@ -58,7 +36,6 @@ function Detail({ classroom, quiz }) {
         Trắc nghiệm của lớp
       </Link>
       <PageHeader
-        breadcrumb={`${classroom.name} / Trắc nghiệm`}
         title={quiz.title}
       >
         {quiz.status === "Draft" && (
@@ -94,50 +71,6 @@ function Detail({ classroom, quiz }) {
         {quiz.description && (
           <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-600">
             {quiz.description}
-          </p>
-        )}
-        {quiz.materialIds.length > 0 && (
-          <div className="border-t border-slate-100 pt-4">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-              <FileText size={16} />
-              Tài liệu tham khảo
-            </h2>
-            {loading ? (
-              <p className="text-xs text-slate-400">Đang tải tài liệu…</p>
-            ) : materialError ? (
-              <p role="alert" className="text-sm text-red-600">
-                {materialError}
-              </p>
-            ) : (
-              quiz.materialIds.map((id) => {
-                const material = materials.find((item) => item.id === id);
-                return (
-                  <div
-                    key={id}
-                    className="mb-2 flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3"
-                  >
-                    <span className="min-w-0 break-words text-sm">
-                      {material?.title ?? "Tài liệu không còn khả dụng"}
-                    </span>
-                    {material && (
-                      <button
-                        className="shrink-0 text-emerald-700 disabled:opacity-50"
-                        disabled={busy}
-                        aria-label={`Tải ${material.title}`}
-                        onClick={() => download(id)}
-                      >
-                        <Download size={17} />
-                      </button>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        )}
-        {error && (
-          <p role="alert" className="text-sm text-red-600">
-            {error}
           </p>
         )}
       </section>

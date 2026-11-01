@@ -1,3 +1,4 @@
+import ClassNavigation from "../components/ClassNavigation";
 import { useState } from "react";
 import { Download } from "lucide-react";
 import { PageHeader } from "../components/ui";
@@ -33,17 +34,17 @@ export default function ExportResults() {
         "class-results.json",
         "application/json",
       );
-    setMessage("Đã tạo tệp theo danh sách lớp từ server.");
+    setMessage("Đã tải báo cáo.");
   }
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader breadcrumb="Giảng viên / Báo cáo" title="Xuất kết quả" />
+      <PageHeader title="Xuất kết quả" />
+      {scope.classroom && <ClassNavigation classId={scope.classroom.id} active="export" />}
       <section className="panel space-y-6 p-6 sm:p-8">
         <div>
           <h2 className="font-bold text-slate-900">Phạm vi báo cáo</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Xuất danh sách sinh viên trong các lớp bạn phụ trách. Kết quả thực
-            tế cần đồng bộ từ game.
+            Xuất danh sách sinh viên trong các lớp bạn phụ trách. Kết quả lấy từ cùng backend với game.
           </p>
         </div>
         <div>
@@ -77,7 +78,7 @@ export default function ExportResults() {
           <p>{scope.rows.length} bản ghi được chọn.</p>
           <p>
             {scope.rows.length
-              ? "Gồm họ tên, email và lớp. Điểm học tập chờ đồng bộ từ game."
+              ? "Gồm họ tên, email và lớp. Điểm là trung bình điểm cao nhất của từng quiz đã nộp."
               : scope.invalid
                 ? "Lớp không thuộc danh sách bạn phụ trách."
                 : "Chưa có sinh viên trong phạm vi này để xuất báo cáo."}

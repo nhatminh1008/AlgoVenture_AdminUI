@@ -1,3 +1,4 @@
+import ClassNavigation from "../components/ClassNavigation";
 import {
   BarChart,
   Bar,
@@ -26,17 +27,17 @@ export default function Analytics() {
     }));
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader breadcrumb="Giảng viên / Phân tích" title="Phân tích lớp học">
+      <PageHeader title="Phân tích lớp học">
         <ClassFilter scope={scope} />
       </PageHeader>
+      {scope.classroom && <ClassNavigation classId={scope.classroom.id} active="analytics" />}
       <p className="mb-6 text-sm leading-6 text-slate-500">
         {scope.classroom
           ? scope.classroom.name
           : scope.invalid
             ? "Lớp không khả dụng."
             : "Tổng hợp các lớp bạn phụ trách."}{" "}
-        Các số liệu dưới đây lấy từ database; chưa có dữ liệu Knowledge Tracing
-        từ game.
+        Điểm quiz và tiến độ bài giao được lấy từ dữ liệu học viên trên máy chủ.
       </p>
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         {[
@@ -107,8 +108,7 @@ export default function Analytics() {
               Chưa có dữ liệu ước lượng
             </p>
             <p className="mt-3 text-sm leading-6 text-slate-500">
-              Khi tích hợp adaptive engine, giảng viên có thể xem mức thành thạo
-              theo khái niệm và nhận diện nội dung sinh viên cần luyện thêm.
+              Mức thành thạo sẽ hiển thị khi có đủ dữ liệu học tập của sinh viên.
             </p>
           </div>
           <p className="text-xs leading-5 text-slate-500">

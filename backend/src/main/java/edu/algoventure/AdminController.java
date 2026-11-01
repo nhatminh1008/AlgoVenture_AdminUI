@@ -266,7 +266,7 @@ public class AdminController {
                         "actor",
                         r.getString("name"))),
         "learningResultsAvailable",
-        false);
+        true);
   }
 
   long count(String table) {

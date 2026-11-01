@@ -3,9 +3,7 @@ import { Link } from "react-router-dom";
 import {
   Plus,
   Search,
-  ArrowUpRight,
   Users,
-  BookOpen,
   Layers,
   GraduationCap,
 } from "lucide-react";
@@ -29,47 +27,13 @@ export default function Classes() {
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
-        breadcrumb="Không gian giảng dạy / Lớp học"
         title="Lớp của tôi"
       >
         <Link to="/instructor/classes/new" className="btn-primary">
           <Plus size={18} /> Tạo lớp mới
         </Link>
       </PageHeader>
-      <div className="mb-8 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-6 sm:p-8">
-        <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-700">
-          <GraduationCap size={17} /> Học thuật toán qua thực hành
-        </div>
-        <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">
-          Mỗi lớp học, một hành trình khám phá.
-        </h2>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-          Tổ chức lớp theo chủ đề DSA và trình độ học tập. Chọn bộ thử thách,
-          theo dõi tiến độ và xem kết quả của các lớp bạn phụ trách.
-        </p>
-      </div>
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
-        {[
-          [GraduationCap, "Lớp phụ trách", classes.length],
-          [Users, "Lượt tham gia lớp", students.length],
-          [
-            Layers,
-            "Bộ bài đang giao",
-            assignments.filter((item) => item.status === "Active").length +
-              quizzes.filter((item) => item.status === "Published").length,
-          ],
-        ].map(([Icon, label, value]) => (
-          <div key={label} className="panel flex items-center gap-4 p-5">
-            <span className="rounded-xl bg-slate-50 p-3 text-emerald-600">
-              <Icon size={22} />
-            </span>
-            <div>
-              <p className="text-xs text-slate-500">{label}</p>
-              <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      <p className="mb-5 text-sm text-slate-500">Chọn lớp để giao bài, theo dõi tiến độ hoặc xem kết quả.</p>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-slate-900">
@@ -121,7 +85,7 @@ export default function Classes() {
           </select>
         </div>
       </div>
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2">
         {filtered.map((item) => {
           const topicInfo = getTopic(item.topicId);
           const members = students.filter(
@@ -139,19 +103,7 @@ export default function Classes() {
                 className={`h-1.5 ${item.level === "advanced" ? "bg-indigo-400" : "bg-emerald-400"}`}
               />
               <div className="flex flex-1 flex-col p-6">
-                <div className="mb-5 flex items-center justify-between gap-2">
-                  <span className="rounded-lg bg-slate-50 p-2.5 text-slate-600">
-                    <BookOpen size={21} />
-                  </span>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${item.level === "advanced" ? "bg-indigo-50 text-indigo-700" : "bg-emerald-50 text-emerald-700"}`}
-                  >
-                    {getLevel(item.level).name}
-                  </span>
-                </div>
-                <p className="mb-2 text-xs font-semibold text-emerald-700">
-                  {topicInfo.name}
-                </p>
+                <p className="mb-2 text-xs text-slate-500">{topicInfo.name} · {getLevel(item.level).name}</p>
                 <h3 className="break-words text-lg font-bold leading-7 text-slate-900">
                   <Link
                     to={`/instructor/classes/${item.id}`}
@@ -160,9 +112,6 @@ export default function Classes() {
                     {item.name}
                   </Link>
                 </h3>
-                <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-500">
-                  {item.description || topicInfo.description}
-                </p>
                 <div className="mt-auto flex flex-wrap gap-4 pt-6 text-xs text-slate-500">
                   <span className="flex items-center gap-1.5">
                     <Users size={15} />
@@ -172,16 +121,14 @@ export default function Classes() {
                     <Layers size={15} />
                     {sets} bộ bài
                   </span>
-                  <span>{topicInfo.lessons.length} bài học</span>
+
                 </div>
               </div>
-              <Link
-                className="flex items-center justify-between border-t border-slate-100 px-6 py-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
-                to={`/instructor/classes/${item.id}`}
-              >
-                Vào lớp học
-                <ArrowUpRight size={17} />
-              </Link>
+              <div className="flex flex-wrap gap-2 border-t border-slate-100 p-4">
+                <Link className="btn-primary" to={`/instructor/challenges?classId=${item.id}`}>Giao thử thách</Link>
+                <Link className="btn-secondary" to={`/instructor/progress?classId=${item.id}`}>Xem tiến độ</Link>
+                <Link className="btn-secondary" to={`/instructor/classes/${item.id}`}>Mở lớp</Link>
+              </div>
             </article>
           );
         })}
@@ -197,7 +144,7 @@ export default function Classes() {
           <p className="mt-2 text-sm text-slate-500">
             {classes.length
               ? "Thử tìm tên khác hoặc thay đổi bộ lọc."
-              : "Chọn chủ đề và mức độ để chuẩn bị hành trình học tập."}
+              : "Tạo lớp để bắt đầu giao bài cho sinh viên."}
           </p>
           {classes.length ? (
             <button

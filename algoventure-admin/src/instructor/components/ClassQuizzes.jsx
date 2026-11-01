@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, ClipboardList, FileText, Trash2 } from "lucide-react";
+import { Plus, ClipboardList, Trash2 } from "lucide-react";
 import { useClassrooms } from "../data/ClassroomContext";
 
 export default function ClassQuizzes({ classId }) {
@@ -22,7 +22,7 @@ export default function ClassQuizzes({ classId }) {
         <div>
           <h2 className="font-bold text-slate-900">Bộ câu hỏi trắc nghiệm</h2>
           <p className="mt-2 text-sm text-slate-500">
-            Tự soạn câu hỏi, chọn đáp án đúng và đính kèm tài liệu của lớp.
+            Soạn câu hỏi lý thuyết, dự đoán kết quả hoặc độ phức tạp.
           </p>
         </div>
         <Link
@@ -69,10 +69,6 @@ export default function ClassQuizzes({ classId }) {
                   0,
                 )}{" "}
                 điểm
-              </span>
-              <span className="flex items-center gap-1">
-                <FileText size={13} />
-                {quiz.materialIds.length} tài liệu
               </span>
             </div>
             {quiz.due && (
