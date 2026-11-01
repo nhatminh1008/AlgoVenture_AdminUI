@@ -1,51 +1,48 @@
-# AlgoVenture Instructor Portal
+# AlgoVenture Instructor Classroom Portal
 
-Instructor frontend for the AlgoVenture registration's UC9: prepare challenge sets, assign practice, monitor classes, review analytics, and export results.
+React/JavaScript + Vite + Tailwind CSS. The portal runs locally without backend services. The current user is an explicitly labeled placeholder in `src/data/session.js`; the route guard permits only `INSTRUCTOR`. Real authentication and authorization must come from the backend later.
 
-## Run locally
+## Run and verify
 
 ```sh
-npm install
 npm run dev
-```
-
-```sh
 npm test
 npm run lint
 npm run build
 ```
 
-## Classroom workflow
+Use the URL printed by Vite. The repository has no API credentials or runtime environment variables. No additional dependency was added for the Classroom changes.
 
-- `/classes`: classes belonging to the current demo instructor, with search, topic and level filters.
-- `/classes/new`: create a class with a name, one DSA topic, Basic/Advanced level, and learning objectives.
-- `/classes/:classId`: class information, assignments, members and available lesson content.
-- `/classes/:classId/edit`: update class metadata. A topic cannot change after a challenge set has been created for the class.
-- `/challenges?classId=...`: create a draft or publish a challenge set; only lessons from the selected class topic are available. Published content is read-only.
-- `/progress`, `/analytics`, `/export`: accept the same `classId` query parameter. New classes have empty membership and no fabricated performance data.
+## Demo
 
-Topics follow the registration: Sorting, Searching, Data Structures, Graphs/Pathfinding. The catalog in `src/data/curriculum.js` uses the 25 lesson IDs currently present in the learner game's `learningTrack.ts`. Basic/Advanced is the class's instructional level requested for this portal, separate from game difficulty and KT mastery. It does not automatically change the game's configuration or filter out lessons.
+On a new browser origin with no existing data, three classes have invite codes `DSA2026`, `SORT101`, `TREE2026`. There are eight enrolled learners, two published assignments and one draft per class, each with five curriculum questions. Initial deadlines are relative to the first load: one assignment is due in three hours and one expired yesterday. They persist thereafter; refreshing does not move deadlines. Seed submissions demonstrate improvement, perfect/low scores and unanswered questions.
 
-## Current data boundary
+1. Open **Lớp học**, create a class and copy its generated invite code.
+2. Open a seeded class to inspect enrolled learners; the portal never enrolls learners. Joining is a game/backend operation.
+3. Create **Bài tập** with exactly four choices and a required explanation per question. Save an incomplete draft or publish with a future Vietnam deadline.
+4. **Xem trước** allows unanswered submissions and shows scores/explanations only after submission; preview never saves attempts.
+5. Open **Tiến độ** to see learner-by-assignment statuses, best scores, counts, completion and last submission times. Drafts are excluded.
+6. **Phân tích** shows completion, score distribution, most-missed questions, submission-day trends and individual learner views.
+7. **Xuất kết quả** exports gradebook or question errors as CSV, or uses **Lưu thành PDF** to print the selected report. XLSX is an explicit remaining gap; no unverified spreadsheet dependency was installed.
 
-This repository has no classroom backend integration or real instructor authentication. The existing sample instructor is retained as `instructor-demo`. Filtering by this ID is frontend organization, not server authorization.
+New classes intentionally start with no enrollments or attempts. For a demo with existing learner data use a seeded class, not a newly created class.
 
-`ClassroomContext.jsx` provides shared classroom, membership and assignment state. `classroom.js` contains validation, demo fixtures and persistence helpers. Changes persist in browser localStorage under `algoventure.instructor.classrooms.v1`. Storage failures are surfaced and a failed write does not report a successful save. Clearing browser storage removes local changes. Sample data loads on first use; new classes start with zero members and no assignments.
+## Repository boundary
 
-Publishing an assignment currently updates the local preview only; it does not send work to the game. Joining classes, live attempts, completion tracking and Knowledge Tracing analytics require backend and game integration. Existing example scores are explicitly labeled illustrative, never treated as mastery or completion. CSV/JSON exports include these labels and only the selected classes' sample records.
+`src/data/repository.js` documents the async interface, JSDoc records, default adapter and exact learner DTO projections. `localRepository.js` implements scoped reads/writes. Replacing the default adapter with an HTTP repository keeps pages unchanged. `ClassroomProvider` loads through the repository, exposes async actions and refreshes cross-tab changes. Pages do not access browser persistence.
 
-For integration, replace the provider's persistence functions with authenticated classroom and assignment APIs, load the instructor from the authenticated session, and validate ownership on the server. Keep stable lesson IDs and separate class level, assignment settings, game results and KT estimates. Preserve published assignment content versions when receiving real attempts.
+Classroom owner records add `instructorId`, `inviteCode` and optional descriptive metadata to the public view. `joinedAt` comes from an enrollment, never class creation. Assignments have `classroomId`, `dueAt`, `questions` and portal-only `status` (`draft`/`published`); learner projections exclude drafts and portal metadata. Question answer keys are available to the instructor. A production learner API must resolve the security implications of including answer keys in the supplied learner contract.
 
-## Class materials and multiple choice quizzes
+All reads/writes enforce the placeholder session role and class ownership. Errors include `FORBIDDEN`, `NOT_FOUND`, `VALIDATION`, `LOCKED`, `STORAGE`. Storage operations synchronously read the current payload and commit it within each mutation, rather than saving React snapshots. This avoids stale state across awaited operations; simultaneous browser processes still need backend transactions for strong concurrency guarantees.
 
-Class detail now includes **Tài liệu** and **Trắc nghiệm** tabs. Instructors can upload PDF, DOCX, PPTX and TXT files up to 10 MB each, add a display title and description, download the original file, or delete unreferenced files. The actual file Blob and its metadata persist together in IndexedDB (`algoventure.instructor.materials`); files are not uploaded to a server or parsed to generate questions.
+## Policy and migration
 
-Quiz routes: `/classes/:classId/quizzes/new`, `/classes/:classId/quizzes/:quizId`, and `/classes/:classId/quizzes/:quizId/edit`. A quiz belongs to one class, can reference that class's materials, and contains up to 50 questions. Each question has 2–6 options, one correct answer, an optional explanation and 1–20 points. Questions can be reordered and options added or removed. Removing the correct option requires selecting a replacement before publication.
+`src/data/policy.js` is the policy source. Four choices, up to 50 questions, required explanation, Asia/Ho_Chi_Minh, default 23:59, five histogram buckets and eight-character generated codes are configurable there. Existing seed codes remain valid six-to-eight-character alphanumerics. Generated codes exclude ambiguous characters. Best score counts; null answers count as wrong; deadline equality is allowed, strictly later is overdue. Question content and deletion lock after the first attempt; metadata and deadline remain editable. Changing a published deadline requires a future value. A draft can be incomplete.
 
-Drafts allow unfinished questions. Publishing validates every question, freezes the saved content and only assigns within the local preview. The instructor can preview a complete quiz, answer it and see weighted scores and explanations. Preview attempts never enter student results. Actual student delivery, submission storage and server grading remain backend/game integration work. Attached material existence is checked on save; documents referenced by quizzes cannot be deleted. Files have to be removed from draft references first; published references remain preserved.
+The adapter writes only `algoventure.instructor.classrooms.v2`. If v2 is absent and v1 exists, it migrates class records, memberships and old MCQ records once, leaving v1 unchanged. Unsupported old workflow records are not carried forward. Date-only deadlines become 23:59 Vietnam time in UTC. A legacy question with a different number of choices is preserved verbatim in a flagged draft and must be explicitly repaired by the instructor; it is not automatically shortened or extended. Legacy missing enrollment timestamps use the migration clock and are a documented estimate.
 
-Quiz records share the classroom localStorage payload. Existing saved classes migrate with an empty quiz list. Classroom and quiz changes propagate to other open tabs using storage events. File lists can refresh after returning from the materials tab or with **Làm mới danh sách tài liệu**. Do not treat local data or answer keys in this instructor preview as a secure student assessment API.
+Validation is per record: invalid records and dependent orphan records are dropped with a notice while valid records survive. An unreadable payload is copied to `algoventure.instructor.classrooms.v2.corrupt-<timestamp>` before replacement. Backup/write failure surfaces an error and does not report success. Removed browser databases from earlier versions are never deleted. This version does not use IndexedDB.
 
-## Verification
+## Tests
 
-The Node tests cover catalog identity, class validation, duplicate names, assignment/topic consistency, storage recovery and CSV escaping. Browser checks additionally cover creating and editing classes, reload persistence, topic/level filtering, draft/publish flows, empty class reports, downloads, unavailable storage, and desktop/mobile layouts.
+`tests/policy.test.js` covers grading, status/deadline boundary, best attempts, completion, distributions, error statistics, trends, validators, invite codes, Vietnam time, DTOs and CSV/workbook row builders. `tests/repository.test.js` covers migration, data repair, storage failure/backup, ownership, post-attempt locks, UTC normalization and cascade deletion. The clock and storage are injectable. Browser verification covers the main workflow, mobile overflow, migration repair, clipboard fallback and print styling.

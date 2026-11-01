@@ -1,72 +1,84 @@
-import React from "react";
-
-// Badge trạng thái pill — dùng chung cho nhiều màn
-const STATUS_STYLES = {
-  "On Track": "bg-green-100 text-green-700",
-  Active: "bg-green-100 text-green-700",
-  Ready: "bg-green-100 text-green-700",
-  Published: "bg-green-100 text-green-700",
-  "At Risk": "bg-yellow-100 text-yellow-700",
-  Pending: "bg-yellow-100 text-yellow-700",
-  Draft: "bg-yellow-100 text-yellow-700",
-  Processing: "bg-yellow-100 text-yellow-700",
-  Inactive: "bg-red-100 text-red-700",
-  Suspended: "bg-red-100 text-red-700",
-  Closed: "bg-slate-100 text-slate-600",
+const statuses = {
+  not_started: ["Chưa làm", "bg-slate-100 text-slate-600"],
+  submitted: ["Đã nộp", "bg-emerald-50 text-emerald-700"],
+  overdue: ["Quá hạn", "bg-red-50 text-red-700"],
+  draft: ["Nháp", "bg-amber-50 text-amber-700"],
+  published: ["Đã giao", "bg-emerald-50 text-emerald-700"],
 };
-
-export const StatusBadge = ({ status }) => (
-  <span
-    className={`px-3 py-1 rounded-full text-xs font-bold ${STATUS_STYLES[status] || "bg-slate-100 text-slate-600"}`}
-  >
-    {status}
-  </span>
-);
-
-const DIFFICULTY_STYLES = {
-  Easy: "text-green-600",
-  Medium: "text-orange-500",
-  Hard: "text-red-500",
-};
-
-export const DifficultyBadge = ({ level }) => (
-  <span
-    className={`text-xs font-semibold ${DIFFICULTY_STYLES[level] || "text-slate-500"}`}
-  >
-    {level}
-  </span>
-);
-
-// Thẻ thống kê trên đầu trang
-export const StatCard = ({
-  title,
-  value,
-  trend,
-  isUp,
-  note = "vs last month",
-  icon,
-}) => (
-  <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
-    <div className="flex justify-between items-start">
-      <h3 className="text-slate-500 text-sm font-medium mb-2">{title}</h3>
-      {icon && <span className="text-slate-300">{icon}</span>}
-    </div>
-    <div className="text-3xl font-bold text-slate-800 mb-2">{value}</div>
-    <div
-      className={`text-xs font-medium ${isUp ? "text-brand" : "text-red-500"}`}
+export function StatusBadge({ status }) {
+  const [label, style] = statuses[status] ?? [
+    status,
+    "bg-slate-100 text-slate-600",
+  ];
+  return (
+    <span
+      className={`inline-block whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${style}`}
     >
-      {trend} {note}
+      {label}
+    </span>
+  );
+}
+export function StatCard({ title, value, note, icon }) {
+  return (
+    <div className="panel p-5">
+      <div className="mb-2 flex items-start justify-between gap-3">
+        <h3 className="text-sm text-slate-500">{title}</h3>
+        {icon}
+      </div>
+      <p className="text-2xl font-bold text-slate-900">{value}</p>
+      {note && <p className="mt-2 text-xs text-slate-400">{note}</p>}
     </div>
-  </div>
-);
-
-// Header trang: breadcrumb + title + actions
-export const PageHeader = ({ breadcrumb, title, children }) => (
-  <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
-    <div>
-      <p className="text-sm text-slate-500 mb-1">{breadcrumb}</p>
-      <h1 className="text-3xl font-bold text-slate-900">{title}</h1>
+  );
+}
+export function PageHeader({ breadcrumb, title, children }) {
+  return (
+    <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
+      <div className="min-w-0">
+        <p className="mb-1 break-words text-sm text-slate-500">{breadcrumb}</p>
+        <h1 className="break-words text-3xl font-bold text-slate-900">
+          {title}
+        </h1>
+      </div>
+      {children && <div className="flex flex-wrap gap-3">{children}</div>}
     </div>
-    {children && <div className="flex flex-wrap gap-3">{children}</div>}
-  </div>
-);
+  );
+}
+export function LoadState({ loading, error, retry }) {
+  if (!loading && !error) return null;
+  return (
+    <section className="panel p-8">
+      <p
+        role={error ? "alert" : "status"}
+        className={error ? "text-sm text-red-700" : "text-sm text-slate-500"}
+      >
+        {error || "Đang tải dữ liệu…"}
+      </p>
+      {error && (
+        <button className="btn-secondary mt-4" onClick={retry}>
+          Thử lại
+        </button>
+      )}
+    </section>
+  );
+}
+export function EmptyState({ title, children, action }) {
+  return (
+    <section className="panel p-10 text-center">
+      <h2 className="font-semibold text-slate-800">{title}</h2>
+      <div className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
+        {children}
+      </div>
+      {action && <div className="mt-5">{action}</div>}
+    </section>
+  );
+}
+export function ErrorNotice({ error }) {
+  return error ? (
+    <p
+      role="alert"
+      className="mb-5 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700"
+    >
+      {error}
+    </p>
+  ) : null;
+}
