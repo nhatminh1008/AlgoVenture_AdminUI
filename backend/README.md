@@ -16,6 +16,23 @@ JDBC dùng truy vấn tham số cho dữ liệu do client cung cấp. ID đượ
 
 ## API
 
+### Swagger UI
+
+Sau khi chạy backend, mở http://127.0.0.1:8081/swagger-ui/index.html.
+OpenAPI JSON: http://127.0.0.1:8081/v3/api-docs. API được nhóm thành Auth, Admin và Instructor.
+
+Trong Swagger, mở endpoint và bấm **Try it out → Execute**:
+
+1. Gọi `GET /api/auth/csrf` để nhận cookie CSRF.
+2. Gọi `POST /api/auth/login` với JSON email và password của tài khoản local.
+3. Gọi lại `GET /api/auth/csrf` vì đăng nhập làm đổi token.
+4. Thử các API theo vai trò đã đăng nhập. Swagger tự gửi cookie phiên và header `X-XSRF-TOKEN`; không cần nhập cookie vào Authorize.
+5. Gọi `POST /api/auth/logout` để đăng xuất; lấy lại CSRF trước lần đăng nhập tiếp theo.
+
+Dùng cùng hostname trong suốt phiên (ví dụ `127.0.0.1`). Trang tài liệu được phép truy cập công khai;
+các API nghiệp vụ vẫn yêu cầu đăng nhập, đúng vai trò và CSRF cho thao tác ghi.
+Có thể tắt tài liệu khi triển khai bằng `SPRINGDOC_API_DOCS_ENABLED=false` và `SPRINGDOC_SWAGGER_UI_ENABLED=false`.
+
 Tất cả route bắt đầu bằng `/api`. Request JSON dùng `Content-Type: application/json`. Trước POST/PUT/DELETE, gọi `GET /api/auth/csrf`, giữ cookie và gửi token trả về trong header `X-XSRF-TOKEN`. Sau login/logout, lấy token mới trước request ghi tiếp theo. Browser cần `credentials: include`; frontend đã xử lý việc này.
 
 | Method | Route | Chức năng |

@@ -27,6 +27,43 @@ class PortalIntegrationTest {
   @Autowired UserStore users;
   @Autowired PortalStore store;
 
+  @Test
+  @org.springframework.test.annotation.DirtiesContext(
+      methodMode = org.springframework.test.annotation.DirtiesContext.MethodMode.BEFORE_METHOD)
+  void swaggerDocumentsApiAndSupportsCookieCsrfLogin() throws Exception {
+    mvc.perform(get("/swagger-ui/index.html")).andExpect(status().isOk());
+    mvc.perform(get("/v3/api-docs"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.paths['/api/admin/users'].get").exists())
+        .andExpect(jsonPath("$.paths['/api/auth/logout'].post").exists())
+        .andExpect(jsonPath("$.paths['/api/auth/csrf'].get.parameters").doesNotExist())
+        .andExpect(jsonPath("$.components.securitySchemes.session.name").value("JSESSIONID"));
+    mvc.perform(get("/swagger-ui/swagger-initializer.js"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(org.hamcrest.Matchers.containsString("X-XSRF-TOKEN")));
+    var csrfResult = mvc.perform(get("/api/auth/csrf")).andExpect(status().isOk()).andReturn();
+    var result =
+        mvc.perform(
+                post("/api/auth/login")
+                    .cookie(csrfResult.getResponse().getCookie("XSRF-TOKEN"))
+                    .header("X-XSRF-TOKEN", body(csrfResult).path("token").asText())
+                    .contentType("application/json")
+                    .content(
+                        "{\"email\":\"admin@algoventure.edu\",\"password\":\"Admin@Test123\"}"))
+            .andExpect(status().isOk())
+            .andReturn();
+    var session = (MockHttpSession) result.getRequest().getSession(false);
+    mvc.perform(get("/api/admin/users").session(session)).andExpect(status().isOk());
+    var nextCsrf = mvc.perform(get("/api/auth/csrf").session(session)).andReturn();
+    mvc.perform(
+            post("/api/auth/logout")
+                .session(session)
+                .cookie(nextCsrf.getResponse().getCookie("XSRF-TOKEN"))
+                .header("X-XSRF-TOKEN", body(nextCsrf).path("token").asText()))
+        .andExpect(status().isNoContent());
+    mvc.perform(get("/api/admin/users")).andExpect(status().isUnauthorized());
+  }
+
   MockHttpSession login(String role) throws Exception {
     String password = role.equals("admin") ? "Admin@Test123" : "Instructor@Test123";
     var result =

@@ -32,7 +32,7 @@ public class AuthController {
   }
 
   @GetMapping("/auth/csrf")
-  Map<String, String> csrf(CsrfToken token) {
+  Map<String, String> csrf(@io.swagger.v3.oas.annotations.Parameter(hidden = true) CsrfToken token) {
     return Map.of("token", token.getToken(), "headerName", token.getHeaderName());
   }
 
