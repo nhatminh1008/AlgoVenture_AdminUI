@@ -1,0 +1,60 @@
+param([switch]$SkipBuild)
+$ErrorActionPreference = 'Stop'
+$projectRoot = Split-Path -Parent $PSScriptRoot
+$runtimeDir = Join-Path $projectRoot '.runtime'
+New-Item -ItemType Directory -Force -Path $runtimeDir | Out-Null
+
+# Tools are scoped to this project workflow; no system PATH changes.
+$toolsDir = Join-Path $env:LOCALAPPDATA 'AlgoVenture\tools'
+if (-not $env:JAVA_HOME -or -not (Test-Path (Join-Path $env:JAVA_HOME 'bin\java.exe'))) {
+    $jdk = Get-ChildItem -LiteralPath $toolsDir -Directory -Filter 'jdk-*' -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $jdk) { throw 'Install JDK 21 and set JAVA_HOME, or place a Temurin JDK under %LOCALAPPDATA%\AlgoVenture\tools.' }
+    $env:JAVA_HOME = $jdk.FullName
+}
+$postgresBin = if ($env:POSTGRES_BIN) { $env:POSTGRES_BIN } else { 'C:\Program Files\PostgreSQL\18\bin' }
+if (-not (Test-Path (Join-Path $postgresBin 'initdb.exe'))) { throw 'Set POSTGRES_BIN to the PostgreSQL bin directory.' }
+$secretsFile = Join-Path $runtimeDir 'dev-secrets.json'
+if (-not (Test-Path -LiteralPath $secretsFile)) {
+    @{ databasePassword = ([guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N')) } | ConvertTo-Json | Set-Content -LiteralPath $secretsFile -Encoding utf8
+}
+$localSecrets = Get-Content -LiteralPath $secretsFile -Raw | ConvertFrom-Json
+$databaseDir = Join-Path $runtimeDir 'postgres'
+if (-not (Test-Path (Join-Path $databaseDir 'PG_VERSION'))) {
+    $passwordFile = Join-Path $runtimeDir 'initdb-password.txt'
+    $localSecrets.databasePassword | Set-Content -LiteralPath $passwordFile -Encoding ascii
+    & (Join-Path $postgresBin 'initdb.exe') -D $databaseDir -U algoventure -A scram-sha-256 --encoding=UTF8 --locale=C "--pwfile=$passwordFile"
+    if ($LASTEXITCODE -ne 0) { throw 'Failed to initialize the isolated development database.' }
+    Remove-Item -LiteralPath $passwordFile
+}
+& (Join-Path $postgresBin 'pg_ctl.exe') status -D $databaseDir *> $null
+if ($LASTEXITCODE -ne 0) {
+    & (Join-Path $postgresBin 'pg_ctl.exe') -D $databaseDir -l (Join-Path $runtimeDir 'postgres.log') -o '-h 127.0.0.1 -p 55432' -w start
+    if ($LASTEXITCODE -ne 0) { throw 'Failed to start development PostgreSQL on port 55432.' }
+}
+$env:PGPASSWORD = $localSecrets.databasePassword
+try {
+    $databaseExists = & (Join-Path $postgresBin 'psql.exe') -h 127.0.0.1 -p 55432 -U algoventure -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='algoventure'"
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot connect to development PostgreSQL.' }
+    if ($databaseExists -ne '1') {
+        & (Join-Path $postgresBin 'createdb.exe') -h 127.0.0.1 -p 55432 -U algoventure algoventure
+        if ($LASTEXITCODE -ne 0) { throw 'Failed to create development database.' }
+    }
+} finally { Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue }
+$env:DB_URL = 'jdbc:postgresql://127.0.0.1:55432/algoventure'
+$env:DB_USER = 'algoventure'
+$env:DB_PASSWORD = $localSecrets.databasePassword
+$env:SEED_ENABLED = 'true'
+if (-not $env:SEED_ADMIN_PASSWORD) { $env:SEED_ADMIN_PASSWORD = 'Admin@12345' }
+if (-not $env:SEED_INSTRUCTOR_PASSWORD) { $env:SEED_INSTRUCTOR_PASSWORD = 'Instructor@12345' }
+Push-Location (Join-Path $projectRoot 'backend')
+try {
+    if (-not $SkipBuild) {
+        & '.\mvnw.cmd' -B -ntp package
+        if ($LASTEXITCODE -ne 0) { throw 'Backend build failed.' }
+    }
+    # This Windows host rejects AF_UNIX connect. A nonexistent socket directory
+    # makes the JDK selector use its built-in TCP loopback fallback instead.
+    $socketDir = Join-Path $toolsDir 'tcp-loopback-only\unavailable'
+    & (Join-Path $env:JAVA_HOME 'bin\java.exe') "-Djdk.net.unixdomain.tmpdir=$socketDir" -jar 'target\algoventure-api-0.1.0.jar'
+    if ($LASTEXITCODE -ne 0) { throw 'Backend process stopped with an error.' }
+} finally { Pop-Location }

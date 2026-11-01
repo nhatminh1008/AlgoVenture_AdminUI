@@ -1,0 +1,207 @@
+package edu.algoventure;
+
+import static edu.algoventure.PortalDtos.*;
+
+import jakarta.validation.Valid;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import org.springframework.http.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+@RestController
+@RequestMapping("/api/instructor")
+@Transactional
+public class InstructorController {
+  final PortalStore store;
+  final UserStore users;
+
+  public InstructorController(PortalStore store, UserStore users) {
+    this.store = store;
+    this.users = users;
+  }
+
+  String owner(Authentication a) {
+    return users.byEmail(a.getName()).id();
+  }
+
+  @GetMapping("/state")
+  Map<String, Object> state(Authentication a) {
+    return store.state(owner(a));
+  }
+
+  @GetMapping("/curriculum")
+  Object curriculum() {
+    return store.catalog().topics;
+  }
+
+  @PostMapping("/classes")
+  @ResponseStatus(HttpStatus.CREATED)
+  Object createClass(Authentication a, @Valid @RequestBody Classroom v) {
+    return store.saveClass(owner(a), null, v);
+  }
+
+  @PutMapping("/classes/{id}")
+  Object updateClass(Authentication a, @PathVariable String id, @Valid @RequestBody Classroom v) {
+    return store.saveClass(owner(a), id, v);
+  }
+
+  @PostMapping("/assignments")
+  @ResponseStatus(HttpStatus.CREATED)
+  Object createAssignment(Authentication a, @Valid @RequestBody Assignment v) {
+    return store.saveAssignment(owner(a), null, v);
+  }
+
+  @PutMapping("/assignments/{id}")
+  Object updateAssignment(
+      Authentication a, @PathVariable String id, @Valid @RequestBody Assignment v) {
+    return store.saveAssignment(owner(a), id, v);
+  }
+
+  @PostMapping("/quizzes")
+  @ResponseStatus(HttpStatus.CREATED)
+  Object createQuiz(Authentication a, @Valid @RequestBody Quiz v) {
+    return store.saveQuiz(owner(a), null, v);
+  }
+
+  @PutMapping("/quizzes/{id}")
+  Object updateQuiz(Authentication a, @PathVariable String id, @Valid @RequestBody Quiz v) {
+    return store.saveQuiz(owner(a), id, v);
+  }
+
+  @DeleteMapping("/quizzes/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  void deleteQuiz(Authentication a, @PathVariable String id) {
+    store.removeQuiz(owner(a), id);
+  }
+
+  Map<String, Object> material(java.sql.ResultSet r) throws java.sql.SQLException {
+    return store.map(
+        "id",
+        r.getString("id"),
+        "classId",
+        r.getString("class_id"),
+        "title",
+        r.getString("title"),
+        "description",
+        r.getString("description"),
+        "filename",
+        r.getString("filename"),
+        "size",
+        r.getLong("size"),
+        "type",
+        r.getString("type"),
+        "uploadedAt",
+        PortalStore.timestamp(r, "uploaded_at"));
+  }
+
+  @GetMapping("/classes/{cid}/materials")
+  Object materials(Authentication a, @PathVariable String cid) {
+    store.ownedClass(cid, owner(a));
+    return store
+        .db()
+        .query(
+            "SELECT id,class_id,title,description,filename,size,type,uploaded_at FROM materials"
+                + " WHERE class_id=? ORDER BY uploaded_at DESC",
+            (r, n) -> material(r),
+            cid);
+  }
+
+  static final Map<String, String> TYPES =
+      Map.of(
+          "pdf",
+          "application/pdf",
+          "txt",
+          "text/plain",
+          "docx",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "pptx",
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+
+  @PostMapping("/classes/{cid}/materials")
+  @ResponseStatus(HttpStatus.CREATED)
+  Object upload(
+      Authentication a,
+      @PathVariable String cid,
+      @RequestParam MultipartFile file,
+      @RequestParam String title,
+      @RequestParam(defaultValue = "") String description)
+      throws IOException {
+    String owner = owner(a);
+    store.ownedClass(cid, owner);
+    String filename = Objects.toString(file.getOriginalFilename(), "").replace('\\', '/');
+    filename = filename.substring(filename.lastIndexOf('/') + 1);
+    String extension = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT);
+    if (!TYPES.containsKey(extension)
+        || file.isEmpty()
+        || file.getSize() > 10 * 1024 * 1024
+        || filename.length() > 255
+        || filename.chars().anyMatch(Character::isISOControl))
+      throw ApiException.bad("Tệp không hợp lệ. Hỗ trợ PDF, DOCX, PPTX, TXT tối đa 10 MB.");
+    if (title.isBlank() || title.trim().length() > 120 || description.length() > 500)
+      throw ApiException.bad("Tên tài liệu tối đa 120 ký tự, mô tả tối đa 500 ký tự.");
+    String id = store.id();
+    store
+        .db()
+        .update(
+            "INSERT INTO materials(id,class_id,title,description,filename,size,type,content) VALUES"
+                + " (?,?,?,?,?,?,?,?)",
+            id,
+            cid,
+            title.trim(),
+            description.trim(),
+            filename,
+            file.getSize(),
+            TYPES.get(extension),
+            file.getBytes());
+    store.audit(owner, "material.upload");
+    return store
+        .db()
+        .query("SELECT * FROM materials WHERE id=?", (r, n) -> material(r), id)
+        .getFirst();
+  }
+
+  @GetMapping("/classes/{cid}/materials/{id}/download")
+  ResponseEntity<byte[]> download(
+      Authentication a, @PathVariable String cid, @PathVariable String id) {
+    store.ownedClass(cid, owner(a));
+    return store
+        .db()
+        .query(
+            "SELECT * FROM materials WHERE id=? AND class_id=?",
+            (r, n) ->
+                ResponseEntity.ok()
+                    .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment()
+                            .filename(r.getString("filename"), StandardCharsets.UTF_8)
+                            .build()
+                            .toString())
+                    .header("X-Content-Type-Options", "nosniff")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(r.getBytes("content")),
+            id,
+            cid)
+        .stream()
+        .findFirst()
+        .orElseThrow(ApiException::missing);
+  }
+
+  @DeleteMapping("/classes/{cid}/materials/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  void deleteMaterial(Authentication a, @PathVariable String cid, @PathVariable String id) {
+    String owner = owner(a);
+    store.ownedClass(cid, owner);
+    if (store
+            .db()
+            .queryForObject(
+                "SELECT COUNT(*) FROM quiz_materials WHERE material_id=?", Integer.class, id)
+        > 0) throw ApiException.bad("Tài liệu đang được sử dụng bởi bộ câu hỏi.");
+    if (store.db().update("DELETE FROM materials WHERE id=? AND class_id=?", id, cid) != 1)
+      throw ApiException.missing();
+    store.audit(owner, "material.delete");
+  }
+}
