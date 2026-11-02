@@ -8,12 +8,13 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { PageHeader } from "../components/ui";
+import { Users, Layers, ChartNoAxesColumn, GraduationCap } from "lucide-react";
+import { PageHeader, MetricCard } from "../components/ui";
 import ClassFilter, { useClassScope } from "../components/ClassFilter";
 
 export default function Analytics() {
   const scope = useClassScope();
-  const graded = scope.rows.filter((row) => row.score !== null);
+  const graded = scope.rows.filter((row) => row.score != null);
   const average = graded.length
     ? Math.round(
         graded.reduce((sum, row) => sum + row.score, 0) / graded.length,
@@ -25,70 +26,52 @@ export default function Analytics() {
       name: item.name,
       students: scope.rows.filter((row) => row.classId === item.id).length,
     }));
+  const distribution = [["0–49", 0, 50], ["50–69", 50, 70], ["70–84", 70, 85], ["85–100", 85, 101]].map(([name, min, max]) => ({ name, students: graded.filter((row) => row.score >= min && row.score < max).length }));
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader title="Phân tích lớp học">
         <ClassFilter scope={scope} />
       </PageHeader>
       {scope.classroom && <ClassNavigation classId={scope.classroom.id} active="analytics" />}
-      <p className="mb-6 text-sm leading-6 text-slate-500">
-        {scope.classroom
-          ? scope.classroom.name
-          : scope.invalid
-            ? "Lớp không khả dụng."
-            : "Tổng hợp các lớp bạn phụ trách."}{" "}
-        Điểm quiz và tiến độ bài giao được lấy từ dữ liệu học viên trên máy chủ.
-      </p>
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        {[
-          ["Sinh viên trong lớp", scope.rows.length],
-          [
-            "Bộ bài đang giao",
-            scope.sets.filter((item) => item.status === "Active").length +
-              scope.quizzes.filter((item) => item.status === "Published")
-                .length,
-          ],
-          [
-            "Điểm trung bình",
-            average === null ? "Chưa có dữ liệu" : `${average}/100`,
-          ],
-        ].map(([label, value]) => (
-          <div key={label} className="panel p-6">
-            <p className="mb-3 text-sm text-slate-500">{label}</p>
-            <p className="text-2xl font-bold text-slate-900">{value}</p>
-          </div>
-        ))}
+      {scope.invalid && <p role="alert" className="mb-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">Lớp không khả dụng.</p>}
+      <div className="instructor-metrics">
+        <MetricCard label="Sinh viên" value={scope.rows.length} icon={<Users size={22} />} />
+        <MetricCard label="Bộ bài đang giao" value={scope.sets.filter((item) => item.status === "Active").length + scope.quizzes.filter((item) => item.status === "Published").length} icon={<Layers size={22} />} />
+        <MetricCard label="Điểm quiz trung bình / 100" value={average ?? "—"} icon={<ChartNoAxesColumn size={22} />} />
       </div>
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid items-start gap-6 lg:grid-cols-2">
         <section className="panel min-w-0 p-6">
-          <h2 className="font-bold text-slate-900">Sinh viên theo lớp</h2>
-          <p className="mt-1 text-xs text-slate-500">
-            Số thành viên từ danh sách đăng ký lớp
-          </p>
+          <h2 className="instructor-chart-title"><GraduationCap size={19} />Sinh viên theo lớp</h2>
           {scope.rows.length ? (
-            <div className="mt-5 h-64">
+            <div className="mt-5" style={{ height: Math.max(256, chart.length * 42) }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={chart}
-                  margin={{ left: 0, right: 12, bottom: 15 }}
+                  layout="vertical"
+                  margin={{ left: 0, right: 20, bottom: 5 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis
+                  <CartesianGrid stroke="#e5ece3" strokeDasharray="3 5" horizontal={false} />
+                  <YAxis
+                    type="category"
                     dataKey="name"
                     tickFormatter={(name) =>
-                      name.length > 20 ? `${name.slice(0, 18)}…` : name
+                      name.length > 15 ? `${name.slice(0, 13)}…` : name
                     }
                     tick={{ fontSize: 10 }}
                     interval={0}
+                    width={110}
+                    axisLine={false}
+                    tickLine={false}
                   />
-                  <YAxis allowDecimals={false} width={25} />
-                  <Tooltip />
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <Tooltip cursor={{ fill: "#f0f5ed" }} contentStyle={{ borderRadius: 12, borderColor: "#e1e9df", fontSize: 12 }} />
                   <Bar
                     dataKey="students"
                     name="Sinh viên"
-                    fill="#10b981"
-                    radius={[5, 5, 0, 0]}
-                    maxBarSize={55}
+                    fill="#388b64"
+                    radius={[0, 5, 5, 0]}
+                    maxBarSize={18}
+                    isAnimationActive={false}
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -100,21 +83,8 @@ export default function Analytics() {
           )}
         </section>
         <section className="panel p-6">
-          <h2 className="font-bold text-slate-900">
-            Mức thành thạo theo khái niệm
-          </h2>
-          <div className="my-6 rounded-xl border border-dashed border-slate-200 p-8 text-center">
-            <p className="font-medium text-slate-600">
-              Chưa có dữ liệu ước lượng
-            </p>
-            <p className="mt-3 text-sm leading-6 text-slate-500">
-              Mức thành thạo sẽ hiển thị khi có đủ dữ liệu học tập của sinh viên.
-            </p>
-          </div>
-          <p className="text-xs leading-5 text-slate-500">
-            Điểm thực hành và mức thành thạo do mô hình ước lượng là hai chỉ số
-            riêng.
-          </p>
+          <h2 className="instructor-chart-title"><ChartNoAxesColumn size={19} />Phân bố điểm quiz</h2>
+          {graded.length ? <div className="mt-5 h-64"><ResponsiveContainer width="100%" height="100%"><BarChart data={distribution} margin={{ left: 0, right: 12, bottom: 15 }}><CartesianGrid stroke="#e5ece3" strokeDasharray="3 5" vertical={false} /><XAxis dataKey="name" tick={{ fontSize: 11 }} /><YAxis allowDecimals={false} width={25} /><Tooltip cursor={{ fill: "#f0f2fa" }} contentStyle={{ borderRadius: 12, borderColor: "#e1e9df", fontSize: 12 }} /><Bar dataKey="students" name="Sinh viên" fill="#8798c8" radius={[7, 7, 0, 0]} maxBarSize={55} isAnimationActive={false} /></BarChart></ResponsiveContainer></div> : <div className="instructor-empty"><ChartNoAxesColumn /><p>Chưa có điểm quiz</p></div>}
         </section>
       </div>
     </div>

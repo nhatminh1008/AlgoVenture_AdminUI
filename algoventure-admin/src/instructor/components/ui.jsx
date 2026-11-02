@@ -62,10 +62,27 @@ export const StatCard = ({
 
 // Header trang: title + actions
 export const PageHeader = ({ title, children }) => (
-  <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
-    <div>
-      <h1 className="text-3xl font-bold text-slate-900">{title}</h1>
-    </div>
-    {children && <div className="flex flex-wrap gap-3">{children}</div>}
+  <header className="instructor-page-header">
+    <h1>{title}</h1>
+    {children && <div>{children}</div>}
+  </header>
+);
+
+export const MetricCard = ({ label, value, icon }) => (
+  <div className="instructor-metric">
+    <span className="instructor-metric-icon" aria-hidden="true">{icon}</span>
+    <dl><dt>{label}</dt><dd>{value}</dd></dl>
   </div>
 );
+
+export const StudentIdentity = ({ name, email }) => (
+  <div className="instructor-student">
+    <span className="instructor-student-avatar" aria-hidden="true">{name?.trim().split(/\s+/).map((part) => part[0]).slice(-2).join("")}</span>
+    <div><p className="instructor-student-name">{name}</p>{email && <p className="instructor-student-email">{email}</p>}</div>
+  </div>
+);
+
+export const ProgressMeter = ({ completed, total, percent }) => {
+  if (!total) return <span className="text-xs text-slate-500">Chưa giao bài</span>;
+  return <div className="instructor-progress"><div className="instructor-progress-label"><span>{completed}/{total} bài</span><strong>{percent}%</strong></div><progress max="100" value={percent} aria-label={`Hoàn thành ${completed} trên ${total} bài`} /></div>;
+};

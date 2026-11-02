@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2, RotateCcw } from "lucide-react";
+import { CheckCircle2, RotateCcw, Eye } from "lucide-react";
 import { gradeQuiz, validateQuiz } from "../data/quizzes";
 
 export default function QuizPreview({ quiz }) {
@@ -17,10 +17,7 @@ export default function QuizPreview({ quiz }) {
     );
   return (
     <div>
-      <div className="mb-5 rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm leading-6 text-indigo-800">
-        Chế độ làm thử của giảng viên. Đáp án được chấm ngay trên trình duyệt;
-        không ghi thành kết quả của sinh viên.
-      </div>
+      <div className="instructor-quiz-note" title="Kết quả làm thử không được ghi vào kết quả của sinh viên."><Eye size={16} />Chế độ làm thử</div>
       {result && (
         <div
           role="status"

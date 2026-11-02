@@ -39,7 +39,7 @@ export default function QuizEditor() {
       <div className="panel p-8">
         <h1 className="text-xl font-bold">Bộ câu hỏi đã được công bố</h1>
         <p className="mt-3 text-sm text-slate-500">
-          Nội dung được giữ nguyên để bảo toàn yêu cầu đã giao.
+          Không thể chỉnh sửa nội dung đã công bố.
         </p>
         <Link
           className="btn-secondary mt-4"
@@ -114,7 +114,7 @@ function Editor({ classroom, existing }) {
         state: {
           message:
             status === "Published"
-              ? "Đã giao bộ câu hỏi cho lớp. Kết quả sẽ cập nhật khi sinh viên làm bài trong game."
+              ? "Đã giao bộ câu hỏi cho lớp."
               : "Đã lưu bản nháp bộ câu hỏi.",
         },
       });
@@ -247,11 +247,12 @@ function Editor({ classroom, existing }) {
             {form.questions.map((question, index) => (
               <section
                 key={question.id}
-                className="panel p-5 sm:p-6"
+                id={`question-${question.id}`}
+                className="panel quiz-question-editor p-5 sm:p-6"
                 aria-label={`Soạn câu ${index + 1}`}
               >
                 <div className="mb-5 flex items-center justify-between gap-3">
-                  <h2 className="font-bold text-slate-900">Câu {index + 1}</h2>
+                  <h2 className="quiz-question-title"><span>{String(index + 1).padStart(2, "0")}</span>Câu hỏi {index + 1}</h2>
                   <div className="flex gap-1">
                     <button
                       className="rounded-lg p-2 hover:bg-slate-50"
@@ -311,10 +312,6 @@ function Editor({ classroom, existing }) {
                   <legend className="field-label">
                     Lựa chọn và đáp án đúng
                   </legend>
-                  <p className="mb-3 text-xs text-slate-400">
-                    Chọn vòng tròn bên cạnh lựa chọn đúng. Mỗi câu có từ 2 đến 6
-                    lựa chọn.
-                  </p>
                   <div className="space-y-2">
                     {question.options.map((option, optionIndex) => (
                       <div
@@ -439,7 +436,7 @@ function Editor({ classroom, existing }) {
               Thêm câu hỏi ({form.questions.length}/{MAX_QUESTIONS})
             </button>
           </div>
-          <aside className="min-w-0 space-y-5">
+          <aside className="quiz-editor-summary min-w-0 space-y-5">
             <section className="panel p-5">
               <h2 className="mb-4 font-bold text-slate-900">
                 Tổng quan bộ câu hỏi
@@ -459,10 +456,7 @@ function Editor({ classroom, existing }) {
                   </dd>
                 </div>
               </dl>
-              <p className="mt-4 border-t border-slate-100 pt-4 text-xs leading-5 text-slate-500">
-                Có thể lưu bản nháp khi chưa hoàn thiện. Khi giao cho lớp, mọi
-                câu hỏi phải có nội dung và một đáp án đúng.
-              </p>
+              <nav className="quiz-question-nav" aria-label="Danh sách câu hỏi">{form.questions.map((question, index) => <a key={question.id} href={`#question-${question.id}`} aria-label={`Đến câu ${index + 1}`}>{index + 1}</a>)}</nav>
             </section>
           </aside>
         </div>

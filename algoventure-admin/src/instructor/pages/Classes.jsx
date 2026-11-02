@@ -6,10 +6,17 @@ import {
   Users,
   Layers,
   GraduationCap,
+  ArrowDownUp,
+  ArrowUpRight,
+  TrendingUp,
+  Network,
+  Send,
+  X,
 } from "lucide-react";
-import { PageHeader } from "../components/ui";
 import { useClassrooms } from "../data/ClassroomContext";
 import { topics, levels, getTopic, getLevel } from "../data/curriculum";
+
+const topicIcons = { sorting: ArrowDownUp, searching: Search, "data-structures": Layers, graphs: Network };
 
 export default function Classes() {
   const { classes, students, assignments, quizzes } = useClassrooms();
@@ -25,41 +32,37 @@ export default function Classes() {
         .includes(query.trim().toLocaleLowerCase()),
   );
   return (
-    <div className="mx-auto max-w-6xl">
-      <PageHeader
-        title="Lớp của tôi"
-      >
-        <Link to="/instructor/classes/new" className="btn-primary">
+    <div className="classes-page">
+      <header className="classes-header">
+        <h1>Lớp của tôi <span>{classes.length}</span></h1>
+        <Link to="/instructor/classes/new" className="btn-primary classes-create">
           <Plus size={18} /> Tạo lớp mới
         </Link>
-      </PageHeader>
-      <p className="mb-5 text-sm text-slate-500">Chọn lớp để giao bài, theo dõi tiến độ hoặc xem kết quả.</p>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900">
-            Danh sách lớp học
-          </h2>
-          <p className="mt-1 text-xs text-slate-500">
-            {filtered.length} / {classes.length} lớp bạn phụ trách
-          </p>
-        </div>
-        <div className="flex w-full flex-wrap gap-3 lg:w-auto">
-          <label className="relative min-w-48 flex-1">
+      </header>
+      <dl className="classes-overview">
+        <div><span className="classes-overview-icon"><GraduationCap size={22} /></span><div><dt>Lớp học</dt><dd>{classes.length}</dd></div></div>
+        <div><span className="classes-overview-icon"><Users size={22} /></span><div><dt>Sinh viên</dt><dd>{students.filter((student) => classes.some((item) => item.id === student.classId)).length}</dd></div></div>
+        <div><span className="classes-overview-icon"><Layers size={22} /></span><div><dt>Bộ bài</dt><dd>{[...assignments, ...quizzes].filter((set) => classes.some((item) => item.id === set.classId)).length}</dd></div></div>
+      </dl>
+      <section aria-label="Danh sách lớp học">
+        <div className="classes-toolbar">
+          <label className="classes-search">
             <span className="sr-only">Tìm lớp học</span>
             <Search
               size={17}
-              className="absolute left-3 top-3.5 text-slate-400"
+              className="classes-search-icon"
             />
             <input
-              className="field pl-10"
+              className="field"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Tìm tên lớp..."
             />
+            {query && <button type="button" aria-label="Xóa tìm kiếm" onClick={() => setQuery("")}><X size={16} /></button>}
           </label>
           <select
             aria-label="Lọc theo chủ đề"
-            className="field w-auto flex-1 lg:flex-none"
+            className="field classes-filter"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
           >
@@ -72,7 +75,7 @@ export default function Classes() {
           </select>
           <select
             aria-label="Lọc theo mức độ"
-            className="field w-auto flex-1 lg:flex-none"
+            className="field classes-filter"
             value={level}
             onChange={(e) => setLevel(e.target.value)}
           >
@@ -84,10 +87,11 @@ export default function Classes() {
             ))}
           </select>
         </div>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
+        <div className="classes-list-heading"><h2>Danh sách lớp học</h2><span>{filtered.length} / {classes.length} lớp</span></div>
+      <div className="classes-grid">
         {filtered.map((item) => {
           const topicInfo = getTopic(item.topicId);
+          const TopicIcon = topicIcons[item.topicId] || GraduationCap;
           const members = students.filter(
             (student) => student.classId === item.id,
           ).length;
@@ -97,37 +101,34 @@ export default function Classes() {
           return (
             <article
               key={item.id}
-              className="panel flex flex-col overflow-hidden transition-shadow hover:shadow-md"
+              className={`class-card class-theme-${item.topicId}`}
             >
-              <div
-                className={`h-1.5 ${item.level === "advanced" ? "bg-indigo-400" : "bg-emerald-400"}`}
-              />
-              <div className="flex flex-1 flex-col p-6">
-                <p className="mb-2 text-xs text-slate-500">{topicInfo.name} · {getLevel(item.level).name}</p>
-                <h3 className="break-words text-lg font-bold leading-7 text-slate-900">
+              <div className="class-card-content">
+                <div className="class-card-top"><span className="class-topic-icon"><TopicIcon size={24} /></span><span className={`class-level ${item.level === "advanced" ? "class-level-advanced" : ""}`}><span />{getLevel(item.level).label}</span></div>
+                <p className="class-topic">{topicInfo.name}</p>
+                <h3>
                   <Link
                     to={`/instructor/classes/${item.id}`}
-                    className="hover:text-emerald-700"
                   >
                     {item.name}
                   </Link>
                 </h3>
-                <div className="mt-auto flex flex-wrap gap-4 pt-6 text-xs text-slate-500">
-                  <span className="flex items-center gap-1.5">
-                    <Users size={15} />
-                    {members} sinh viên
+                <div className="class-card-metrics">
+                  <span>
+                    <Users size={16} />
+                    <strong>{members}</strong> sinh viên
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <Layers size={15} />
-                    {sets} bộ bài
+                  <span>
+                    <Layers size={16} />
+                    <strong>{sets}</strong> bộ bài
                   </span>
 
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 border-t border-slate-100 p-4">
-                <Link className="btn-primary" to={`/instructor/challenges?classId=${item.id}`}>Giao thử thách</Link>
-                <Link className="btn-secondary" to={`/instructor/progress?classId=${item.id}`}>Xem tiến độ</Link>
-                <Link className="btn-secondary" to={`/instructor/classes/${item.id}`}>Mở lớp</Link>
+              <div className="class-card-actions">
+                <Link className="class-assign" to={`/instructor/challenges?classId=${item.id}`}><Send size={15} />Giao thử thách</Link>
+                <Link className="class-progress" to={`/instructor/progress?classId=${item.id}`}><TrendingUp size={16} />Tiến độ</Link>
+                <Link className="class-open" to={`/instructor/classes/${item.id}`} aria-label={`Mở lớp ${item.name}`} title="Mở lớp"><ArrowUpRight size={19} /></Link>
               </div>
             </article>
           );
@@ -141,11 +142,6 @@ export default function Classes() {
               ? "Không tìm thấy lớp phù hợp"
               : "Bắt đầu với lớp học đầu tiên"}
           </h3>
-          <p className="mt-2 text-sm text-slate-500">
-            {classes.length
-              ? "Thử tìm tên khác hoặc thay đổi bộ lọc."
-              : "Tạo lớp để bắt đầu giao bài cho sinh viên."}
-          </p>
           {classes.length ? (
             <button
               className="btn-secondary mt-5"
@@ -164,6 +160,7 @@ export default function Classes() {
           )}
         </div>
       )}
+      </section>
     </div>
   );
 }

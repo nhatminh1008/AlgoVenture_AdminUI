@@ -1,8 +1,8 @@
 import ClassNavigation from "../components/ClassNavigation";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Download, Search } from "lucide-react";
-import { PageHeader } from "../components/ui";
+import { Download, Search, Users, ChartNoAxesColumn, TrendingUp } from "lucide-react";
+import { PageHeader, MetricCard, StudentIdentity, ProgressMeter } from "../components/ui";
 import ClassFilter, { useClassScope } from "../components/ClassFilter";
 import { exportStudentRows, downloadFile } from "../data/classroom";
 import { getTopic } from "../data/curriculum";
@@ -15,6 +15,8 @@ export default function Progress() {
       .toLocaleLowerCase()
       .includes(query.trim().toLocaleLowerCase()),
   );
+  const graded = rows.filter((row) => row.score != null);
+  const assigned = rows.filter((row) => row.assignedLessons > 0);
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
@@ -35,9 +37,11 @@ export default function Progress() {
         </button>
       </PageHeader>
       {scope.classroom && <ClassNavigation classId={scope.classroom.id} active="progress" />}
-      <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
-        Điểm là trung bình điểm cao nhất của từng quiz đã nộp. Tiến độ là số bài thực hành được giao đã hoàn thành.
-      </p>
+      <div className="instructor-metrics">
+        <MetricCard label="Sinh viên" value={rows.length} icon={<Users size={22} />} />
+        <MetricCard label="Điểm quiz trung bình / 100" value={graded.length ? Math.round(graded.reduce((sum, row) => sum + row.score, 0) / graded.length) : "—"} icon={<ChartNoAxesColumn size={22} />} />
+        <MetricCard label="Tiến độ trung bình" value={assigned.length ? `${Math.round(assigned.reduce((sum, row) => sum + row.progressPercent, 0) / assigned.length)}%` : "—"} icon={<TrendingUp size={22} />} />
+      </div>
       <div className="panel overflow-hidden">
         <div className="flex flex-wrap gap-3 border-b border-slate-100 p-5">
           <label className="relative min-w-48 flex-1">
@@ -62,8 +66,8 @@ export default function Progress() {
                 <th>Sinh viên</th>
                 <th>Lớp học</th>
                 <th>Chủ đề</th>
-                <th>Điểm học tập / 100</th>
-                <th>Tiến độ thực tế</th>
+                <th title="Trung bình điểm cao nhất của từng quiz đã nộp">Điểm quiz / 100</th>
+                <th>Tiến độ bài thực hành</th>
               </tr>
             </thead>
             <tbody>
@@ -74,8 +78,7 @@ export default function Progress() {
                 return (
                   <tr key={row.id}>
                     <td>
-                      <p className="font-medium text-slate-800">{row.name}</p>
-                      <p className="mt-1 text-xs text-slate-400">{row.email}</p>
+                      <StudentIdentity name={row.name} email={row.email} />
                     </td>
                     <td>
                       <Link
@@ -86,8 +89,8 @@ export default function Progress() {
                       </Link>
                     </td>
                     <td>{getTopic(classroom.topicId).name}</td>
-                    <td>{row.score ?? "Chưa có dữ liệu"}</td>
-                    <td className="text-xs text-slate-500">{row.assignedLessons ? `${row.completedLessons}/${row.assignedLessons} bài (${row.progressPercent}%)` : "Chưa giao bài thực hành"}</td>
+                    <td><strong className="text-emerald-800">{row.score ?? "—"}</strong></td>
+                    <td><ProgressMeter completed={row.completedLessons} total={row.assignedLessons} percent={row.progressPercent} /></td>
                   </tr>
                 );
               })}
@@ -106,7 +109,7 @@ export default function Progress() {
           </table>
         </div>
         <p className="border-t border-slate-100 p-4 text-xs text-slate-500">
-          {rows.length} sinh viên trong phạm vi đã chọn
+          {rows.length} sinh viên
         </p>
       </div>
     </div>

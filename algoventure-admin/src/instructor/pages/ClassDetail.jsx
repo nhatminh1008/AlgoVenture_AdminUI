@@ -5,7 +5,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { Plus, Pencil, Users, Layers, Download } from "lucide-react";
-import { PageHeader } from "../components/ui";
+import { PageHeader, StudentIdentity } from "../components/ui";
 import { useClassrooms } from "../data/ClassroomContext";
 import { getTopic, getLevel, lessonName } from "../data/curriculum";
 import ClassNavigation from "../components/ClassNavigation";
@@ -27,9 +27,6 @@ export default function ClassDetail() {
     return (
       <div className="panel p-8">
         <h1 className="text-xl font-bold">Không tìm thấy lớp học</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Lớp không tồn tại trong danh sách bạn phụ trách.
-        </p>
         <Link to="/instructor/classes" className="btn-secondary mt-5">
           Về lớp của tôi
         </Link>
@@ -67,9 +64,11 @@ export default function ClassDetail() {
           {location.state.message}
         </p>
       )}
-      <p className="mb-5 text-sm text-slate-500">{topic.name} · {getLevel(classroom.level).name} · {members.length} sinh viên</p>
+      <div className="instructor-detail-summary">
+        <div className="instructor-detail-tags"><span>{topic.name}</span><span>{getLevel(classroom.level).label}</span><span><Users size={15} />{members.length} sinh viên</span></div>
+        <div className="instructor-invite"><span>Mã tham gia</span><strong>{classroom.inviteCode}</strong></div>
+      </div>
       {classroom.description && <p className="mb-5 whitespace-pre-wrap text-sm text-slate-600">{classroom.description}</p>}
-      <p className="mb-5 text-sm text-emerald-800">Mã tham gia trong game: <strong className="font-mono text-lg">{classroom.inviteCode}</strong></p>
       <ClassNavigation classId={classId} active={tab} />
       <section id="class-panel">
         {tab === "quizzes" && <ClassQuizzes key={classId} classId={classId} />}
@@ -117,10 +116,6 @@ export default function ClassDetail() {
               <div className="panel p-10 text-center">
                 <Layers size={32} className="mx-auto mb-3 text-slate-300" />
                 <h2 className="font-semibold">Lớp chưa có bộ thử thách</h2>
-                <p className="mt-2 text-sm text-slate-500">
-                  Chọn các bài thuộc chủ đề {topic.name} để chuẩn bị bài giao
-                  đầu tiên.
-                </p>
                 <Link
                   className="btn-primary mt-5"
                   to={`/instructor/challenges?classId=${classId}`}
@@ -141,15 +136,15 @@ export default function ClassDetail() {
                       <tr>
                         <th>Sinh viên</th>
                         <th>Email</th>
-                        <th>Điểm học tập / 100</th>
+                        <th>Điểm quiz / 100</th>
                       </tr>
                     </thead>
                     <tbody>
                       {members.map((member) => (
                         <tr key={member.id}>
-                          <td className="font-medium">{member.name}</td>
+                          <td><StudentIdentity name={member.name} /></td>
                           <td>{member.email}</td>
-                          <td>{member.score ?? "Chưa có dữ liệu"}</td>
+                          <td><strong className="text-emerald-800">{member.score ?? "—"}</strong></td>
                         </tr>
                       ))}
                     </tbody>
@@ -166,10 +161,6 @@ export default function ClassDetail() {
               <div className="p-10 text-center">
                 <Users size={32} className="mx-auto mb-3 text-slate-300" />
                 <h2 className="font-semibold">Chưa có sinh viên tham gia</h2>
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-                  Lớp mới bắt đầu với danh sách trống. Admin có thể thêm sinh
-                  viên từ trang quản lý lớp.
-                </p>
               </div>
             )}
           </div>

@@ -45,7 +45,7 @@ export default function ClassForm() {
         state: {
           message: classId
             ? "Đã cập nhật thông tin lớp."
-            : "Đã tạo lớp. Bạn có thể bắt đầu chuẩn bị bộ thử thách.",
+            : "Đã tạo lớp học.",
         },
       });
     } catch (failure) {
@@ -72,9 +72,6 @@ export default function ClassForm() {
             <h2 className="text-lg font-bold text-slate-900">
               Thông tin lớp học
             </h2>
-            <p className="mt-2 text-sm text-slate-500">
-              Chọn một chủ đề DSA và mức độ phù hợp với sinh viên.
-            </p>
           </div>
           <div>
             <label className="field-label" htmlFor="class-name">
@@ -114,7 +111,7 @@ export default function ClassForm() {
             </select>
             {topicLocked && (
               <p className="mt-2 text-xs text-slate-500">
-                Lớp đã có bộ bài nên chủ đề được giữ để bảo toàn nội dung.
+                Không thể đổi chủ đề khi lớp đã có bộ bài.
               </p>
             )}
           </div>
@@ -142,16 +139,9 @@ export default function ClassForm() {
                     </strong>
                     <span className="text-xs text-slate-500">{item.label}</span>
                   </span>
-                  <span className="block text-xs leading-5 text-slate-500">
-                    {item.description}
-                  </span>
                 </label>
               ))}
             </div>
-            <p className="mt-2 text-xs leading-5 text-slate-500">
-              Mức độ định hướng lớp học; không phải điểm hay mức thành thạo do
-              hệ thống adaptive ước lượng.
-            </p>
           </fieldset>
           <div>
             <label className="field-label" htmlFor="class-description">
@@ -205,17 +195,13 @@ export default function ClassForm() {
           <h2 className="mt-2 text-lg font-bold text-slate-900">
             {topic?.name ?? "Chọn chủ đề để xem bài học"}
           </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            {topic?.description ??
-              "Các bài học tương ứng với nội dung hiện có trong game AlgoVenture."}
-          </p>
           <span className="mt-4 inline-block rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
             {getLevel(values.level).name}
           </span>
           {topic && (
             <>
               <p className="mb-3 mt-6 text-xs font-semibold text-slate-500">
-                {topic.lessons.length} bài có thể chọn khi tạo bộ thử thách
+                {topic.lessons.length} bài học
               </p>
               <ul className="space-y-2">
                 {topic.lessons.map(([id, name]) => (
@@ -230,10 +216,6 @@ export default function ClassForm() {
               </ul>
             </>
           )}
-          <p className="mt-6 border-t border-slate-100 pt-4 text-xs leading-5 text-slate-500">
-            Tạo lớp chưa tự giao toàn bộ bài học. Bạn sẽ chọn bộ thử thách phù
-            hợp sau khi tạo.
-          </p>
         </aside>
       </div>
     </div>

@@ -21,9 +21,6 @@ export default function ClassQuizzes({ classId }) {
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="font-bold text-slate-900">Bộ câu hỏi trắc nghiệm</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            Soạn câu hỏi lý thuyết, dự đoán kết quả hoặc độ phức tạp.
-          </p>
         </div>
         <Link
           className="btn-primary"
@@ -57,10 +54,7 @@ export default function ClassQuizzes({ classId }) {
             <h3 className="mb-2 mt-5 break-words text-lg font-bold text-slate-900">
               {quiz.title}
             </h3>
-            <p className="line-clamp-2 text-sm leading-6 text-slate-500">
-              {quiz.description ||
-                "Câu hỏi trắc nghiệm do giảng viên biên soạn."}
-            </p>
+            {quiz.description && <p className="line-clamp-2 text-sm leading-6 text-slate-500">{quiz.description}</p>}
             <div className="mt-auto flex flex-wrap gap-3 pt-5 text-xs text-slate-500">
               <span>{quiz.questions.length} câu hỏi</span>
               <span>
@@ -110,10 +104,6 @@ export default function ClassQuizzes({ classId }) {
           <h3 className="font-semibold text-slate-800">
             Soạn bộ câu hỏi đầu tiên
           </h3>
-          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">
-            Bổ sung câu hỏi lý thuyết, dự đoán kết quả hoặc độ phức tạp bên cạnh
-            các thử thách game.
-          </p>
           <Link
             className="btn-primary mt-5"
             to={`/instructor/classes/${classId}/quizzes/new`}

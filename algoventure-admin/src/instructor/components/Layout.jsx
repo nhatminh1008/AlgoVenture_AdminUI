@@ -7,9 +7,10 @@ import {
   TrendingUp,
   BarChart2,
   Download,
-  BookOpen,
 } from "lucide-react";
 import { useClassrooms } from "../data/ClassroomContext";
+import BrandMark from "../../components/BrandMark";
+import "./instructor.css";
 
 const Layout = () => {
   const { user, logout } = useAuth();
@@ -43,18 +44,16 @@ const Layout = () => {
   ];
 
   return (
-    <div className="portal-shell">
+    <div className="portal-shell instructor-shell">
       {/* Sidebar */}
       <aside className="portal-sidebar text-slate-300">
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-8 h-8 bg-brand rounded flex items-center justify-center">
-            <BookOpen size={20} className="text-white" />
-          </div>
+        <div className="instructor-brand">
+          <BrandMark className="instructor-brand-mark" />
           <div>
-            <p className="text-white font-bold text-lg leading-tight">
+            <p className="instructor-brand-name">
               AlgoVenture
             </p>
-            <p className="text-brand text-xs font-semibold tracking-wider">
+            <p className="instructor-brand-role">
               GIẢNG VIÊN
             </p>
           </div>
@@ -62,7 +61,7 @@ const Layout = () => {
 
         <nav
           aria-label="Điều hướng chính"
-          className="flex-1 px-4 space-y-2 mt-4"
+          className="instructor-nav"
         >
           {navItems.map((item) => (
             <NavLink
@@ -70,11 +69,7 @@ const Layout = () => {
               to={item.path}
               end={item.path === "/"}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-slate-800 text-brand border-l-4 border-brand"
-                    : "hover:bg-slate-800 hover:text-white border-l-4 border-transparent"
-                }`
+                `instructor-nav-link${isActive ? " is-active" : ""}`
               }
             >
               {item.icon}
@@ -84,14 +79,14 @@ const Layout = () => {
         </nav>
 
         {/* User Profile */}
-        <div className="p-4 border-t border-slate-700 m-4 flex items-center justify-between">
+        <div className="instructor-profile">
           <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-full bg-slate-700 grid place-items-center text-white text-sm">
+            <span className="instructor-avatar">
               {user.name?.trim().split(/\s+/).map((part) => part[0]).slice(-2).join("")}
             </span>
-            <div>
-              <p className="text-white font-medium text-sm">{user.name}</p>
-              <p className="text-xs text-slate-400">Giảng viên</p>
+            <div className="min-w-0">
+              <p className="instructor-profile-name">{user.name}</p>
+              <p className="instructor-profile-role">Giảng viên</p>
             </div>
           </div>
           <button
@@ -110,7 +105,7 @@ const Layout = () => {
 
       {/* Main Content */}
       <div className="min-w-0 flex-1">
-        <main id="main-content" className="p-5 sm:p-8 lg:p-10">
+        <main id="main-content" className="instructor-main">
           {storageError && (
             <p
               role="alert"

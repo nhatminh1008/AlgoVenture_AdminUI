@@ -107,7 +107,7 @@ function ChallengeEditor({
       const item = await saveAssignment({ ...form, status }, existing?.id);
       const message =
         item.status === "Active"
-          ? "Đã giao bộ thử thách. Kết quả sẽ cập nhật khi sinh viên làm bài trong game."
+          ? "Đã giao bộ thử thách."
           : "Đã lưu bản nháp.";
       setMessage(message);
       setError("");
@@ -220,8 +220,7 @@ function ChallengeEditor({
           </fieldset>
           {readOnly && (
             <p className="text-xs leading-5 text-slate-500">
-              Bộ bài đã công bố được giữ nguyên nội dung. Tạo bộ mới để thay đổi
-              yêu cầu.
+              Bộ bài đã công bố. Không thể chỉnh sửa nội dung.
             </p>
           )}
           {error && (
@@ -248,17 +247,13 @@ function ChallengeEditor({
           )}
         </section>
         <section className="panel p-6">
-          <h2 className="flex items-center gap-2 font-bold text-slate-900">
+          <h2 className="instructor-section-title instructor-lesson-heading">
             <BookOpen size={19} />
             Chọn bài học{" "}
             <span className="ml-auto text-xs font-normal text-slate-500">
               {form.lessonIds.length} đã chọn
             </span>
           </h2>
-          <p className="mb-5 mt-2 text-sm leading-6 text-slate-500">
-            Các bài thuộc chủ đề của lớp, tương ứng với màn thử thách trong
-            game.
-          </p>
           {!readOnly && topic && <button disabled={busy} type="button" className="mb-3 text-sm font-semibold text-emerald-700" onClick={() => update("lessonIds", form.lessonIds.length === topic.lessons.length ? [] : topic.lessons.map(([id]) => id))}>{form.lessonIds.length === topic.lessons.length ? "Bỏ chọn tất cả" : "Chọn tất cả bài"}</button>}
           <fieldset disabled={readOnly || busy} className="space-y-2">
             {topic?.lessons.map(([id, name]) => (
@@ -330,7 +325,7 @@ function ChallengeEditor({
                   <td className="whitespace-nowrap">
                     {item.due || "Chưa đặt"}
                   </td>
-                  <td>{statusLabels[item.status]}</td>
+                  <td><span className={`instructor-badge ${item.status === "Draft" ? "instructor-badge-draft" : item.status === "Closed" ? "instructor-badge-closed" : ""}`}>{statusLabels[item.status]}</span></td>
                   <td>
                     <button
                       className="font-semibold text-emerald-700"
