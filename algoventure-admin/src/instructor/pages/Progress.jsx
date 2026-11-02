@@ -1,4 +1,5 @@
 import ClassNavigation from "../components/ClassNavigation";
+import PracticeEvidence from "../components/PracticeEvidence";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Download, Search, Users, ChartNoAxesColumn, TrendingUp } from "lucide-react";
@@ -112,6 +113,7 @@ export default function Progress() {
           {rows.length} sinh viên
         </p>
       </div>
+      {scope.classroom && <PracticeEvidence key={scope.classroom.id} classId={scope.classroom.id} />}
     </div>
   );
 }
