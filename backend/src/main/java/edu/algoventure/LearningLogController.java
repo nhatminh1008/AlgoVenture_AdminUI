@@ -2,6 +2,7 @@ package edu.algoventure;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
@@ -17,7 +18,8 @@ public class LearningLogController {
   static final String KC="bubble.next_swap.v1";
   final PortalStore s;
   final UserStore users;
-  public LearningLogController(PortalStore s,UserStore users) { this.s=s; this.users=users; }
+  final PracticeCatalog catalog;
+  public LearningLogController(PortalStore s,UserStore users,PracticeCatalog catalog) { this.s=s; this.users=users; this.catalog=catalog; }
   record Event(@NotNull UUID eventId,@Min(1) int sequence,
       @NotNull @Pattern(regexp="move|pause|resume|completed|abandoned|timed_out") String kind,
       @NotNull Instant occurredAt,@Min(0) @Max(300000) int elapsedMs,
@@ -32,10 +34,15 @@ public class LearningLogController {
       @NotNull @Pattern(regexp="map|classroom") String source,UUID assignmentId,
       @NotNull @Pattern(regexp="easy|medium|hard") String difficulty,
       @NotNull @Size(min=2,max=8) List<@NotNull @Min(-99) @Max(99) Integer> input,
-      @NotNull Instant startedAt,@NotNull @Size(max=2000) List<@NotNull @Valid Event> events) {}
+      @NotNull Instant startedAt,@NotNull @Size(max=2000) List<@NotNull @Valid Event> events,
+      @Pattern(regexp="supplementary") String activity,
+      @Size(max=80) String exerciseId,UUID recommendationId) {}
   record Header(int schemaVersion,String engineVersion,String lessonId,String mode,String source,
-      UUID assignmentId,String difficulty,List<Integer> input,Instant startedAt) {
-    Header(Upload v) { this(v.schemaVersion(),v.engineVersion(),v.lessonId(),v.mode(),v.source(),v.assignmentId(),v.difficulty(),v.input(),v.startedAt()); }
+      UUID assignmentId,String difficulty,List<Integer> input,Instant startedAt,
+      @JsonInclude(JsonInclude.Include.NON_NULL) String activity,
+      @JsonInclude(JsonInclude.Include.NON_NULL) String exerciseId,
+      @JsonInclude(JsonInclude.Include.NON_NULL) UUID recommendationId) {
+    Header(Upload v) { this(v.schemaVersion(),v.engineVersion(),v.lessonId(),v.mode(),v.source(),v.assignmentId(),v.difficulty(),v.input(),v.startedAt(),v.activity(),v.exerciseId(),v.recommendationId()); }
   }
   String owner(Authentication auth) { return users.byEmail(auth.getName()).id(); }
   static ApiException conflict(String message) { return new ApiException(HttpStatus.CONFLICT,message); }
@@ -46,9 +53,22 @@ public class LearningLogController {
     // Serialize creation/append for this account, including simultaneous retry requests.
     s.db().queryForList("SELECT id FROM app_users WHERE id=? FOR UPDATE",uid);
     if(v.source().equals("classroom")!=(v.assignmentId()!=null)) throw ApiException.bad("Nguồn bài chơi không khớp bài giao.");
+    if((v.activity()!=null)!=(v.exerciseId()!=null) || (v.recommendationId()!=null && v.exerciseId()==null)) throw ApiException.bad("Thông tin bài luyện bổ trợ chưa đầy đủ.");
     String metadata=s.encode(new Header(v));
     var attempts=s.db().queryForList("SELECT metadata,status,event_count FROM learning_attempts WHERE user_id=? AND client_attempt_id=?",uid,aid);
     if(!attempts.isEmpty()&&!attempts.getFirst().get("metadata").equals(metadata)) throw conflict("Mã lượt chơi đã dùng với cấu hình khác.");
+    if(attempts.isEmpty() && v.exerciseId()!=null) {
+      var exercise=catalog.get(v.exerciseId());
+      if(!exercise.input().equals(v.input()) || !exercise.difficulty().equals(v.difficulty())) throw ApiException.bad("Cấu hình không khớp bài luyện.");
+      if(v.recommendationId()!=null) {
+        var records=s.db().queryForList("SELECT response_json,context_json FROM adaptive_recommendations WHERE id=? AND user_id=?",v.recommendationId().toString(),uid);
+        if(records.isEmpty()) throw ApiException.missing();
+        var response=(Map<?,?>)s.decode((String)records.getFirst().get("response_json"));
+        var context=(Map<?,?>)s.decode((String)records.getFirst().get("context_json"));
+        if(!"ready".equals(response.get("status")) || !v.exerciseId().equals(response.get("exerciseId"))
+            || !Objects.equals(Objects.toString(v.assignmentId(),null),context.get("assignmentId"))) throw ApiException.bad("Bài luyện không khớp đề xuất.");
+      }
+    }
     if(attempts.isEmpty()&&v.assignmentId()!=null) {
       var assignment=s.db().queryForList("SELECT a.lesson_ids FROM assignments a JOIN enrollments e ON e.class_id=a.class_id WHERE a.id=? AND e.user_id=? AND a.status='Active'",v.assignmentId().toString(),uid);
       if(assignment.isEmpty()||!((List<?>)s.decode((String)assignment.getFirst().get("lesson_ids"))).contains("bubble")) throw ApiException.missing();
@@ -124,6 +144,6 @@ public class LearningLogController {
         "knowledgeComponent",s.map("id",KC,"description","Thực hiện phép đổi chỗ kế tiếp hợp lệ trong Bubble Sort"),
         "support",s.map("automaticKeeps",true,"immediateFeedback",true,"fixedTailVisible",true,"hintsAvailable",false),
         "decisions",decisions,"correctDecisions",correct,"retryDecisions",decisions-observations.size(),"observations",observations,
-        "limitations",List.of("Only first responses per swap opportunity are model observations; retries stay in raw logs.","Automatic keeps, pass changes and completion are not learner answers.","This task does not measure an explicit keep/no-swap decision or unassisted mastery.","Semantic KC IDs require a verified mapping/training pipeline before SAKT inference."));
+        "limitations",List.of("Only first responses per swap opportunity are model observations; retries stay in raw logs.","Automatic keeps, pass changes and completion are not learner answers.","This task does not measure an explicit keep/no-swap decision or unassisted mastery.","Semantic KC IDs require a verified mapping/training pipeline before simpleKT inference."));
   }
 }

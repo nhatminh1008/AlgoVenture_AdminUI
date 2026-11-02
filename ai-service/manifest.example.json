@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "architecture": "simplekt",
+  "modelVersion": "replace-with-validated-game-artifact-version",
+  "modelFile": "model.onnx",
+  "modelSha256": "replace-with-sha256",
+  "predictionTarget": "first_swap_opportunity",
+  "encodingVersion": "bubble-board-v1",
+  "sequenceLength": 200,
+  "questionVocab": {},
+  "kcVocab": { "bubble.next_swap.v1": 0 },
+  "outputName": "probabilities",
+  "validation": { "status": "pending", "evidence": "" }
+}
