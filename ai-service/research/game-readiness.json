@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "encodingVersion": "bubble-board-v1",
+  "predictionTarget": "first_swap_opportunity",
+  "observations": 59,
+  "learners": 1,
+  "attempts": 8,
+  "questions": 52,
+  "correct": 52,
+  "activityCounts": {
+    "minigame": 38,
+    "supplementary": 21
+  },
+  "excludedQaObservations": 54,
+  "includesQa": false,
+  "trainingApproved": false,
+  "limitations": [
+    "Non-QA accounts are not verified study participants.",
+    "Split by learner before fitting vocabulary or training; never split random events.",
+    "Training readiness requires held-out learner validation and candidate vocabulary coverage.",
+    "The dataset does not establish unassisted mastery or learning gains."
+  ]
+}

@@ -1,0 +1,8 @@
+# Research/export environment only; do not add PyTorch to the serving runtime.
+# Versions used for the recorded Windows CPU audit (Python 3.11).
+torch==2.14.1
+numpy==2.4.6
+pandas==3.0.6
+scikit-learn==1.9.1
+onnx==1.23.2
+onnxruntime==1.31.1

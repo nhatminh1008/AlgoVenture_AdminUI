@@ -24,6 +24,29 @@ class SharedGameIntegrationTest {
   JsonNode getState(String token) throws Exception { return json.readTree(mvc.perform(get("/api/game/me/state").header("Authorization",token)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString()); }
   String body(Object v) throws Exception { return json.writeValueAsString(v); }
 
+  @Test void splitStackAndQueueLessonsPersistAndCountTowardInstructorAssignments() throws Exception {
+    String email="split.operations@example.test",token=bearer(register(email));
+    String uid=store.db().queryForObject("SELECT id FROM app_users WHERE email=?",String.class,email);
+    String teacher=store.db().queryForObject("SELECT id FROM app_users WHERE email='instructor@algoventure.edu'",String.class);
+    var classroom=store.saveClass(teacher,null,new PortalDtos.Classroom("Split operations","","data-structures","basic"));
+    String cid=(String)classroom.get("id");
+    store.db().update("INSERT INTO enrollments(id,class_id,user_id) VALUES (?,?,?)",store.id(),cid,uid);
+    var ids=List.of("stack-push","stack-pop","stack-peek","queue-enqueue","queue-dequeue","queue-peek");
+    var assignment=store.saveAssignment(teacher,null,new PortalDtos.Assignment(cid,"Operations","","Active",java.time.LocalDate.now().plusDays(7),ids));
+    for(String id:ids) {
+      assertEquals(1,store.db().queryForObject("SELECT COUNT(*) FROM algorithms WHERE id=? AND status='Published'",Integer.class,id));
+      var completion=Map.of("clientAttemptId",UUID.randomUUID(),"lessonId",id,"stage",1);
+      for(int retry=0;retry<2;retry++) mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(completion)))
+          .andExpect(status().isOk());
+      assertTrue(getState(token).path("completed").path(id).asBoolean(),id);
+    }
+    assertEquals(6,store.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=?",Integer.class,assignment.get("id"),uid));
+    assertEquals(6,store.db().queryForObject("SELECT COUNT(*) FROM practice_events WHERE user_id=?",Integer.class,uid));
+    assertEquals(2,store.db().queryForObject("SELECT COUNT(*) FROM algorithms WHERE id IN ('stack','queue')",Integer.class));
+    mvc.perform(get("/api/game/leaderboard").header("Authorization",token).param("period","all-time"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.player.score").value(600));
+  }
+
   @Test void publicRegistrationUsesSharedAccountsAndRevocableHashedSessions() throws Exception {
     var auth=register(" Learner.Shared@EXAMPLE.test "); String token=bearer(auth);
     assertTrue(auth.path("userId").asLong()>=1000000000L);

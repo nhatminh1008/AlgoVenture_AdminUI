@@ -1,4 +1,4 @@
-param([switch]$SkipBuild)
+param([switch]$SkipBuild,[switch]$ExperimentalAi)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $runtimeDir = Join-Path $projectRoot '.runtime'
@@ -88,6 +88,7 @@ $env:DB_URL = 'jdbc:postgresql://127.0.0.1:55432/algoventure'
 $env:DB_USER = 'algoventure'
 $env:DB_PASSWORD = $localSecrets.databasePassword
 $env:SEED_ENABLED = 'true'
+if ($ExperimentalAi) { $env:AI_SERVICE_URL = 'http://127.0.0.1:8000' }
 if (-not $env:SEED_ADMIN_PASSWORD) { $env:SEED_ADMIN_PASSWORD = 'Admin@12345' }
 if (-not $env:SEED_INSTRUCTOR_PASSWORD) { $env:SEED_INSTRUCTOR_PASSWORD = 'Instructor@12345' }
 Push-Location (Join-Path $projectRoot 'backend')

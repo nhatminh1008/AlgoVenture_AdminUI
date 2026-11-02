@@ -67,7 +67,8 @@ public class AdaptiveController {
     var response=s.map("id",id,"status",result.status(),"exerciseId",result.status().equals("ready")?result.exerciseId():null,
         "predictedCorrectness",result.status().equals("ready")?result.predictedCorrectness():null,
         "modelVersion",result.modelVersion(),"policyVersion",result.policyVersion(),"reasonCode",result.reasonCode(),
-        "predictionTarget","first_swap_opportunity","observationCount",history.size());
+        "predictionTarget","first_swap_opportunity","observationCount",history.size(),
+        "historyUsed",result.historyUsed(),"historySkipped",result.historySkipped());
     s.db().update("INSERT INTO adaptive_recommendations(id,user_id,client_request_id,context_json,response_json) VALUES (?,?,?,?,?)",id,uid,request.clientRequestId().toString(),context,s.encode(response));
     return response;
   }

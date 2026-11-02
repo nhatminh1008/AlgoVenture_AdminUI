@@ -69,6 +69,21 @@ class AdaptiveIntegrationTest {
     verifyNoInteractions(gateway);
   }
 
+  @Test void experimentalRecommendationKeepsHistoryDisclosureAndRetryProvenance() throws Exception {
+    String token=register("practice.experimental");
+    var trace=new BubbleTrace(List.of(3,1,2));
+    upload(token,UUID.randomUUID(),uploadValue(List.of(3,1,2),List.of(move(trace,1,1,0))));
+    when(gateway.recommend(any())).thenReturn(new AdaptiveGateway.Result("ready","bubble-short-v1",.68,
+        "bubble-experimental-test","target-correctness-v1:0.70","experimental_target_correctness",1,0));
+    UUID request=UUID.randomUUID();
+    var result=recommend(token,request);
+    assertEquals("experimental_target_correctness",result.path("reasonCode").asText());
+    assertEquals(1,result.path("historyUsed").asInt());
+    assertEquals(0,result.path("historySkipped").asInt());
+    assertEquals(result,recommend(token,request));
+    verify(gateway,times(1)).recommend(any());
+  }
+
   @Test void recommendationUsesOnlyFirstResponsesAndSupplementaryPracticeKeepsItsProvenance() throws Exception {
     String token=register("practice.full"); UUID original=UUID.randomUUID();
     var trace=new BubbleTrace(List.of(3,1,2));

@@ -31,6 +31,12 @@ export const topics = [
     lessons: [
       ["stack", "Stack"],
       ["queue", "Queue"],
+      ["stack-push", "Stack · Push"],
+      ["stack-pop", "Stack · Pop"],
+      ["stack-peek", "Stack · Peek"],
+      ["queue-enqueue", "Queue · Enqueue"],
+      ["queue-dequeue", "Queue · Dequeue"],
+      ["queue-peek", "Queue · Peek"],
       ["linked-list", "Linked List Construction"],
       ["linked-traversal", "Linked List Traversal"],
       ["linked-search", "Linked List Search"],

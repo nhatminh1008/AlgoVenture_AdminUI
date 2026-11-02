@@ -6,5 +6,6 @@ backend/*.log
 ai-service/.venv/
 ai-service/__pycache__/
 ai-service/tests/__pycache__/
+ai-service/research/__pycache__/
 ai-service/.pytest_cache/
 ai-service/artifacts/

@@ -1,0 +1,83 @@
+{
+  "status": "passed",
+  "scope": "CSEDM research reproduction; NOT Game deployment",
+  "archiveSha256": "16eaa53c856ca552f196b4216964ebbff64aa02c54ab2da8b725769cb7f0a3f3",
+  "probabilityTolerance": 2e-05,
+  "torchVersion": "2.14.1+cpu",
+  "onnxVersion": "1.23.2",
+  "onnxruntimeVersion": "1.31.1",
+  "folds": [
+    {
+      "fold": 0,
+      "status": "passed",
+      "checkpointSha256": "573b4f9c7a9a7ada2c0927c4a7d19d5c25ad31fcb2f900668afa38b69c8073a9",
+      "onnxSha256": "de3eafcaf00deff85d9321f475580d4e2fc122b679d77f986b2c3775f0f738c4",
+      "testPredictions": 4683,
+      "referenceProbabilityMaxError": 7.152557373046875e-07,
+      "portableAndOnnxMaxError": 1.1622905731201172e-06,
+      "testAuc": 0.8070886344526258,
+      "testAccuracy": 0.7606235319239804,
+      "testBrier": 0.16663748911879742,
+      "variableShapeCases": 5,
+      "currentResponseInvariant": true
+    },
+    {
+      "fold": 1,
+      "status": "passed",
+      "checkpointSha256": "6b73f1c0583d29bd8c0a087e3d7943a008849ef87ba5c7c9d16d571ef8082ef9",
+      "onnxSha256": "c755a2a2b8b74e3f3e37594a14bee6fc86e7da1ffb6c2c0e2c19c00c0b6acfa7",
+      "testPredictions": 4683,
+      "referenceProbabilityMaxError": 5.662441253662109e-07,
+      "portableAndOnnxMaxError": 8.940696716308594e-07,
+      "testAuc": 0.8060929801262053,
+      "testAccuracy": 0.7601964552637198,
+      "testBrier": 0.1664701660501564,
+      "variableShapeCases": 5,
+      "currentResponseInvariant": true
+    },
+    {
+      "fold": 2,
+      "status": "passed",
+      "checkpointSha256": "33c5bcc1f3bc1ee1370345271e6b1977bae1507f62ae373295e62f32b10f4673",
+      "onnxSha256": "8af29ddcf6843a2e2511642fad3de53fb4f5983b11ec26914ae56e6100aaa0b8",
+      "testPredictions": 4683,
+      "referenceProbabilityMaxError": 6.854534149169922e-07,
+      "portableAndOnnxMaxError": 9.834766387939453e-07,
+      "testAuc": 0.8053450606272543,
+      "testAccuracy": 0.7591287636130686,
+      "testBrier": 0.1672339740144039,
+      "variableShapeCases": 5,
+      "currentResponseInvariant": true
+    },
+    {
+      "fold": 3,
+      "status": "passed",
+      "checkpointSha256": "3be560a412357074889289e8282139efb1efec4b3a07757d99e43f8fc9700979",
+      "onnxSha256": "b7f8ddc6648e3fd2796ceb3950384fe810348b2f3ef1e3ef665bd7d84104b416",
+      "testPredictions": 4683,
+      "referenceProbabilityMaxError": 4.470348358154297e-07,
+      "portableAndOnnxMaxError": 7.152557373046875e-07,
+      "testAuc": 0.805852514282571,
+      "testAccuracy": 0.7655349135169763,
+      "testBrier": 0.165396450402484,
+      "variableShapeCases": 5,
+      "currentResponseInvariant": true
+    },
+    {
+      "fold": 4,
+      "status": "passed",
+      "checkpointSha256": "4e861d9d41fa303d0c9de12a372d94bbea481de1d68d196136f85e45d318dfde",
+      "onnxSha256": "571072be061e8e00145f602a469d89a5d1a75489bf3c03a25af16c54d7ace3a2",
+      "testPredictions": 4683,
+      "referenceProbabilityMaxError": 4.470348358154297e-07,
+      "portableAndOnnxMaxError": 7.748603820800781e-07,
+      "testAuc": 0.8062346270814833,
+      "testAccuracy": 0.7619047619047619,
+      "testBrier": 0.16601785406197606,
+      "variableShapeCases": 5,
+      "currentResponseInvariant": true
+    }
+  ],
+  "gameReady": false,
+  "gameBlocker": "Bubble item/KC vocabulary and prediction target are absent from CSEDM training"
+}

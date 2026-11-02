@@ -38,7 +38,8 @@ class Recommend(StrictModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.tutor = Tutor(os.environ.get("AI_MODEL_MANIFEST"))
+    app.state.tutor = Tutor(os.environ.get("AI_MODEL_MANIFEST"),
+                            allow_experimental=os.environ.get("AI_ALLOW_EXPERIMENTAL", "").lower() == "true")
     yield
 
 
@@ -48,7 +49,8 @@ app = FastAPI(title="AlgoVenture Adaptive Learning", lifespan=lifespan)
 @app.get("/health")
 def health():
     tutor = app.state.tutor
-    return {"status": "ok", "modelStatus": tutor.reason}
+    return {"status": "ok", "modelStatus": tutor.reason,
+            "experimental": tutor.experimental}
 
 
 @app.post("/v1/recommendations")

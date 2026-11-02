@@ -13,7 +13,11 @@ public class AdaptiveGateway {
   public record Candidate(String id,String questionId,String kcId) {}
   public record Request(int schemaVersion,List<Observation> history,List<Candidate> candidates) {}
   public record Result(String status,String exerciseId,Double predictedCorrectness,String modelVersion,
-      String policyVersion,String reasonCode) {}
+      String policyVersion,String reasonCode,Integer historyUsed,Integer historySkipped) {
+    public Result(String status,String exerciseId,Double predictedCorrectness,String modelVersion,String policyVersion,String reasonCode) {
+      this(status,exerciseId,predictedCorrectness,modelVersion,policyVersion,reasonCode,null,null);
+    }
+  }
   final String url; final ObjectMapper json;
   public AdaptiveGateway(@Value("${app.ai.url:}") String url,ObjectMapper json) { this.url=url; this.json=json; }
   public Result recommend(Request input) {
@@ -36,6 +40,10 @@ public class AdaptiveGateway {
           || !Double.isFinite(result.predictedCorrectness()) || result.predictedCorrectness()<0 || result.predictedCorrectness()>1
           || result.modelVersion()==null || result.modelVersion().isBlank()
           || !"target-correctness-v1:0.70".equals(result.policyVersion())
+          || ("experimental_target_correctness".equals(result.reasonCode()) &&
+              (result.historyUsed()==null || result.historyUsed()<1 || result.historyUsed()>input.history().size()
+               || result.historySkipped()==null || result.historySkipped()<0 || result.historySkipped()>input.history().size()
+               || result.historyUsed()+result.historySkipped()>input.history().size()))
           || input.candidates().stream().noneMatch(c->c.id().equals(result.exerciseId()))))
         return unavailable("temporarily_unavailable","invalid_model_response");
       return result;

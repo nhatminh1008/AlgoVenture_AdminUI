@@ -24,10 +24,12 @@ def choose_target_correctness(scores: dict[str, float], target: float = 0.70) ->
 
 
 class Tutor:
-    def __init__(self, manifest_path: str | None = None):
+    def __init__(self, manifest_path: str | None = None, *, allow_experimental: bool = False):
         self.session = None
         self.manifest = None
         self.reason = "model_not_configured"
+        self.experimental = False
+        self.allow_experimental = allow_experimental
         if manifest_path:
             try:
                 self._load(Path(manifest_path))
@@ -42,10 +44,22 @@ class Tutor:
         if (manifest["schemaVersion"] != 1 or manifest["architecture"] != "simplekt"
                 or manifest["predictionTarget"] != TARGET
                 or manifest["encodingVersion"] != "bubble-board-v1"
-                or not manifest["modelVersion"]
-                or manifest["validation"]["status"] != "passed"
-                or not manifest["validation"]["evidence"]):
+                or not manifest["modelVersion"]):
             raise ValueError("Unverified or incompatible artifact")
+        mode = manifest.get("deploymentMode", "validated")
+        experimental = mode == "experimental"
+        if experimental:
+            if not self.allow_experimental or manifest["validation"]["status"] != "deferred":
+                raise ValueError("Experimental mode requires explicit opt-in")
+            validation = manifest["technicalValidation"]
+            evidence = path.parent / validation["evidence"]
+            if (validation["status"] != "passed" or evidence.resolve().parent != path.parent.resolve()
+                    or hashlib.sha256(evidence.read_bytes()).hexdigest() != validation["evidenceSha256"]
+                    or json.loads(evidence.read_text(encoding="utf-8"))["status"] != "passed"):
+                raise ValueError("Missing technical validation")
+        elif (mode != "validated" or manifest["validation"]["status"] != "passed"
+                or not manifest["validation"]["evidence"]):
+            raise ValueError("Unverified artifact")
         sequence_length = manifest["sequenceLength"]
         if type(sequence_length) is not int or not 2 <= sequence_length <= 512:
             raise ValueError("Invalid sequence length")
@@ -67,7 +81,8 @@ class Tutor:
         if manifest["outputName"] not in {item.name for item in session.get_outputs()}:
             raise ValueError("Missing ONNX probability output")
         self.manifest, self.session = manifest, session
-        self.reason = "ready"
+        self.experimental = experimental
+        self.reason = "experimental_ready" if experimental else "ready"
 
     def recommend(self, history: list[dict], candidates: list[dict]) -> dict:
         if not history:
@@ -77,8 +92,16 @@ class Tutor:
         if not candidates:
             return unavailable("model_not_ready", "no_eligible_exercises")
         manifest = self.manifest
-        history = history[-(manifest["sequenceLength"] - 1):]
         qv, cv = manifest["questionVocab"], manifest["kcVocab"]
+        skipped = 0
+        if self.experimental:
+            # Dev-only sparse history: disclose dropped boards; never invent an OOV embedding.
+            known = [r for r in history if r["questionId"] in qv and r["kcId"] in cv]
+            skipped = len(history) - len(known)
+            history = known
+            if not history:
+                return unavailable("insufficient_history", "no_known_history")
+        history = history[-(manifest["sequenceLength"] - 1):]
         if any(row["questionId"] not in qv or row["kcId"] not in cv for row in history + candidates):
             return unavailable("model_not_ready", "unmapped_game_items")
         try:
@@ -100,8 +123,11 @@ class Tutor:
                 raise ValueError("Expected simpleKT full sequence probabilities")
             scores = {row["id"]: float(output[i, -1]) for i, row in enumerate(candidates)}
             selected = choose_target_correctness(scores)
-            return dict(status="ready", exerciseId=selected, predictedCorrectness=scores[selected],
+            result = dict(status="ready", exerciseId=selected, predictedCorrectness=scores[selected],
                         modelVersion=manifest["modelVersion"], policyVersion=POLICY,
-                        reasonCode="target_correctness")
+                        reasonCode="experimental_target_correctness" if self.experimental else "target_correctness")
+            if self.experimental:
+                result.update(historyUsed=len(history), historySkipped=skipped)
+            return result
         except Exception:
             return unavailable("temporarily_unavailable", "inference_failed")

@@ -8,9 +8,11 @@ Game tiếp tục xác thực qua Bearer session của backend.
 - Có API FastAPI, loader ONNX, kiểm tra manifest/hash/vocab và policy chọn bài.
 - Có ngân hàng ba bài Bubble, API lưu đề xuất, giao diện Game và log bài bổ trợ.
 - Instructor xem evidence thuộc lớp, tách minigame và bài bổ trợ.
-- **Chưa có artifact simpleKT đã kiểm chứng cho kỹ năng Bubble.** Không tự gắn
+- **Chưa có artifact simpleKT đã đánh giá chất lượng cho kỹ năng Bubble.** Không tự gắn
   các số KC của CSEDM/ASSIST vào `bubble.next_swap.v1`. Dịch vụ trả
   `model_not_ready` và không tạo xác suất hoặc bài đề xuất giả.
+- Có **chế độ dev thử nghiệm** chạy checkpoint Bubble qua ONNX. Chỉ bật bằng
+  opt-in riêng, hiển thị nhãn AI thử nghiệm trong Game; đánh giá chất lượng vẫn hoãn.
 - Các bài hiện tại là biến thể minigame Bubble dùng cùng engine/recorder. Chưa có
   dạng bài bổ trợ viết code, câu hỏi độ phức tạp hoặc sinh nội dung tự do.
 
@@ -37,6 +39,39 @@ Internet; endpoint này dành cho backend tin cậy và không xử lý tài kho
 Swagger nội bộ của AI ở `/docs`, health ở `/health`.
 
 ## Nạp artifact
+
+### Chế độ dev thử nghiệm đã nối Game
+
+Từ thư mục gốc AdminUI, chạy hai terminal:
+
+```powershell
+# Terminal 1: AI http://127.0.0.1:8000
+.\scripts\start-ai.ps1 -Experimental
+# Terminal 2: backend http://127.0.0.1:8081
+.\scripts\start-backend.ps1 -SkipBuild -ExperimentalAi
+```
+
+Backend jar cần build lại sau khi sửa Java (`backend/mvnw.cmd package`, JDK 21).
+Trên Windows, dừng backend cũ trước bước package để tránh jar bị khóa.
+Game vẫn tại http://127.0.0.1:5173; vào **Bài luyện bổ trợ → Xem đề xuất cho tôi**.
+Tài khoản chưa có history phù hợp cần luyện một bài trong thư viện trước.
+
+Artifact dev nằm tại `.runtime/ai-research/game-artifact/manifest.json`, không
+commit trọng số. Nếu clone mới/chưa có artifact, làm theo lệnh export ở
+[research/README.md](research/README.md). Health AI trả `experimental_ready`.
+
+Manifest dev dùng `deploymentMode: experimental`, `validation.status: deferred`,
+kèm báo cáo kiểm tra kỹ thuật và hash. Loader chỉ nhận khi
+`AI_ALLOW_EXPERIMENTAL=true` (script đặt khi có `-Experimental`). Không gán
+`validation.status=passed` cho checkpoint này. Bỏ opt-in thì artifact bị từ chối.
+
+Dev chỉ dùng những board đã có trong vocab để dựng lịch sử rút gọn; số log bỏ qua
+được gửi qua backend và hiển thị cạnh bài đề xuất (`historyUsed`, `historySkipped`).
+Không có history phù hợp trả `no_known_history`; candidate chưa biết vẫn bị từ chối.
+Chế độ đã đánh giá giữ nguyên hành vi từ chối history ngoài vocab.
+Checkpoint hiện cố định: log mới đổi đầu vào đề xuất, không tự huấn luyện lại trọng số.
+
+### Artifact đã đánh giá
 
 Đặt `AI_MODEL_MANIFEST` thành đường dẫn tuyệt đối tới manifest trước khi chạy AI.
 Ví dụ cấu trúc ở `manifest.example.json`, với trạng thái validation chưa đạt để
@@ -98,3 +133,10 @@ shape và trạng thái chưa sẵn sàng; chưa có parity test cho checkpoint 
 
 Tài liệu API thư viện: [FastAPI](https://fastapi.tiangolo.com/tutorial/body-nested-models/)
 và [ONNX Runtime](https://onnxruntime.ai/docs/api/python/api_summary.html).
+
+## Checkpoint research và dữ liệu huấn luyện Game
+
+Đã tái lập cả 5 checkpoint simpleKT CSEDM và xuất ONNX, đối chiếu từng xác suất
+trên 4.683 test predictions/fold. Công cụ, kết quả kiểm chứng và bộ xuất log
+Game nằm tại [research/README.md](research/README.md). Artifact CSEDM chưa
+tương thích vocab/target Game, nên không được dùng làm manifest phục vụ Bubble.
