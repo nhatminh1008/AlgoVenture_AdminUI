@@ -31,7 +31,7 @@ public class GameController {
       if(lesson.startsWith("linked-")) linked.computeIfAbsent(lesson,k->new ArrayList<>()).add(stage);
       if(!lesson.equals("linked-list")) completed.put(lesson,true);
     }
-    if(linked.getOrDefault("linked-list",List.of()).containsAll(List.of(1,2,3))) completed.put("linked-list",true);
+    if(linked.getOrDefault("linked-list",List.of()).containsAll(List.of(1,2))) completed.put("linked-list",true);
     return s.map("profile",profile,"completed",completed,"linkedLevels",linked);
   }
   record Profile(@NotBlank @Size(max=24) String name, @NotNull @Pattern(regexp="fox|buta") String avatar,
@@ -51,6 +51,7 @@ public class GameController {
     }
     var lessons=s.db().queryForList("SELECT config FROM algorithms WHERE id=? AND status='Published'",v.lessonId());
     if(lessons.isEmpty()) throw ApiException.missing();
+    if(v.lessonId().equals("linked-list") && v.stage()>2) throw ApiException.bad("Chặng học không hợp lệ.");
     if(!v.lessonId().startsWith("linked-") && v.stage()!=1) throw ApiException.bad("Chặng học không hợp lệ.");
     @SuppressWarnings("unchecked") var configured=(Map<String,Object>)s.decode((String)lessons.getFirst().get("config"));
     Set<String> prerequisites=new LinkedHashSet<>(prerequisites(v.lessonId()));
@@ -86,7 +87,7 @@ public class GameController {
     Instant since=period.equals("weekly") ? LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).with(java.time.temporal.TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant() : Instant.EPOCH;
     var rows=s.db().query("SELECT p.*,u.id AS account_id FROM learner_profiles p JOIN app_users u ON u.id=p.user_id WHERE u.role='learner' AND u.status='Active'",(r,n)->s.map("id",r.getString("account_id"),"name",r.getString("display_name"),"avatar",r.getString("avatar"),"avatarImage",r.getString("avatar_image"),"color","#a6e6d1","climb",0,"isPlayer",uid.equals(r.getString("account_id"))));
     for(var row:rows) {
-      var first=s.db().query("SELECT lesson_id,CASE WHEN lesson_id='linked-list' THEN MAX(completed_at) ELSE MIN(completed_at) END AS first_at FROM lesson_completions WHERE user_id=? GROUP BY lesson_id HAVING lesson_id<>'linked-list' OR COUNT(DISTINCT stage)=3",(r,n)->r.getObject("first_at",OffsetDateTime.class).toInstant(),row.get("id"));
+      var first=s.db().query("SELECT lesson_id,CASE WHEN lesson_id='linked-list' THEN MAX(CASE WHEN stage IN (1,2) THEN completed_at END) ELSE MIN(completed_at) END AS first_at FROM lesson_completions WHERE user_id=? GROUP BY lesson_id HAVING lesson_id<>'linked-list' OR COUNT(DISTINCT CASE WHEN stage IN (1,2) THEN stage END)=2",(r,n)->r.getObject("first_at",OffsetDateTime.class).toInstant(),row.get("id"));
       row.put("score",first.stream().filter(t->!t.isBefore(since)).count()*100);
     }
     rows.sort(Comparator.<Map<String,Object>>comparingLong(r->((Number)r.get("score")).longValue()).reversed().thenComparing(r->(String)r.get("id")));
