@@ -12,27 +12,25 @@ export default function Dashboard() {
       <ApiFeedback state={state} />
       {state.data && (
         <>
-          <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <dl className="admin-summary">
             {Object.entries({
               "Tài khoản": state.data.counts.users,
               "Lớp học": state.data.counts.classrooms,
               "Lượt đăng ký lớp": state.data.counts.enrollments,
+            }).map(([label, value]) => (
+              <div key={label}>
+                <dt>{label}</dt><dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <section className="admin-resource-section">
+            <h2>Nội dung học tập</h2>
+            <dl className="admin-resources">{Object.entries({
               "Bộ thử thách": state.data.counts.assignments,
               "Bộ trắc nghiệm": state.data.counts.quizzes,
               "Tài liệu": state.data.counts.materials,
               "Bài học": state.data.counts.algorithms,
-            }).map(([label, value]) => (
-              <div key={label} className="panel p-6">
-                <p className="text-sm text-slate-500">{label}</p>
-                <p className="mt-3 text-3xl font-bold">{value}</p>
-              </div>
-            ))}
-          </div>
-          <section className="panel p-6">
-            <h2 className="mb-3 font-bold">Kết nối dữ liệu</h2>
-            <p className="text-sm leading-6 text-slate-500">
-              Số liệu được lấy từ database. Kết quả quiz và tiến độ game được lưu chung trên server. Mức thành thạo từ mô hình Knowledge Tracing chưa có dữ liệu.
-            </p>
+            }).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
           </section>
         </>
       )}

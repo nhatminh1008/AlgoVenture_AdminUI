@@ -57,7 +57,7 @@ export default function ClassForm() {
   return (
     <div className="mx-auto max-w-5xl">
       <Link
-        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-emerald-700"
+        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-portal-purple-strong"
         to={existing ? `/instructor/classes/${classId}` : "/instructor/classes"}
       >
         <ArrowLeft size={16} />
@@ -66,7 +66,7 @@ export default function ClassForm() {
       <PageHeader
         title={classId ? "Chỉnh sửa lớp học" : "Tạo lớp học mới"}
       />
-      <div className="grid items-start gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <div className="class-form-layout">
         <form onSubmit={submit} className="panel space-y-6 p-6 sm:p-8">
           <div>
             <h2 className="text-lg font-bold text-slate-900">
@@ -123,7 +123,7 @@ export default function ClassForm() {
               {levels.map((item) => (
                 <label
                   key={item.id}
-                  className={`cursor-pointer rounded-xl border p-4 ${values.level === item.id ? "border-emerald-500 bg-emerald-50/70" : "border-slate-200"}`}
+                  className={`cursor-pointer rounded-xl border p-4 ${values.level === item.id ? "border-portal-purple bg-portal-lavender/70" : "border-slate-200"}`}
                 >
                   <span className="mb-2 flex items-center gap-2">
                     <input
@@ -132,7 +132,7 @@ export default function ClassForm() {
                       value={item.id}
                       checked={values.level === item.id}
                       onChange={() => field("level", item.id)}
-                      className="accent-emerald-600"
+                      className="accent-portal-purple"
                     />
                     <strong className="text-sm text-slate-800">
                       {item.name}
@@ -186,7 +186,7 @@ export default function ClassForm() {
           </div>
         </form>
         <aside className="panel p-6">
-          <span className="mb-4 inline-flex rounded-xl bg-emerald-50 p-3 text-emerald-600">
+          <span className="mb-4 inline-flex rounded-xl bg-portal-lavender p-3 text-portal-purple-strong">
             <BookOpen size={24} />
           </span>
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -195,7 +195,7 @@ export default function ClassForm() {
           <h2 className="mt-2 text-lg font-bold text-slate-900">
             {topic?.name ?? "Chọn chủ đề để xem bài học"}
           </h2>
-          <span className="mt-4 inline-block rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+          <span className="mt-4 inline-block rounded-full bg-portal-lavender px-3 py-1 text-xs font-semibold text-portal-purple-strong">
             {getLevel(values.level).name}
           </span>
           {topic && (
@@ -209,7 +209,7 @@ export default function ClassForm() {
                     key={id}
                     className="flex items-center gap-2 text-sm text-slate-600"
                   >
-                    <Check size={14} className="shrink-0 text-emerald-500" />
+                    <Check size={14} className="shrink-0 text-portal-purple-strong" />
                     {name}
                   </li>
                 ))}

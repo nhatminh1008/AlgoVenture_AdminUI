@@ -82,14 +82,14 @@ export default function Progress() {
                     </td>
                     <td>
                       <Link
-                        className="text-emerald-700"
+                        className="text-portal-purple-strong"
                         to={`/instructor/classes/${row.classId}`}
                       >
                         {classroom.name}
                       </Link>
                     </td>
                     <td>{getTopic(classroom.topicId).name}</td>
-                    <td><strong className="text-emerald-800">{row.score ?? "—"}</strong></td>
+                    <td><strong className="text-portal-ink">{row.score ?? "—"}</strong></td>
                     <td><ProgressMeter completed={row.completedLessons} total={row.assignedLessons} percent={row.progressPercent} /></td>
                   </tr>
                 );

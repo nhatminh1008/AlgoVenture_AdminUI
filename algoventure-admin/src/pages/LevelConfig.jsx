@@ -74,7 +74,7 @@ function Editor({ lesson, lessons, onSaved }) {
         </p>
       )}
       {message && (
-        <p role="status" className="text-emerald-700">
+        <p role="status" className="text-portal-purple-strong">
           {message}
         </p>
       )}

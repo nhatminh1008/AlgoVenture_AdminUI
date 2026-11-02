@@ -39,7 +39,7 @@ export default function Analytics() {
         <MetricCard label="Bộ bài đang giao" value={scope.sets.filter((item) => item.status === "Active").length + scope.quizzes.filter((item) => item.status === "Published").length} icon={<Layers size={22} />} />
         <MetricCard label="Điểm quiz trung bình / 100" value={average ?? "—"} icon={<ChartNoAxesColumn size={22} />} />
       </div>
-      <div className="grid items-start gap-6 lg:grid-cols-2">
+      <div className="analytics-layout">
         <section className="panel min-w-0 p-6">
           <h2 className="instructor-chart-title"><GraduationCap size={19} />Sinh viên theo lớp</h2>
           {scope.rows.length ? (
@@ -50,25 +50,25 @@ export default function Analytics() {
                   layout="vertical"
                   margin={{ left: 0, right: 20, bottom: 5 }}
                 >
-                  <CartesianGrid stroke="#e5ece3" strokeDasharray="3 5" horizontal={false} />
+                  <CartesianGrid stroke="var(--portal-line)" strokeDasharray="3 5" horizontal={false} />
                   <YAxis
                     type="category"
                     dataKey="name"
                     tickFormatter={(name) =>
                       name.length > 15 ? `${name.slice(0, 13)}…` : name
                     }
-                    tick={{ fontSize: 10 }}
+                    tick={{ fontSize: 13 }}
                     interval={0}
                     width={110}
                     axisLine={false}
                     tickLine={false}
                   />
-                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <Tooltip cursor={{ fill: "#f0f5ed" }} contentStyle={{ borderRadius: 12, borderColor: "#e1e9df", fontSize: 12 }} />
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 13 }} axisLine={false} tickLine={false} />
+                  <Tooltip cursor={{ fill: "var(--portal-lavender)" }} contentStyle={{ borderRadius: 12, borderColor: "var(--portal-line)", fontSize: 14 }} />
                   <Bar
                     dataKey="students"
                     name="Sinh viên"
-                    fill="#388b64"
+                    fill="#242424"
                     radius={[0, 5, 5, 0]}
                     maxBarSize={18}
                     isAnimationActive={false}
@@ -84,7 +84,7 @@ export default function Analytics() {
         </section>
         <section className="panel p-6">
           <h2 className="instructor-chart-title"><ChartNoAxesColumn size={19} />Phân bố điểm quiz</h2>
-          {graded.length ? <div className="mt-5 h-64"><ResponsiveContainer width="100%" height="100%"><BarChart data={distribution} margin={{ left: 0, right: 12, bottom: 15 }}><CartesianGrid stroke="#e5ece3" strokeDasharray="3 5" vertical={false} /><XAxis dataKey="name" tick={{ fontSize: 11 }} /><YAxis allowDecimals={false} width={25} /><Tooltip cursor={{ fill: "#f0f2fa" }} contentStyle={{ borderRadius: 12, borderColor: "#e1e9df", fontSize: 12 }} /><Bar dataKey="students" name="Sinh viên" fill="#8798c8" radius={[7, 7, 0, 0]} maxBarSize={55} isAnimationActive={false} /></BarChart></ResponsiveContainer></div> : <div className="instructor-empty"><ChartNoAxesColumn /><p>Chưa có điểm quiz</p></div>}
+          {graded.length ? <div className="mt-5 h-64"><ResponsiveContainer width="100%" height="100%"><BarChart data={distribution} margin={{ left: 0, right: 12, bottom: 15 }}><CartesianGrid stroke="var(--portal-line)" strokeDasharray="3 5" vertical={false} /><XAxis dataKey="name" tick={{ fontSize: 14 }} /><YAxis allowDecimals={false} width={25} /><Tooltip cursor={{ fill: "var(--portal-yellow-soft)" }} contentStyle={{ borderRadius: 12, borderColor: "var(--portal-line)", fontSize: 14 }} /><Bar dataKey="students" name="Sinh viên" fill="var(--portal-purple)" radius={[7, 7, 0, 0]} maxBarSize={55} isAnimationActive={false} /></BarChart></ResponsiveContainer></div> : <div className="instructor-empty"><ChartNoAxesColumn /><p>Chưa có điểm quiz</p></div>}
         </section>
       </div>
     </div>

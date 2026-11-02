@@ -138,7 +138,7 @@ function ChallengeEditor({
           Bạn cần{" "}
           <Link
             to="/instructor/classes/new"
-            className="font-semibold text-emerald-700"
+            className="font-semibold text-portal-purple-strong"
           >
             tạo lớp học
           </Link>{" "}
@@ -154,7 +154,7 @@ function ChallengeEditor({
           khác.
         </p>
       )}
-      <form onSubmit={save} className="grid items-start gap-6 lg:grid-cols-2">
+      <form onSubmit={save} className="challenge-editor-layout">
         <section className="panel space-y-5 p-6">
           <h2 className="font-bold text-slate-900">Thông tin bộ bài</h2>
           <label className="block">
@@ -180,7 +180,7 @@ function ChallengeEditor({
             </select>
           </label>
           {classroom && (
-            <p className="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800">
+            <p className="rounded-lg bg-portal-lavender p-3 text-xs text-portal-ink">
               {topic.name} · {getLevel(classroom.level).name}
             </p>
           )}
@@ -234,7 +234,7 @@ function ChallengeEditor({
           {message && (
             <p
               role="status"
-              className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800"
+              className="rounded-lg bg-portal-lavender p-3 text-sm text-portal-ink"
             >
               {message}
             </p>
@@ -254,15 +254,15 @@ function ChallengeEditor({
               {form.lessonIds.length} đã chọn
             </span>
           </h2>
-          {!readOnly && topic && <button disabled={busy} type="button" className="mb-3 text-sm font-semibold text-emerald-700" onClick={() => update("lessonIds", form.lessonIds.length === topic.lessons.length ? [] : topic.lessons.map(([id]) => id))}>{form.lessonIds.length === topic.lessons.length ? "Bỏ chọn tất cả" : "Chọn tất cả bài"}</button>}
+          {!readOnly && topic && <button disabled={busy} type="button" className="mb-3 text-sm font-semibold text-portal-purple-strong" onClick={() => update("lessonIds", form.lessonIds.length === topic.lessons.length ? [] : topic.lessons.map(([id]) => id))}>{form.lessonIds.length === topic.lessons.length ? "Bỏ chọn tất cả" : "Chọn tất cả bài"}</button>}
           <fieldset disabled={readOnly || busy} className="space-y-2">
             {topic?.lessons.map(([id, name]) => (
               <label
                 key={id}
-                className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 text-sm ${form.lessonIds.includes(id) ? "border-emerald-300 bg-emerald-50/60 text-emerald-900" : "border-slate-100 text-slate-600"}`}
+                className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 text-sm ${form.lessonIds.includes(id) ? "border-portal-line-strong bg-portal-lavender/60 text-portal-ink" : "border-slate-100 text-slate-600"}`}
               >
                 <input
-                  className="h-4 w-4 accent-emerald-600"
+                  className="h-4 w-4 accent-portal-purple"
                   type="checkbox"
                   checked={form.lessonIds.includes(id)}
                   onChange={() =>
@@ -328,7 +328,7 @@ function ChallengeEditor({
                   <td><span className={`instructor-badge ${item.status === "Draft" ? "instructor-badge-draft" : item.status === "Closed" ? "instructor-badge-closed" : ""}`}>{statusLabels[item.status]}</span></td>
                   <td>
                     <button
-                      className="font-semibold text-emerald-700"
+                      className="font-semibold text-portal-purple-strong"
                       onClick={() =>
                         setParams({ classId, assignmentId: item.id })
                       }

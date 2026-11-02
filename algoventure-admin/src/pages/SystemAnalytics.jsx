@@ -23,14 +23,13 @@ export default function SystemAnalytics() {
       <ApiFeedback state={state} />
       {state.data && (
         <>
-          <div className="mb-6 grid gap-4 sm:grid-cols-3">
+          <dl className="admin-summary">
             {state.data.roles.map((role) => (
-              <div className="panel p-6" key={role.name}>
-                <p className="text-sm text-slate-500">{role.name}</p>
-                <p className="mt-3 text-3xl font-bold">{role.value}</p>
+              <div key={role.name}>
+                <dt>{role.name}</dt><dd>{role.value}</dd>
               </div>
             ))}
-          </div>
+          </dl>
           <section className="panel overflow-hidden">
             <h2 className="p-6 font-bold">Hoạt động quản trị gần đây</h2>
             <div className="overflow-x-auto">

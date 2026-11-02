@@ -55,12 +55,12 @@ export default function ExportResults() {
             {["CSV", "JSON"].map((value) => (
               <label
                 key={value}
-                className={`instructor-export-format flex cursor-pointer items-center gap-2 rounded-lg border px-5 py-3 text-sm ${format === value ? "border-emerald-400 bg-emerald-50 text-emerald-800" : "border-slate-200"}`}
+                className={`instructor-export-format flex cursor-pointer items-center gap-2 rounded-lg border px-5 py-3 text-sm ${format === value ? "border-portal-purple bg-portal-lavender text-portal-ink" : "border-slate-200"}`}
               >
                 <input
                   type="radio"
                   name="format"
-                  className="accent-emerald-600"
+                  className="accent-portal-purple"
                   checked={format === value}
                   onChange={() => {
                     setFormat(value);
@@ -82,7 +82,7 @@ export default function ExportResults() {
           Tải báo cáo {format}
         </button>
         {message && (
-          <p role="status" className="text-sm text-emerald-700">
+          <p role="status" className="text-sm text-portal-purple-strong">
             {message}
           </p>
         )}

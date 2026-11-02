@@ -25,7 +25,7 @@ export default function QuizPreview({ quiz }) {
         >
           <div>
             <p className="mb-2 text-sm text-slate-500">Kết quả làm thử</p>
-            <p className="text-2xl font-bold text-emerald-700">
+            <p className="text-2xl font-bold text-portal-purple-strong">
               {result.score}/{result.maxScore} điểm
             </p>
             <p className="mt-1 text-xs text-slate-500">
@@ -70,11 +70,11 @@ export default function QuizPreview({ quiz }) {
               {question.options.map((option, optionIndex) => (
                 <label
                   key={option.id}
-                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-sm ${result && option.id === question.correctOptionId ? "border-emerald-300 bg-emerald-50 text-emerald-900" : result && answers[question.id] === option.id ? "border-red-200 bg-red-50 text-red-800" : "border-slate-200 text-slate-600"}`}
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-sm ${result && option.id === question.correctOptionId ? "border-portal-line-strong bg-portal-lavender text-portal-ink" : result && answers[question.id] === option.id ? "border-red-200 bg-red-50 text-red-800" : "border-slate-200 text-slate-600"}`}
                 >
                   <input
                     required
-                    className="mt-1 accent-emerald-600"
+                    className="mt-1 accent-portal-purple"
                     type="radio"
                     name={`answer-${question.id}`}
                     checked={answers[question.id] === option.id}
