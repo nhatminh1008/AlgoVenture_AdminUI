@@ -49,8 +49,15 @@ if (-not (Test-Path (Join-Path $databaseDir 'PG_VERSION'))) {
 }
 & (Join-Path $postgresBin 'pg_ctl.exe') status -D $databaseDir *> $null
 if ($LASTEXITCODE -ne 0) {
-    & (Join-Path $postgresBin 'pg_ctl.exe') -D $databaseDir -l (Join-Path $runtimeDir 'postgres.log') -o '-h 127.0.0.1 -p 55432' -w start
-    if ($LASTEXITCODE -ne 0) { throw 'Failed to start development PostgreSQL on port 55432.' }
+    # pg_ctl launches a persistent server. Do not let that child inherit the
+    # PowerShell pipeline: inherited handles can keep the native command blocked
+    # after "server started", preventing the Java backend from ever launching.
+    $pgStart = Start-Process -FilePath (Join-Path $postgresBin 'pg_ctl.exe') -WindowStyle Hidden -PassThru `
+        -ArgumentList @('-D', ('"{0}"' -f $databaseDir), '-l', ('"{0}"' -f (Join-Path $runtimeDir 'postgres.log')), '-o', '"-h 127.0.0.1 -p 55432"', '-w', 'start') `
+        -RedirectStandardOutput (Join-Path $runtimeDir 'pg-start.log') `
+        -RedirectStandardError (Join-Path $runtimeDir 'pg-start-error.log')
+    if (-not $pgStart.WaitForExit(30000)) { throw 'PostgreSQL startup timed out; see .runtime/postgres.log.' }
+    if ($pgStart.ExitCode -ne 0) { throw 'Failed to start development PostgreSQL; see .runtime/pg-start-error.log.' }
 }
 $env:PGPASSWORD = $localSecrets.databasePassword
 try {
