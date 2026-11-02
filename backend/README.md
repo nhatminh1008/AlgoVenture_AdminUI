@@ -1,5 +1,7 @@
 # AlgoVenture Spring Boot API
 
+Bubble Sort interaction logs: migration V5 thêm `learning_attempts` và `learning_interactions`. Learner dùng `PUT /api/game/me/learning-attempts/{uuid}` để gửi snapshot nối thêm; GET cùng URL đọc trace, GET hậu tố `/observations` đọc các phản hồi đầu tiên theo cơ hội đổi chỗ. Backend replay `bubble-v1`, tính đúng/sai, bảo vệ thứ tự và chống trùng. Chưa có SAKT inference hoặc phần trăm mastery. Đặc tả, giới hạn quan sát và cách kiểm thử ở `../../AlgoVenture_Game/docs/bubble-interaction-log.md`.
+
 Java 21, Spring Boot 3.5.16, Spring Security, Bean Validation, Spring JDBC, Flyway 11.20.3 và PostgreSQL. Maven Wrapper đi kèm, không cần Maven hệ thống. Cách chạy Windows local và tài khoản bootstrap ở [README gốc](../README.md).
 
 ## Backend chung cho Learner
