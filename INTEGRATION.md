@@ -1,6 +1,6 @@
 # Backend chung cho Admin, Instructor và Learner
 
-Backend duy nhất: `AlgoVenture_AdminUI/backend`, cổng **8081**, PostgreSQL local **55432**. Web game `algoven5/proto_algo` chạy **5173**; Admin/Instructor chạy **5174**. Cả hai Vite proxy `/api` về 8081. Không cần backend game 8080.
+Backend duy nhất: `AlgoVenture_AdminUI/backend`, cổng **8081**, PostgreSQL local **55432**. Web game `AlgoVenture_Game` chạy **5173**; Admin/Instructor chạy **5174**. Cả hai Vite proxy `/api` về 8081. Không cần backend game 8080.
 
 ## Tài khoản
 
@@ -36,6 +36,8 @@ Chơi khách vẫn lưu cục bộ. Dữ liệu khách/local cũ không tự nh�
 
 ## API Classroom
 
+Backend đã có các API dưới đây; Game hiện chưa có màn hình Classroom để nhập mã lớp, xem bài giao hoặc nộp quiz. Kiểm thử live dùng API để tham gia lớp, sau đó chơi minigame qua UI và kiểm tra tiến độ trong portal.
+
 Tất cả yêu cầu Bearer token Learner của backend chung:
 
 | Method | Path | Nội dung |
@@ -58,10 +60,12 @@ Instructor state trả điểm trung bình các điểm cao nhất của từng 
 
 1. Repo AdminUI: `.\scripts\start-backend.ps1`.
 2. Terminal khác, thư mục algoventure-admin: `npm run dev`.
-3. Terminal khác, thư mục algoven5/proto_algo: `npm run dev`.
+3. Terminal khác, thư mục AlgoVenture_Game: `npm run dev`.
 
 Swagger: http://127.0.0.1:8081/swagger-ui/index.html. API game: đăng ký/đăng nhập rồi nhập token vào Authorize → game. API portal: lấy CSRF rồi đăng nhập bằng cookie.
 
-Backend: `backend/mvnw.cmd test`. Portal: `npm test`, `npm run lint`, `npm run build`. Game: `npm run build`; kiểm thử thật: `npx playwright test tests/portal-integration.spec.ts` (cần backend 8081 và Vite 5173). Test thật tạo dữ liệu có tiền tố QA trong database phát triển.
+Backend: `backend/mvnw.cmd test`. Portal: `npm test`, `npm run lint`, `npm run build`. Game: `npm run build`; kiểm thử hợp đồng/UI bằng API giả lập: `npx playwright test tests/auth.spec.ts tests/guest.spec.ts tests/shared-backend.spec.ts`. Test live validation trong auth.spec.ts cần `LIVE_AUTH_TEST=1` và backend 8081 đang chạy. Xem thêm `../AlgoVenture_Game/INTEGRATION.md`.
 
 Production cần HTTPS, proxy /api cùng origin, SPA fallback và biến môi trường database. Dev proxy không có trong bundle production.
+
+Kiểm thử tích hợp thật có trong repo Game: bật backend 8081 và portal 5174, đặt `LIVE_INTEGRATION_TEST=1`, chạy `npx playwright test tests/live-integration.spec.ts`. Test tạo dữ liệu có tiền tố QA trong database phát triển. Game được Playwright chạy tại 5173 nếu chưa bật. Máy dùng Edge có thể đặt `PLAYWRIGHT_CHANNEL=msedge`.

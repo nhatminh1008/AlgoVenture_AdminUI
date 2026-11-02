@@ -4,7 +4,7 @@ Web chung cho Admin và Instructor dùng React cùng Java Spring Boot và Postgr
 
 ## Backend chung hiện tại
 
-Admin, Instructor và Learner dùng chung backend `backend` ở cổng 8081 và bảng `app_users`. Learner tự đăng ký trong web game, tham gia lớp bằng mã mời và nộp quiz. Hồ sơ, tiến trình game và bảng xếp hạng lấy dữ liệu server. Không cần backend game 8080. Xem [API và luồng tích hợp hiện tại](INTEGRATION.md).
+Admin, Instructor và Learner dùng chung backend `backend` ở cổng 8081 và bảng `app_users`. Learner tự đăng ký trong web game; hồ sơ, tiến trình game và bảng xếp hạng lấy dữ liệu server. Backend có API tham gia lớp bằng mã mời và nộp quiz, nhưng Game hiện chưa có giao diện Classroom cho các thao tác này. Không cần backend game 8080. Xem [API và luồng tích hợp hiện tại](INTEGRATION.md).
 
 ## Chạy trên máy Windows hiện tại
 
@@ -14,7 +14,7 @@ Mở terminal tại thư mục repo và chạy backend:
 .\scripts\start-backend.ps1
 ```
 
-Script dùng JDK 21 ở `JAVA_HOME` hoặc `%LOCALAPPDATA%\AlgoVenture\tools`, Maven Wrapper và PostgreSQL 18 đã cài trên máy. Database phát triển nằm riêng trong `.runtime/postgres`, lắng nghe `127.0.0.1:55432`. Script không thay đổi PostgreSQL đang chạy ở cổng mặc định. Mật khẩu database được sinh ngẫu nhiên và lưu trong `.runtime/dev-secrets.json` đã loại khỏi Git.
+Script dùng JDK 21 ở `JAVA_HOME`, `%LOCALAPPDATA%\AlgoVenture\tools` hoặc `%USERPROFILE%\.jdks`, cùng Maven Wrapper. PostgreSQL được tìm từ `POSTGRES_BIN`, bản cài trong Program Files hoặc bản portable trong `%LOCALAPPDATA%\AlgoVenture\tools`. Bản portable chỉ có server sẽ dùng JDBC driver trong backend đã build để tạo database. Database phát triển nằm riêng trong `.runtime/postgres`, lắng nghe `127.0.0.1:55432`. Script không thay đổi PostgreSQL đang chạy ở cổng mặc định. Mật khẩu database được sinh ngẫu nhiên và lưu trong `.runtime/dev-secrets.json` đã loại khỏi Git.
 
 Mở terminal thứ hai:
 
@@ -54,7 +54,7 @@ Dữ liệu localStorage/IndexedDB cũ không tự nhập lên server. Database 
 
 ## Phạm vi còn lại
 
-Game đã đọc quiz/bộ thử thách và lưu sự kiện hoàn thành bài học. Điểm quiz và tiến độ bài giao hiển thị trong Instructor; mastery chưa có mô hình ước lượng. Làm thử quiz chỉ dành cho giảng viên, không ghi kết quả học viên. Các feature toggle và cờ bảo trì được lưu để client/game đọc khi tích hợp; chưa tự thay đổi hành vi game. Catalog giữ 25 mã bài hiện có, chưa tạo thêm thuật toán thực thi mới. Xuất dữ liệu portal không phải backup database đầy đủ.
+Game đã lưu sự kiện hoàn thành bài học; chưa có UI đọc quiz/bộ thử thách Classroom. Khi học viên đã tham gia lớp qua API hoặc được Admin thêm vào lớp, hoàn thành bài giao Active đúng hạn sẽ cập nhật tiến độ trong Instructor. Backend có chấm quiz; mastery chưa có mô hình ước lượng. Làm thử quiz trong portal chỉ dành cho giảng viên, không ghi kết quả học viên. Các feature toggle và cờ bảo trì được lưu để client/game đọc khi tích hợp; chưa tự thay đổi hành vi game. Catalog giữ 25 mã bài hiện có, chưa tạo thêm thuật toán thực thi mới. Xuất dữ liệu portal không phải backup database đầy đủ.
 
 Đăng ký công khai Learner và Bearer session dành cho game đã có. Google OAuth, quên/đổi mật khẩu, đồng bộ offline đầy đủ, Redis và FastAPI/Knowledge Tracing chưa được triển khai. Xác thực web hiện dùng session phía server. Chưa kiểm thử tải 2.000 người dùng hoặc cấu hình mã hóa ổ đĩa theo yêu cầu triển khai trong đặc tả.
 

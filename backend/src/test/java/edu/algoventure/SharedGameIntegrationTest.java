@@ -30,7 +30,14 @@ class SharedGameIntegrationTest {
     assertEquals("learner.shared@example.test",auth.path("email").asText());
     assertEquals("learner",store.db().queryForObject("SELECT role FROM app_users WHERE email=?",String.class,"learner.shared@example.test"));
     assertNotEquals(auth.path("token").asText(),store.db().queryForObject("SELECT token_hash FROM learner_sessions",String.class));
-    mvc.perform(post("/api/game/auth/register").contentType("application/json").content(body(Map.of("email","learner.shared@example.test","password","Learner@12345","fullName","Duplicate")))).andExpect(status().isConflict());
+    // PostgreSQL aborts a transaction after a unique violation. This test wraps
+    // multiple HTTP requests in one rollback-only transaction, unlike production.
+    var duplicateSavepoint = store.db().execute((org.springframework.jdbc.core.ConnectionCallback<java.sql.Savepoint>) c -> c.setSavepoint());
+    try {
+      mvc.perform(post("/api/game/auth/register").contentType("application/json").content(body(Map.of("email","learner.shared@example.test","password","Learner@12345","fullName","Duplicate")))).andExpect(status().isConflict());
+    } finally {
+      store.db().execute((org.springframework.jdbc.core.ConnectionCallback<Void>) c -> { c.rollback(duplicateSavepoint); c.releaseSavepoint(duplicateSavepoint); return null; });
+    }
     mvc.perform(get("/api/game/auth/me").header("Authorization",token)).andExpect(status().isOk()).andExpect(jsonPath("$.userId").value(auth.path("userId").asLong()));
     mvc.perform(get("/api/admin/users").header("Authorization",token)).andExpect(status().isUnauthorized());
     mvc.perform(post("/api/game/auth/logout").header("Authorization",token)).andExpect(status().isNoContent());
