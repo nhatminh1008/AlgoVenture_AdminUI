@@ -36,7 +36,7 @@ Chơi khách vẫn lưu cục bộ. Dữ liệu khách/local cũ không tự nh�
 
 ## API Classroom
 
-Backend đã có các API dưới đây; Game hiện chưa có màn hình Classroom để nhập mã lớp, xem bài giao hoặc nộp quiz. Kiểm thử live dùng API để tham gia lớp, sau đó chơi minigame qua UI và kiểm tra tiến độ trong portal.
+Game đã có màn hình Classroom dùng các API dưới đây để nhập mã lớp, xem bài giao, nộp/làm lại quiz và mở minigame được giao. Test `tests/portal-integration.spec.ts` trong repo Game kiểm tra luồng Classroom thật, điểm quiz và tiến độ minigame hiển thị trong Instructor; bật `LIVE_INTEGRATION_TEST=1` để chạy cùng backend 8081 và portal 5174.
 
 Tất cả yêu cầu Bearer token Learner của backend chung:
 

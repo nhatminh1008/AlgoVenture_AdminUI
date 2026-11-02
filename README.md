@@ -4,7 +4,7 @@ Web chung cho Admin và Instructor dùng React cùng Java Spring Boot và Postgr
 
 ## Backend chung hiện tại
 
-Admin, Instructor và Learner dùng chung backend `backend` ở cổng 8081 và bảng `app_users`. Learner tự đăng ký trong web game; hồ sơ, tiến trình game và bảng xếp hạng lấy dữ liệu server. Backend có API tham gia lớp bằng mã mời và nộp quiz, nhưng Game hiện chưa có giao diện Classroom cho các thao tác này. Không cần backend game 8080. Xem [API và luồng tích hợp hiện tại](INTEGRATION.md).
+Admin, Instructor và Learner dùng chung backend `backend` ở cổng 8081 và bảng `app_users`. Learner tự đăng ký trong web game; hồ sơ, tiến trình game và bảng xếp hạng lấy dữ liệu server. Game có giao diện Classroom để tham gia/rời lớp bằng mã mời, xem bài giao, nộp/làm lại quiz và mở minigame được giao. Không cần backend game 8080. Xem [API và luồng tích hợp hiện tại](INTEGRATION.md).
 
 ## Chạy trên máy Windows hiện tại
 
@@ -54,7 +54,7 @@ Dữ liệu localStorage/IndexedDB cũ không tự nhập lên server. Database 
 
 ## Phạm vi còn lại
 
-Game đã lưu sự kiện hoàn thành bài học; chưa có UI đọc quiz/bộ thử thách Classroom. Khi học viên đã tham gia lớp qua API hoặc được Admin thêm vào lớp, hoàn thành bài giao Active đúng hạn sẽ cập nhật tiến độ trong Instructor. Backend có chấm quiz; mastery chưa có mô hình ước lượng. Làm thử quiz trong portal chỉ dành cho giảng viên, không ghi kết quả học viên. Các feature toggle và cờ bảo trì được lưu để client/game đọc khi tích hợp; chưa tự thay đổi hành vi game. Catalog giữ 25 mã bài hiện có, chưa tạo thêm thuật toán thực thi mới. Xuất dữ liệu portal không phải backup database đầy đủ.
+Game đọc quiz/bộ thử thách qua UI Classroom và lưu sự kiện hoàn thành bài học. Khi học viên đã tham gia lớp, hoàn thành bài giao Active đúng hạn sẽ cập nhật tiến độ trong Instructor. Backend chấm quiz; mastery chưa có mô hình ước lượng. Làm thử quiz trong portal chỉ dành cho giảng viên, không ghi kết quả học viên. Các feature toggle và cờ bảo trì được lưu để client/game đọc khi tích hợp; chưa tự thay đổi hành vi game. Catalog giữ 25 mã bài hiện có, chưa tạo thêm thuật toán thực thi mới. Xuất dữ liệu portal không phải backup database đầy đủ.
 
 Đăng ký công khai Learner và Bearer session dành cho game đã có. Google OAuth, quên/đổi mật khẩu, đồng bộ offline đầy đủ, Redis và FastAPI/Knowledge Tracing chưa được triển khai. Xác thực web hiện dùng session phía server. Chưa kiểm thử tải 2.000 người dùng hoặc cấu hình mã hóa ổ đĩa theo yêu cầu triển khai trong đặc tả.
 
