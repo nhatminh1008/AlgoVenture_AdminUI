@@ -41,6 +41,34 @@ class BubbleInteractionIntegrationTest {
     return json.readTree(mvc.perform(get("/api/game/me/learning-attempts/"+id+suffix).header("Authorization",token)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
   }
 
+  @Test void completionRequiresTheOwnersReplayedHardAttempt() throws Exception {
+    String owner=register("bubble.credit"), other=register("bubble.other-credit");
+    var issued=json.readTree(mvc.perform(post("/api/game/me/bubble-challenges").header("Authorization",owner))
+      .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+    UUID id=UUID.fromString(issued.path("clientAttemptId").asText());
+    var body=json.writeValueAsString(Map.of("lessonId","bubble","stage",1,"clientAttemptId",id));
+    var claim=post("/api/game/me/completions").contentType("application/json").content(body);
+    mvc.perform(claim.header("Authorization",owner)).andExpect(status().isBadRequest());
+    var altered=header(List.of(2,1,3,4,5,6,7,8),List.of());
+    altered.put("difficulty","hard");
+    upload(owner,id,altered).andExpect(status().isBadRequest());
+    upload(other,id,altered).andExpect(status().isNotFound());
+    var input=new ArrayList<Integer>();
+    issued.path("input").forEach(value -> input.add(value.asInt()));
+    var trace=new BubbleTrace(input);
+    var events=new ArrayList<Map<String,Object>>();
+    while(!trace.done) events.add(move(trace,events.size()+1,trace.items.get(trace.pair).id(),trace.pair+1));
+    assertTrue(events.size()>=8);
+    events.add(event(events.size()+1,"completed",(events.size()+1)*100));
+    var log=header(input,events);
+    log.put("difficulty","hard");
+    upload(owner,id,log).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("completed"));
+    mvc.perform(post("/api/game/me/completions").header("Authorization",other).contentType("application/json").content(body))
+      .andExpect(status().isBadRequest());
+    for(int i=0;i<2;i++) mvc.perform(claim).andExpect(status().isOk()).andExpect(jsonPath("$.completed.bubble").value(true));
+    assertEquals(1,store.db().queryForObject("SELECT COUNT(*) FROM practice_events WHERE client_id=?",Integer.class,id.toString()));
+  }
+
   @Test void preservesWrongDecisionsReplaysAndDeduplicatesPrefixesWithoutFakeMastery() throws Exception {
     String token=register("bubble.logs"); UUID id=UUID.randomUUID();
     var input=List.of(3,1,2); var trace=new BubbleTrace(input); var events=new ArrayList<Map<String,Object>>();

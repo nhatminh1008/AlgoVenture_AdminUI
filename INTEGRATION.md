@@ -30,7 +30,9 @@ Response auth có userId dạng số ổn định từ learner_profiles, liên k
 
 Migration V4 thêm learner_profiles, learner_sessions, practice_events. Tiến trình dùng lesson_completions và assignment_completions có sẵn từ V2. Không đổi checksum migration cũ.
 
-Hoàn thành màn chơi hiện do engine trình duyệt xác nhận rồi gửi sự kiện. Backend kiểm tra danh mục/tiên quyết/chặng, chống ghi trùng; chưa phát lại toàn bộ thao tác để chống giả mạo kết quả game. Quiz Classroom chấm hoàn toàn ở server. Leaderboard không nhận điểm client tự khai.
+Đối với Bubble Sort mức Khó, client gọi `POST /api/game/me/bubble-challenges` để nhận `{clientAttemptId,input}` gắn với tài khoản. Đề gồm 8 số khác nhau và yêu cầu ít nhất 8 lần đổi chỗ. Client gửi nhật ký qua `PUT /api/game/me/learning-attempts/{clientAttemptId}` trước khi yêu cầu ghi hoàn thành cùng mã lượt. Backend kiểm tra chủ sở hữu, khớp mảng đã cấp và phát lại thao tác. Sau khi nhận đề, lượt đang mở tiếp tục chơi được khi mất mạng và đồng bộ khi kết nối lại. Lượt bổ trợ không tính hoàn thành bài chính. Script tự giải đề được cấp vẫn có thể gửi lời giải hợp lệ.
+
+Các bài còn lại gửi sự kiện hoàn thành do engine trình duyệt xác nhận. Backend kiểm tra danh mục, bài tiên quyết và chặng, đồng thời chống ghi trùng. Quiz Classroom chấm hoàn toàn ở server.
 
 Chơi khách vẫn lưu cục bộ. Dữ liệu khách/local cũ không tự nhập thành kết quả server. Kết quả tài khoản lỗi mạng được xếp hàng theo userId, giữ clientAttemptId khi thử lại và hiển thị thông báo chưa đồng bộ. Sandbox không ghi điểm/hoàn thành.
 

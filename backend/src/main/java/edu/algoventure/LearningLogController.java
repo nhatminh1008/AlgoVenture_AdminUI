@@ -52,6 +52,14 @@ public class LearningLogController {
     String uid=owner(auth), aid=id.toString();
     // Serialize creation/append for this account, including simultaneous retry requests.
     s.db().queryForList("SELECT id FROM app_users WHERE id=? FOR UPDATE",uid);
+    var issued=s.db().queryForList("SELECT user_id,input_json FROM bubble_challenges WHERE id=?",aid);
+    if(!issued.isEmpty()) {
+      var challenge=issued.getFirst();
+      if(!uid.equals(challenge.get("user_id"))) throw ApiException.missing();
+      if(!"hard".equals(v.difficulty()) || v.activity()!=null
+          || !v.input().equals(s.decode((String)challenge.get("input_json"))))
+        throw ApiException.bad("Nhật ký Bubble Sort không khớp đề máy chủ đã cấp.");
+    }
     if(v.source().equals("classroom")!=(v.assignmentId()!=null)) throw ApiException.bad("Nguồn bài chơi không khớp bài giao.");
     if((v.activity()!=null)!=(v.exerciseId()!=null) || (v.recommendationId()!=null && v.exerciseId()==null)) throw ApiException.bad("Thông tin bài luyện bổ trợ chưa đầy đủ.");
     String metadata=s.encode(new Header(v));

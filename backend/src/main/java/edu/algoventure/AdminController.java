@@ -146,11 +146,28 @@ public class AdminController {
     Set<String> prerequisites = new HashSet<>(v.config().prerequisites());
     if (prerequisites.size() != v.config().prerequisites().size() || prerequisites.contains(id))
       throw ApiException.bad("Điều kiện tiên quyết không hợp lệ.");
-    for (String pid : prerequisites)
-      if (store
-              .db()
-              .queryForObject("SELECT COUNT(*) FROM algorithms WHERE id=?", Integer.class, pid)
-          != 1) throw ApiException.bad("Bài tiên quyết không tồn tại.");
+    var rules = new HashMap<String, Set<String>>();
+    // Serialize configuration edits so concurrent requests cannot create a cycle together.
+    for (var row : store.db().queryForList("SELECT id,config FROM algorithms ORDER BY id FOR UPDATE")) {
+      String lesson = (String) row.get("id");
+      var required = new HashSet<>(GameController.prerequisites(lesson));
+      var config = (Map<?, ?>) store.decode((String) row.get("config"));
+      if (config.get("prerequisites") instanceof List<?> configured) {
+        for (Object prerequisite : configured) required.add((String) prerequisite);
+      }
+      rules.put(lesson, required);
+    }
+    if (!rules.containsKey(id)) throw ApiException.missing();
+    if (!rules.keySet().containsAll(prerequisites))
+      throw ApiException.bad("Bài tiên quyết không tồn tại.");
+    var pending = new ArrayDeque<>(GameController.prerequisites(id));
+    pending.addAll(prerequisites);
+    var visited = new HashSet<String>();
+    while (!pending.isEmpty()) {
+      String lesson = pending.removeFirst();
+      if (lesson.equals(id)) throw ApiException.bad("Cấu hình tạo vòng lặp bài tiên quyết.");
+      if (visited.add(lesson)) pending.addAll(rules.getOrDefault(lesson, Set.of()));
+    }
     if (store
             .db()
             .update(

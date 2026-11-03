@@ -449,6 +449,15 @@ class PortalIntegrationTest {
                     "{\"name\":\"Bubble\",\"difficulty\":\"Easy\",\"status\":\"Published\",\"config\":{\"timeLimit\":300,\"starThresholds\":[300,200,100],\"hintsAllowed\":true,\"prerequisites\":[]}}"))
         .andExpect(status().isBadRequest());
     mvc.perform(
+            put("/api/admin/algorithms/bubble")
+                .session(admin)
+                .with(csrf())
+                .contentType("application/json")
+                .content(
+                    "{\"name\":\"Bubble\",\"difficulty\":\"Easy\",\"status\":\"Published\",\"config\":{\"timeLimit\":300,\"starThresholds\":[100,200,300],\"hintsAllowed\":true,\"prerequisites\":[\"selection\"]}}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("Cấu hình tạo vòng lặp bài tiên quyết."));
+    mvc.perform(
             put("/api/admin/features/practice")
                 .session(admin)
                 .with(csrf())
