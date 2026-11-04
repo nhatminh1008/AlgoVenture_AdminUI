@@ -101,7 +101,7 @@ class SharedGameIntegrationTest {
         .andExpect(status().isOk()).andExpect(jsonPath("$.player.score").value(600));
   }
 
-  @Test void legacyAssignmentsRequireEveryCurrentOperationWithoutExtraRewards() throws Exception {
+  @Test void migratedAssignmentsRequireCurrentOperationsAndRespectDeadlinesWithoutExtraRewards() throws Exception {
     String email="legacy.operations@example.test",token=bearer(register(email));
     String uid=store.db().queryForObject("SELECT id FROM app_users WHERE email=?",String.class,email);
     String teacher=store.db().queryForObject("SELECT id FROM app_users WHERE email='instructor@algoventure.edu'",String.class);
@@ -112,15 +112,22 @@ class SharedGameIntegrationTest {
     for(String legacy:List.of("stack","queue")) {
       mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json")
           .content(body(Map.of("clientAttemptId",UUID.randomUUID(),"lessonId",legacy,"stage",1))))
-          .andExpect(status().isBadRequest());
-      var assignment=store.saveAssignment(teacher,null,new PortalDtos.Assignment(cid,"Legacy "+legacy,"","Active",due,List.of(legacy)));
-      var expired=store.saveAssignment(teacher,null,new PortalDtos.Assignment(cid,"Expired "+legacy,"","Active",due.minusDays(8),List.of(legacy)));
+          .andExpect(status().isNotFound());
+      // Simulate persisted content from before V9; current APIs reject retired IDs.
+      var assignment=Map.of("id",store.id());
+      var expired=Map.of("id",store.id());
+      for(var item:List.of(assignment,expired))
+        store.db().update("INSERT INTO assignments(id,class_id,title,description,status,due,lesson_ids,lesson_configs) VALUES (?,?,?,'','Active',?,?,?)",
+            item.get("id"),cid,"Legacy "+legacy,item==expired?due.minusDays(8):due,body(List.of(legacy)),"{}");
+      var context=org.mockito.Mockito.mock(org.flywaydb.core.api.migration.Context.class);
+      org.mockito.Mockito.when(context.getConnection()).thenReturn(org.springframework.jdbc.datasource.DataSourceUtils.getConnection(store.db().getDataSource()));
+      new db.migration.V9__Retire_combined_stack_queue().migrate(context);
       var required=Catalog.currentLessons(legacy);
       for(int index=0;index<required.size();index++) {
         var completion=Map.of("clientAttemptId",UUID.randomUUID(),"lessonId",required.get(index),"stage",1);
         for(int retry=0;retry<2;retry++) mvc.perform(post("/api/game/me/completions").header("Authorization",token)
             .contentType("application/json").content(body(completion))).andExpect(status().isOk());
-        assertEquals(index==2?1:0,store.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=? AND lesson_id=?",Integer.class,assignment.get("id"),uid,legacy));
+        assertEquals(index+1,store.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=?",Integer.class,assignment.get("id"),uid));
         assertEquals(0,store.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=?",Integer.class,expired.get("id"),uid));
       }
       assertFalse(getState(token).path("completed").has(legacy));
@@ -130,8 +137,8 @@ class SharedGameIntegrationTest {
         .andExpect(status().isOk()).andExpect(jsonPath("$.player.score").value(600));
     @SuppressWarnings("unchecked") var students=(List<Map<String,Object>>)store.state(teacher).get("students");
     var learner=students.stream().filter(value->value.get("email").equals(email)).findFirst().orElseThrow();
-    assertEquals(2,learner.get("completedLessons"));
-    assertEquals(4,learner.get("assignedLessons"));
+    assertEquals(6,learner.get("completedLessons"));
+    assertEquals(12,learner.get("assignedLessons"));
     assertEquals(50L,learner.get("progressPercent"));
   }
 

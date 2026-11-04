@@ -37,6 +37,11 @@ public class GameController {
     var rows=s.db().queryForList("SELECT lesson_id,stage FROM lesson_completions WHERE user_id=? ORDER BY lesson_id,stage",uid);
     for(var row:rows) {
       String lesson=(String)row.get("lesson_id"); int stage=((Number)row.get("stage")).intValue();
+      // The old Traversal course covered both DFS and BFS. Retain its original
+      // completion row/score while exposing the current progress IDs.
+      if(lesson.equals("tree-traversal")) {
+        completed.put("tree-dfs",true); completed.put("tree-bfs",true); continue;
+      }
       if(!s.catalog().isCurrent(lesson)) continue;
       if(lesson.startsWith("linked-")) linked.computeIfAbsent(lesson,k->new ArrayList<>()).add(stage);
       else completed.put(lesson,true);
@@ -122,30 +127,27 @@ public class GameController {
     if(v.lessonId().startsWith("linked-") && v.stage()>1 && s.db().queryForObject("SELECT COUNT(*) FROM lesson_completions WHERE user_id=? AND lesson_id=? AND stage=?",Integer.class,uid,v.lessonId(),v.stage()-1)==0)
       throw ApiException.bad("Hãy hoàn thành chặng trước của bài học.");
     s.db().update("INSERT INTO practice_events(id,user_id,client_id,lesson_id,stage) VALUES (?,?,?,?,?)",s.id(),uid,v.clientAttemptId().toString(),v.lessonId(),v.stage());
-    if(s.db().queryForObject("SELECT COUNT(*) FROM lesson_completions WHERE user_id=? AND lesson_id=? AND stage=?",Integer.class,uid,v.lessonId(),v.stage())==0)
+    if(!completed.containsKey(v.lessonId()) && s.db().queryForObject("SELECT COUNT(*) FROM lesson_completions WHERE user_id=? AND lesson_id=? AND stage=?",Integer.class,uid,v.lessonId(),v.stage())==0)
       s.db().update("INSERT INTO lesson_completions(id,user_id,lesson_id,stage) VALUES (?,?,?,?)",s.id(),uid,v.lessonId(),v.stage());
     @SuppressWarnings("unchecked") var updated=(Map<String,Boolean>)state(uid).get("completed");
     if(updated.containsKey(v.lessonId())) for(var assignment:s.db().query("SELECT a.* FROM assignments a JOIN enrollments e ON e.class_id=a.class_id WHERE e.user_id=? AND a.status='Active'",(r,n)->s.assignment(r),uid)) {
       @SuppressWarnings("unchecked") var ids=(List<String>)assignment.get("lessonIds");
       String due=Objects.toString(assignment.get("due"),"");
-<<<<<<< Updated upstream
       if(!due.isEmpty() && LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).isAfter(LocalDate.parse(due))) continue;
       for(String assignedLesson:ids) {
         var required=Catalog.currentLessons(assignedLesson);
+        var custom=(Map<?,?>)assignment.get("lessonConfigs");
+        if(custom.containsKey(assignedLesson) || required.stream().anyMatch(custom::containsKey)) continue;
         boolean finished=assignedLesson.equals(v.lessonId())
             || required.contains(v.lessonId()) && updated.keySet().containsAll(required);
         if(finished && s.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=? AND lesson_id=?",Integer.class,assignment.get("id"),uid,assignedLesson)==0)
           s.db().update("INSERT INTO assignment_completions(assignment_id,user_id,lesson_id) VALUES (?,?,?)",assignment.get("id"),uid,assignedLesson);
       }
-=======
-      if(!((Map<?,?>)assignment.get("lessonConfigs")).containsKey(v.lessonId()) && ids.contains(v.lessonId()) && (due.isEmpty() || !LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).isAfter(LocalDate.parse(due))) && s.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=? AND lesson_id=?",Integer.class,assignment.get("id"),uid,v.lessonId())==0)
-        s.db().update("INSERT INTO assignment_completions(assignment_id,user_id,lesson_id) VALUES (?,?,?)",assignment.get("id"),uid,v.lessonId());
->>>>>>> Stashed changes
     }
     return state(uid);
   }
   static List<String> prerequisites(String lesson) {
-    for(var route:List.of(List.of("bubble","selection","insertion","merge","quick"),List.of("linear","binary"),List.of("linked-list","linked-traversal","linked-search","linked-insertion","linked-deletion","linked-reversal"),List.of("tree-basics","tree-traversal","bst","bst-search","bst-insert","bst-delete"),List.of("graph-basics","bfs","dfs","dijkstra"))) {
+    for(var route:List.of(List.of("bubble","selection","insertion","merge","quick"),List.of("linear","binary"),List.of("linked-list","linked-traversal","linked-search","linked-insertion","linked-deletion","linked-reversal"),List.of("tree-basics","tree-dfs","tree-bfs","bst-search","bst-insert","bst-delete"),List.of("graph-basics","bfs","dfs","dijkstra"))) {
       int index=route.indexOf(lesson); if(index>=0) return route.subList(0,index);
     }
     return List.of();
