@@ -93,3 +93,7 @@ Migration V8 bổ sung cấu hình bài giao và liên kết đề Bubble. Cần
 Danh mục hiện tại có 29 bài, khớp các ID trong `ALL_LESSONS` của game. `stack` và `queue` chỉ còn là tên nhóm hoặc dữ liệu lịch sử; không còn là bài được giao hoặc được mở. Stack dùng Push/Pop/Peek; Queue dùng Enqueue/Dequeue/Peek.
 
 Migration V9 chuyển mọi bộ bài cũ từ `stack` sang ba thao tác Stack, `queue` sang ba thao tác Queue, loại ID trùng và cập nhật bài tiên quyết. Các dòng kết quả cũ được giữ nguyên để bảo toàn lịch sử; chúng không tự hoàn thành các thao tác mới. Catalog, API Admin, Instructor và game không cung cấp hai bài đã ngừng dùng; server từ chối giao, mở lại hoặc ghi hoàn thành chúng.
+
+Migration V10 đồng bộ nhánh Cây với Game: `tree-basics` → `tree-dfs` → `tree-bfs` → `bst-search` → `bst-insert` → `bst-delete`. Bài `tree-traversal` cũ tách thành DFS/BFS; `bst` nền tảng đã ngừng dùng và được bỏ khỏi bài tiên quyết/bài giao. Bộ chỉ chứa `bst` được đóng vì không còn bài chơi. Bộ hỗn hợp giữ các bài còn lại. Portal dùng cùng danh mục mới.
+
+V10 giữ các dòng hoàn thành cũ và thời điểm gốc. Người đã hoàn thành `tree-traversal` được hiển thị hoàn thành cả DFS và BFS, đúng phạm vi bài cũ; không tạo thêm điểm xếp hạng khi chuyển đổi hoặc chơi lại hai bài được kế thừa. Kết quả bài giao `tree-traversal` được chuyển sang hai ID mới và giữ bản ghi gốc. Cấu hình/trạng thái công bố bài cũ được kế thừa nếu chưa có cấu hình riêng cho bài mới; bài có cấu hình riêng được giữ nguyên. Các migration V1–V9 không bị sửa checksum.

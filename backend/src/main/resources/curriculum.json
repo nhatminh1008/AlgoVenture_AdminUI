@@ -102,12 +102,12 @@
         "Cây cơ bản"
       ],
       [
-        "tree-traversal",
-        "Duyệt cây"
+        "tree-dfs",
+        "Tree DFS"
       ],
       [
-        "bst",
-        "BST"
+        "tree-bfs",
+        "Tree BFS"
       ],
       [
         "bst-search",
