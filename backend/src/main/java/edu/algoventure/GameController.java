@@ -78,6 +78,8 @@ public class GameController {
       if(!old.getFirst().get("lesson_id").equals(v.lessonId()) || ((Number)old.getFirst().get("stage")).intValue()!=v.stage()) throw ApiException.bad("Mã lượt chơi đã được dùng cho bài khác.");
       return state(uid);
     }
+    if(Catalog.currentLessons(v.lessonId()).size()>1)
+      throw ApiException.bad("Hãy hoàn thành đủ ba thao tác của bài học này.");
     var lessons=s.db().queryForList("SELECT config FROM algorithms WHERE id=? AND status='Published'",v.lessonId());
     if(lessons.isEmpty()) throw ApiException.missing();
     if(!v.lessonId().startsWith("linked-") && v.stage()!=1) throw ApiException.bad("Chặng học không hợp lệ.");
@@ -96,8 +98,14 @@ public class GameController {
     if(updated.containsKey(v.lessonId())) for(var assignment:s.db().query("SELECT a.* FROM assignments a JOIN enrollments e ON e.class_id=a.class_id WHERE e.user_id=? AND a.status='Active'",(r,n)->s.assignment(r),uid)) {
       @SuppressWarnings("unchecked") var ids=(List<String>)assignment.get("lessonIds");
       String due=Objects.toString(assignment.get("due"),"");
-      if(ids.contains(v.lessonId()) && (due.isEmpty() || !LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).isAfter(LocalDate.parse(due))) && s.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=? AND lesson_id=?",Integer.class,assignment.get("id"),uid,v.lessonId())==0)
-        s.db().update("INSERT INTO assignment_completions(assignment_id,user_id,lesson_id) VALUES (?,?,?)",assignment.get("id"),uid,v.lessonId());
+      if(!due.isEmpty() && LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).isAfter(LocalDate.parse(due))) continue;
+      for(String assignedLesson:ids) {
+        var required=Catalog.currentLessons(assignedLesson);
+        boolean finished=assignedLesson.equals(v.lessonId())
+            || required.contains(v.lessonId()) && updated.keySet().containsAll(required);
+        if(finished && s.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=? AND lesson_id=?",Integer.class,assignment.get("id"),uid,assignedLesson)==0)
+          s.db().update("INSERT INTO assignment_completions(assignment_id,user_id,lesson_id) VALUES (?,?,?)",assignment.get("id"),uid,assignedLesson);
+      }
     }
     return state(uid);
   }

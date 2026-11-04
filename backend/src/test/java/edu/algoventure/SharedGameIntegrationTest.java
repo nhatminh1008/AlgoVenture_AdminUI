@@ -68,6 +68,40 @@ class SharedGameIntegrationTest {
         .andExpect(status().isOk()).andExpect(jsonPath("$.player.score").value(600));
   }
 
+  @Test void legacyAssignmentsRequireEveryCurrentOperationWithoutExtraRewards() throws Exception {
+    String email="legacy.operations@example.test",token=bearer(register(email));
+    String uid=store.db().queryForObject("SELECT id FROM app_users WHERE email=?",String.class,email);
+    String teacher=store.db().queryForObject("SELECT id FROM app_users WHERE email='instructor@algoventure.edu'",String.class);
+    var classroom=store.saveClass(teacher,null,new PortalDtos.Classroom("Legacy operations","","data-structures","basic"));
+    String cid=(String)classroom.get("id");
+    store.db().update("INSERT INTO enrollments(id,class_id,user_id) VALUES (?,?,?)",store.id(),cid,uid);
+    var due=java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).plusDays(7);
+    for(String legacy:List.of("stack","queue")) {
+      mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json")
+          .content(body(Map.of("clientAttemptId",UUID.randomUUID(),"lessonId",legacy,"stage",1))))
+          .andExpect(status().isBadRequest());
+      var assignment=store.saveAssignment(teacher,null,new PortalDtos.Assignment(cid,"Legacy "+legacy,"","Active",due,List.of(legacy)));
+      var expired=store.saveAssignment(teacher,null,new PortalDtos.Assignment(cid,"Expired "+legacy,"","Active",due.minusDays(8),List.of(legacy)));
+      var required=Catalog.currentLessons(legacy);
+      for(int index=0;index<required.size();index++) {
+        var completion=Map.of("clientAttemptId",UUID.randomUUID(),"lessonId",required.get(index),"stage",1);
+        for(int retry=0;retry<2;retry++) mvc.perform(post("/api/game/me/completions").header("Authorization",token)
+            .contentType("application/json").content(body(completion))).andExpect(status().isOk());
+        assertEquals(index==2?1:0,store.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=? AND lesson_id=?",Integer.class,assignment.get("id"),uid,legacy));
+        assertEquals(0,store.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=?",Integer.class,expired.get("id"),uid));
+      }
+      assertFalse(getState(token).path("completed").has(legacy));
+    }
+    assertEquals(6,store.db().queryForObject("SELECT COUNT(*) FROM practice_events WHERE user_id=?",Integer.class,uid));
+    mvc.perform(get("/api/game/leaderboard").header("Authorization",token).param("period","all-time"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.player.score").value(600));
+    @SuppressWarnings("unchecked") var students=(List<Map<String,Object>>)store.state(teacher).get("students");
+    var learner=students.stream().filter(value->value.get("email").equals(email)).findFirst().orElseThrow();
+    assertEquals(2,learner.get("completedLessons"));
+    assertEquals(4,learner.get("assignedLessons"));
+    assertEquals(50L,learner.get("progressPercent"));
+  }
+
   @Test void publicRegistrationUsesSharedAccountsAndRevocableHashedSessions() throws Exception {
     var auth=register(" Learner.Shared@EXAMPLE.test "); String token=bearer(auth);
     assertTrue(auth.path("userId").asLong()>=1000000000L);

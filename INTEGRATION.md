@@ -56,6 +56,8 @@ Tất cả yêu cầu Bearer token Learner của backend chung:
 
 Bộ thử thách mở bài tương ứng trong game. Hoàn thành trong thời hạn sẽ ghi tiến độ cho bài giao Active của lớp đã đăng ký; vẫn áp dụng luật mở khóa bài học.
 
+Bài giao cũ có mã `stack` hoặc `queue` được mở thành ba thao tác hiện hành tương ứng. Backend chỉ ghi hoàn thành mã bài giao cũ sau khi đủ cả ba thao tác; không tạo thêm điểm hoặc hoàn thành bài chính cho mã cũ. Kết quả bài giao cũ đã có được giữ nguyên. Mỗi thao tác trên bản đồ cần vượt mức Khó để gửi hoàn thành; mức Dễ/Vừa chỉ lưu tiến trình độ khó cục bộ.
+
 Instructor state trả điểm trung bình các điểm cao nhất của từng quiz đã nộp, số quiz đã nộp, bài thực hành hoàn thành/được giao và phần trăm. Tiến độ, phân tích và CSV/JSON dùng số liệu này. Chưa có mô hình Knowledge Tracing.
 
 ## Chạy

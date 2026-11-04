@@ -10,6 +10,15 @@ import org.springframework.stereotype.Component;
 public class Catalog {
   public final JsonNode topics;
 
+  // Old combined assignments require all three current operations. Keep their stored IDs/history.
+  static List<String> currentLessons(String id) {
+    return switch (id) {
+      case "stack" -> List.of("stack-push", "stack-pop", "stack-peek");
+      case "queue" -> List.of("queue-enqueue", "queue-dequeue", "queue-peek");
+      default -> List.of(id);
+    };
+  }
+
   public Catalog(ObjectMapper json) throws IOException {
     try (var input = new ClassPathResource("curriculum.json").getInputStream()) {
       topics = json.readTree(input);
