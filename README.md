@@ -47,14 +47,14 @@ Nếu đã build và chỉ cần chạy lại backend, dùng `start-backend.ps1 
 - Admin tạo/sửa tài khoản, đổi vai trò/trạng thái, phân công Instructor và thêm/gỡ Learner khỏi lớp. Luôn giữ ít nhất một Admin đang hoạt động.
 - Instructor tạo/sửa lớp thuộc quyền mình, soạn/giao bộ thử thách, soạn và công bố trắc nghiệm. Nội dung đã công bố được giữ nguyên.
 - Upload/download tài liệu PDF, DOCX, PPTX, TXT tối đa 10 MB. File và metadata lưu ở PostgreSQL; tài liệu được tham chiếu bởi quiz không được xóa.
-- Admin cấu hình 25 bài học có mã ổn định, ngưỡng sao, thời gian, gợi ý và bài tiên quyết; lưu feature toggles và cài đặt nền tảng.
+- Admin cấu hình 29 bài học có mã ổn định, ngưỡng sao, thời gian, gợi ý và bài tiên quyết; lưu feature toggles và cài đặt nền tảng.
 - Thống kê tài khoản, lớp, thành viên, tài liệu và nhật ký thao tác lấy từ database. Instructor xuất CSV/JSON theo lớp từ dữ liệu đã tải qua API.
 
 Dữ liệu localStorage/IndexedDB cũ không tự nhập lên server. Database mới bắt đầu với catalog và hai tài khoản bootstrap, không sinh điểm hoặc sinh viên giả. Việc kiểm thử trình duyệt đã tạo một lớp có tên `Sorting — Lớp kiểm thử API`, một quiz kiểm thử và tài khoản `qa.learner@example.test` trong database phát triển.
 
 ## Phạm vi còn lại
 
-Game đọc quiz/bộ thử thách qua UI Classroom và lưu sự kiện hoàn thành bài học. Khi học viên đã tham gia lớp, hoàn thành bài giao Active đúng hạn sẽ cập nhật tiến độ trong Instructor. Backend chấm quiz; mastery chưa có mô hình ước lượng. Làm thử quiz trong portal chỉ dành cho giảng viên, không ghi kết quả học viên. Các feature toggle và cờ bảo trì được lưu để client/game đọc khi tích hợp; chưa tự thay đổi hành vi game. Catalog giữ 25 mã bài hiện có, chưa tạo thêm thuật toán thực thi mới. Xuất dữ liệu portal không phải backup database đầy đủ.
+Game đọc quiz/bộ thử thách qua UI Classroom và lưu sự kiện hoàn thành bài học. Khi học viên đã tham gia lớp, hoàn thành bài giao Active đúng hạn sẽ cập nhật tiến độ trong Instructor. Backend chấm quiz; mastery chưa có mô hình ước lượng. Làm thử quiz trong portal chỉ dành cho giảng viên, không ghi kết quả học viên. Các feature toggle và cờ bảo trì được lưu để client/game đọc khi tích hợp; chưa tự thay đổi hành vi game. Catalog dùng 29 module hiện tại, đã bỏ bài gộp Stack/Queue cũ, chưa tạo thêm thuật toán thực thi mới. Xuất dữ liệu portal không phải backup database đầy đủ.
 
 Đăng ký công khai Learner và Bearer session dành cho game đã có. Google OAuth, quên/đổi mật khẩu, đồng bộ offline đầy đủ, Redis và FastAPI/Knowledge Tracing chưa được triển khai. Xác thực web hiện dùng session phía server. Chưa kiểm thử tải 2.000 người dùng hoặc cấu hình mã hóa ổ đĩa theo yêu cầu triển khai trong đặc tả.
 

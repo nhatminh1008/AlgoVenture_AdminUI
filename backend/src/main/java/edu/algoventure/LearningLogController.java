@@ -22,7 +22,7 @@ public class LearningLogController {
   public LearningLogController(PortalStore s,UserStore users,PracticeCatalog catalog) { this.s=s; this.users=users; this.catalog=catalog; }
   record Event(@NotNull UUID eventId,@Min(1) int sequence,
       @NotNull @Pattern(regexp="move|pause|resume|completed|abandoned|timed_out") String kind,
-      @NotNull Instant occurredAt,@Min(0) @Max(300000) int elapsedMs,
+      @NotNull Instant occurredAt,@Min(0) @Max(3600000) int elapsedMs,
       Integer itemId,Integer targetIndex,
       @Pattern(regexp="mouse|touch|pen|keyboard") String inputMethod,
       @Pattern(regexp="settings|hidden|leave|restart|harder|timeout") String reason,
@@ -52,16 +52,23 @@ public class LearningLogController {
     String uid=owner(auth), aid=id.toString();
     // Serialize creation/append for this account, including simultaneous retry requests.
     s.db().queryForList("SELECT id FROM app_users WHERE id=? FOR UPDATE",uid);
-    var issued=s.db().queryForList("SELECT user_id,input_json FROM bubble_challenges WHERE id=?",aid);
+    var issued=s.db().queryForList("SELECT user_id,input_json,assignment_id,difficulty FROM bubble_challenges WHERE id=?",aid);
     if(!issued.isEmpty()) {
       var challenge=issued.getFirst();
       if(!uid.equals(challenge.get("user_id"))) throw ApiException.missing();
-      if(!"hard".equals(v.difficulty()) || v.activity()!=null
+      if(!challenge.get("difficulty").equals(v.difficulty()) || v.activity()!=null
+          || !Objects.equals(challenge.get("assignment_id"),Objects.toString(v.assignmentId(),null))
           || !v.input().equals(s.decode((String)challenge.get("input_json"))))
         throw ApiException.bad("Nhật ký Bubble Sort không khớp đề máy chủ đã cấp.");
     }
     if(v.source().equals("classroom")!=(v.assignmentId()!=null)) throw ApiException.bad("Nguồn bài chơi không khớp bài giao.");
     if((v.activity()!=null)!=(v.exerciseId()!=null) || (v.recommendationId()!=null && v.exerciseId()==null)) throw ApiException.bad("Thông tin bài luyện bổ trợ chưa đầy đủ.");
+    int timeLimitMs=300000;
+    if(v.assignmentId()!=null && v.activity()==null) {
+      var item=s.learnerAssignment(uid,v.assignmentId().toString(),"bubble");
+      var config=(Map<?,?>)((Map<?,?>)item.get("lessonConfigs")).get("bubble");
+      if(config!=null && config.get("timeLimitSeconds") instanceof Number seconds) timeLimitMs=seconds.intValue()*1000;
+    }
     String metadata=s.encode(new Header(v));
     var attempts=s.db().queryForList("SELECT metadata,status,event_count FROM learning_attempts WHERE user_id=? AND client_attempt_id=?",uid,aid);
     if(!attempts.isEmpty()&&!attempts.getFirst().get("metadata").equals(metadata)) throw conflict("Mã lượt chơi đã dùng với cấu hình khác.");
@@ -91,7 +98,7 @@ public class LearningLogController {
     boolean first=true,paused=false;
     for(int i=0;i<v.events().size();i++) {
       var e=v.events().get(i);
-      if(e.sequence()!=i+1||!seen.add(e.eventId())||e.elapsedMs()<lastElapsed||!status.equals("in_progress")) throw ApiException.bad("Chuỗi sự kiện không liên tục, bị trùng hoặc đã kết thúc.");
+      if(e.sequence()!=i+1||!seen.add(e.eventId())||e.elapsedMs()<lastElapsed||e.elapsedMs()>timeLimitMs||!status.equals("in_progress")) throw ApiException.bad("Chuỗi sự kiện không liên tục, bị trùng hoặc đã kết thúc.");
       lastElapsed=e.elapsedMs();
       var before=trace.snapshot();
       Map<String,Object> evaluation=s.map("sequence",e.sequence(),"eventId",e.eventId(),"kind",e.kind());
@@ -108,8 +115,8 @@ public class LearningLogController {
         switch(e.kind()) {
           case "pause" -> { if(paused||!Set.of("settings","hidden").contains(Objects.toString(e.reason(),""))) throw ApiException.bad("Tạm dừng không hợp lệ."); paused=true; }
           case "resume" -> { if(!paused||e.reason()!=null) throw ApiException.bad("Tiếp tục không hợp lệ."); paused=false; }
-          case "completed" -> { if(!trace.done||e.reason()!=null) throw ApiException.bad("Chưa hoàn thành Bubble Sort."); status="completed"; }
-          case "timed_out" -> { if(trace.done||e.elapsedMs()!=300000||!"timeout".equals(e.reason())) throw ApiException.bad("Hết giờ không hợp lệ."); status="timed_out"; }
+          case "completed" -> { if(!trace.done||e.elapsedMs()>=timeLimitMs||e.reason()!=null) throw ApiException.bad("Chưa hoàn thành Bubble Sort."); status="completed"; }
+          case "timed_out" -> { if(trace.done||e.elapsedMs()!=timeLimitMs||!"timeout".equals(e.reason())) throw ApiException.bad("Hết giờ không hợp lệ."); status="timed_out"; }
           case "abandoned" -> { if(!Set.of("leave","restart","harder").contains(Objects.toString(e.reason(),""))) throw ApiException.bad("Lý do kết thúc không hợp lệ."); status="abandoned"; }
           default -> throw ApiException.bad("Sự kiện không hỗ trợ.");
         }

@@ -124,6 +124,25 @@ class PortalIntegrationTest {
   }
 
   @Test
+  void assignmentConfigsRoundTripValidateAndFreezeOnPublish() throws Exception {
+    var session=login("instructor");
+    String cid=classroom(session,"Custom Sorting");
+    var payload=new LinkedHashMap<String,Object>(assignment(cid,"Draft",List.of("bubble","selection")));
+    payload.put("lessonConfigs",Map.of("bubble",Map.of("input",List.of(3,-1,3,2),"timeLimitSeconds",90,"difficulty","medium")));
+    var result=mvc.perform(post("/api/instructor/assignments").session(session).with(csrf()).contentType("application/json").content(json.writeValueAsString(payload)))
+        .andExpect(status().isCreated()).andExpect(jsonPath("$.lessonConfigs.bubble.input[1]").value(-1)).andExpect(jsonPath("$.lessonConfigs.bubble.timeLimitSeconds").value(90)).andReturn();
+    String id=body(result).path("id").asText();
+    payload.put("lessonConfigs",Map.of("quick",Map.of("input",List.of(3,2))));
+    mvc.perform(put("/api/instructor/assignments/"+id).session(session).with(csrf()).contentType("application/json").content(json.writeValueAsString(payload))).andExpect(status().isBadRequest());
+    payload.put("lessonConfigs",Map.of("bubble",Map.of("input",List.of(100,2),"timeLimitSeconds",29)));
+    mvc.perform(put("/api/instructor/assignments/"+id).session(session).with(csrf()).contentType("application/json").content(json.writeValueAsString(payload))).andExpect(status().isBadRequest());
+    payload.put("lessonConfigs",Map.of("bubble",Map.of("input",List.of(3,2),"timeLimitSeconds",90,"difficulty","easy")));
+    payload.put("status","Active");
+    mvc.perform(put("/api/instructor/assignments/"+id).session(session).with(csrf()).contentType("application/json").content(json.writeValueAsString(payload))).andExpect(status().isOk());
+    mvc.perform(put("/api/instructor/assignments/"+id).session(session).with(csrf()).contentType("application/json").content(json.writeValueAsString(payload))).andExpect(status().isBadRequest());
+  }
+
+  @Test
   void authenticationRolesCsrfAndLogout() throws Exception {
     mvc.perform(get("/api/admin/users")).andExpect(status().isUnauthorized());
     mvc.perform(post("/api/auth/login").contentType("application/json").content("{}"))

@@ -55,6 +55,7 @@ public class LearnerController {
   @SuppressWarnings("unchecked")
   Map<String,Object> publicItem(Map<String,Object> item,boolean quiz, boolean reveal) {
     var out=s.map("id",item.get("id"),"classroomId",item.get("classId"),"title",item.get("title"),"description",item.get("description"),"dueAt",deadline(item.get("due")),"kind",quiz?"quiz":"challenge","lessonIds",quiz?List.of():item.get("lessonIds"));
+    if(!quiz) out.put("lessonConfigs",item.get("lessonConfigs"));
     List<Object> questions=new ArrayList<>();
     if(quiz) for(var q:(List<Map<String,Object>>)item.get("questions")) {
       var options=(List<Map<String,Object>>)q.get("options");
@@ -79,7 +80,7 @@ public class LearnerController {
     s.db().query("SELECT * FROM quizzes WHERE class_id=? AND status='Published' ORDER BY created_at",(r,n)->s.quiz(r),cid).forEach(q->result.add(publicItem(q,true,false)));
     s.db().query("SELECT * FROM assignments WHERE class_id=? AND status='Active' ORDER BY title",(r,n)->s.assignment(r),cid).forEach(q->{
       var out=publicItem(q,false,false);
-      out.put("completedLessonIds",s.db().query("SELECT lesson_id FROM assignment_completions WHERE assignment_id=? AND user_id=?",(r,n)->r.getString(1),q.get("id"),uid));
+      out.put("completedLessonIds",s.db().query("SELECT lesson_id FROM assignment_completions WHERE assignment_id=? AND user_id=?",(r,n)->r.getString(1),q.get("id"),uid).stream().filter(s.catalog()::isCurrent).toList());
       result.add(out);
     });
     return result;
@@ -88,7 +89,7 @@ public class LearnerController {
     String uid=user(a);var q=item(uid,id);
     boolean reveal=s.db().queryForObject("SELECT COUNT(*) FROM quiz_attempts WHERE user_id=? AND quiz_id=?",Integer.class,uid,id)>0;
     var out=publicItem(q,(boolean)q.get("isQuiz"),reveal);
-    if(!(boolean)q.get("isQuiz")) out.put("completedLessonIds",s.db().query("SELECT lesson_id FROM assignment_completions WHERE assignment_id=? AND user_id=?",(r,n)->r.getString(1),id,uid));
+    if(!(boolean)q.get("isQuiz")) out.put("completedLessonIds",s.db().query("SELECT lesson_id FROM assignment_completions WHERE assignment_id=? AND user_id=?",(r,n)->r.getString(1),id,uid).stream().filter(s.catalog()::isCurrent).toList());
     return out;
   }
   record Answer(@NotBlank String questionId, @Min(0) @Max(5) Integer selectedIndex) {}

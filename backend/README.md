@@ -49,7 +49,7 @@ Tất cả route bắt đầu bằng `/api`. Request JSON dùng `Content-Type: a
 | GET | /auth/me | Hồ sơ tài khoản trong phiên |
 | POST | /auth/logout | Hủy phiên, trả 204 |
 | GET | /instructor/state | Lớp, bài giao, quiz, thành viên thuộc Instructor hiện tại |
-| GET | /instructor/curriculum | Danh mục 25 mã bài |
+| GET | /instructor/curriculum | Danh mục 29 module hiện tại |
 | POST | /instructor/classes | Tạo lớp |
 | PUT | /instructor/classes/{id} | Sửa lớp |
 | POST / PUT | /instructor/assignments[/{id}] | Tạo hoặc cập nhật bản nháp/giao bài |

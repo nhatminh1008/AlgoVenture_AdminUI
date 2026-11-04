@@ -109,7 +109,7 @@ public class AdminController {
     return store
         .db()
         .query(
-            "SELECT * FROM algorithms ORDER BY topic_id,name",
+            "SELECT * FROM algorithms WHERE status<>'Retired' ORDER BY topic_id,name",
             (r, n) ->
                 store.map(
                     "id",
@@ -140,6 +140,9 @@ public class AdminController {
 
   @PutMapping("/algorithms/{id}")
   Object configure(Authentication a, @PathVariable String id, @Valid @RequestBody Algorithm v) {
+    if (!store.catalog().isCurrent(id)) throw ApiException.missing();
+    if (v.config().prerequisites().stream().anyMatch(lesson -> !store.catalog().isCurrent(lesson)))
+      throw ApiException.bad("Bài tiên quyết không còn thuộc danh mục hiện tại.");
     List<Integer> stars = v.config().starThresholds();
     if (stars.get(0) >= stars.get(1) || stars.get(1) >= stars.get(2))
       throw ApiException.bad("Ngưỡng điểm sao phải tăng dần.");
@@ -148,7 +151,7 @@ public class AdminController {
       throw ApiException.bad("Điều kiện tiên quyết không hợp lệ.");
     var rules = new HashMap<String, Set<String>>();
     // Serialize configuration edits so concurrent requests cannot create a cycle together.
-    for (var row : store.db().queryForList("SELECT id,config FROM algorithms ORDER BY id FOR UPDATE")) {
+    for (var row : store.db().queryForList("SELECT id,config FROM algorithms WHERE status<>'Retired' ORDER BY id FOR UPDATE")) {
       String lesson = (String) row.get("id");
       var required = new HashSet<>(GameController.prerequisites(lesson));
       var config = (Map<?, ?>) store.decode((String) row.get("config"));

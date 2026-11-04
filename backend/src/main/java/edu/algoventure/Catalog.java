@@ -25,6 +25,13 @@ public class Catalog {
     }
   }
 
+  public boolean isCurrent(String id) {
+    for (JsonNode topic : topics)
+      for (JsonNode lesson : topic.path("lessons"))
+        if (lesson.get(0).asText().equals(id)) return true;
+    return false;
+  }
+
   public Set<String> lessons(String topicId) {
     for (JsonNode topic : topics)
       if (topic.path("id").asText().equals(topicId)) {

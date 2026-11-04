@@ -45,6 +45,39 @@ class SharedGameIntegrationTest {
     fail("Bubble lesson rules are missing");
   }
 
+  @Test void retiringCombinedModulesUpgradesExistingAssignmentsWithoutInventingProgress() throws Exception {
+    String token=bearer(register("retired.operations@example.test"));
+    String uid=store.db().queryForObject("SELECT id FROM app_users WHERE email='retired.operations@example.test'",String.class);
+    String teacher=store.db().queryForObject("SELECT id FROM app_users WHERE email='instructor@algoventure.edu'",String.class);
+    var classroom=store.saveClass(teacher,null,new PortalDtos.Classroom("Legacy operations","","data-structures","basic"));
+    String cid=(String)classroom.get("id"),aid=store.id();
+    store.db().update("INSERT INTO enrollments(id,class_id,user_id) VALUES (?,?,?)",store.id(),cid,uid);
+    for(String id:List.of("stack","queue")) store.db().update("INSERT INTO algorithms(id,topic_id,name,difficulty,status,config) VALUES (?,'data-structures',?,'Easy','Published',?)",id,id,body(Map.of("prerequisites",List.of())));
+    store.db().update("INSERT INTO assignments(id,class_id,title,description,status,due,lesson_ids,lesson_configs) VALUES (?,?,?,'','Active',?,?,?)",aid,cid,"Legacy",java.time.LocalDate.now().plusDays(7),body(List.of("stack","stack-pop","queue")),body(Map.of()));
+    store.db().update("INSERT INTO lesson_completions(id,user_id,lesson_id,stage) VALUES (?,?,'stack',1)",store.id(),uid);
+    store.db().update("INSERT INTO assignment_completions(assignment_id,user_id,lesson_id) VALUES (?,?,'stack')",aid,uid);
+    var context=org.mockito.Mockito.mock(org.flywaydb.core.api.migration.Context.class);
+    org.mockito.Mockito.when(context.getConnection()).thenReturn(org.springframework.jdbc.datasource.DataSourceUtils.getConnection(store.db().getDataSource()));
+    var migration=new db.migration.V9__Retire_combined_stack_queue();
+    migration.migrate(context); migration.migrate(context);
+    var expected=List.of("stack-push","stack-pop","stack-peek","queue-enqueue","queue-dequeue","queue-peek");
+    assertEquals(expected,store.decode(store.db().queryForObject("SELECT lesson_ids FROM assignments WHERE id=?",String.class,aid)));
+    assertEquals(2,store.db().queryForObject("SELECT COUNT(*) FROM algorithms WHERE status='Retired'",Integer.class));
+    assertEquals(1,store.db().queryForObject("SELECT COUNT(*) FROM lesson_completions WHERE user_id=? AND lesson_id='stack'",Integer.class,uid));
+    assertEquals(0,store.student("enrollment",uid,cid,"Learner","test").get("completedLessons"));
+    var state=getState(token);
+    assertFalse(state.path("completed").has("stack"));
+    assertFalse(state.path("completed").has("stack-push"));
+    for(var rule:state.path("lessonRules")) assertFalse(Set.of("stack","queue").contains(rule.path("id").asText()));
+    for(String id:List.of("stack","queue")) {
+      mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(Map.of("clientAttemptId",UUID.randomUUID(),"lessonId",id,"stage",1)))).andExpect(status().isNotFound());
+      assertThrows(ApiException.class,()->store.saveAssignment(teacher,null,new PortalDtos.Assignment(cid,"Invalid","","Draft",null,List.of(id))));
+    }
+    var result=json.readTree(mvc.perform(get("/api/learner/assignments/"+aid).header("Authorization",token)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+    assertEquals(json.valueToTree(expected),result.path("lessonIds"));
+    assertEquals(0,result.path("completedLessonIds").size());
+  }
+
   @Test void splitStackAndQueueLessonsPersistAndCountTowardInstructorAssignments() throws Exception {
     String email="split.operations@example.test",token=bearer(register(email));
     String uid=store.db().queryForObject("SELECT id FROM app_users WHERE email=?",String.class,email);
@@ -63,7 +96,7 @@ class SharedGameIntegrationTest {
     }
     assertEquals(6,store.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=?",Integer.class,assignment.get("id"),uid));
     assertEquals(6,store.db().queryForObject("SELECT COUNT(*) FROM practice_events WHERE user_id=?",Integer.class,uid));
-    assertEquals(2,store.db().queryForObject("SELECT COUNT(*) FROM algorithms WHERE id IN ('stack','queue')",Integer.class));
+    assertEquals(0,store.db().queryForObject("SELECT COUNT(*) FROM algorithms WHERE id IN ('stack','queue')",Integer.class));
     mvc.perform(get("/api/game/leaderboard").header("Authorization",token).param("period","all-time"))
         .andExpect(status().isOk()).andExpect(jsonPath("$.player.score").value(600));
   }

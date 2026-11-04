@@ -21,7 +21,7 @@ public class GameController {
 
   @GetMapping("/me/state") Object state(Authentication auth) {
     var result=state(user(auth));
-    result.put("lessonRules", s.db().query("SELECT id,status,config FROM algorithms", (r,n) -> {
+    result.put("lessonRules", s.db().query("SELECT id,status,config FROM algorithms WHERE status<>'Retired'", (r,n) -> {
       var config=(Map<?,?>)s.decode(r.getString("config"));
       return s.map("id",r.getString("id"),"published","Published".equals(r.getString("status")),"prerequisites",config.get("prerequisites"));
     }));
@@ -37,6 +37,7 @@ public class GameController {
     var rows=s.db().queryForList("SELECT lesson_id,stage FROM lesson_completions WHERE user_id=? ORDER BY lesson_id,stage",uid);
     for(var row:rows) {
       String lesson=(String)row.get("lesson_id"); int stage=((Number)row.get("stage")).intValue();
+      if(!s.catalog().isCurrent(lesson)) continue;
       if(lesson.startsWith("linked-")) linked.computeIfAbsent(lesson,k->new ArrayList<>()).add(stage);
       else completed.put(lesson,true);
     }
@@ -52,27 +53,56 @@ public class GameController {
     s.db().update("UPDATE learner_profiles SET display_name=?,avatar=?,avatar_image=? WHERE user_id=?",v.name().trim(),v.avatar(),v.avatarImage(),uid);
     return state(uid);
   }
-  record Completion(@NotNull UUID clientAttemptId,@NotBlank String lessonId,@Min(1) @Max(3) int stage) {}
+  record Completion(@NotNull UUID clientAttemptId,@NotBlank String lessonId,@Min(1) @Max(3) int stage, String assignmentId) {}
   @PostMapping("/me/bubble-challenges")
   @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
-  Object issueBubbleChallenge(Authentication auth) {
+  Object issueBubbleChallenge(Authentication auth, @RequestParam(required=false) String assignmentId) {
     String uid=user(auth);
     if(s.db().queryForObject("SELECT COUNT(*) FROM algorithms WHERE id='bubble' AND status='Published'",Integer.class)==0)
       throw ApiException.missing();
     var pool=new ArrayList<>(java.util.stream.IntStream.rangeClosed(1,19).boxed().toList());
     Collections.shuffle(pool,challengeRandom);
-    var input=pool.subList(0,8);
+    List<Integer> input=new ArrayList<>(pool.subList(0,8));
+    String difficulty="hard";
+    Map<?,?> custom=null;
+    if(assignmentId!=null) {
+      var assignment=s.learnerAssignment(uid,assignmentId,"bubble");
+      custom=(Map<?,?>)((Map<?,?>)assignment.get("lessonConfigs")).get("bubble");
+      if(custom!=null) {
+        if(custom.get("input") instanceof List<?> values) input=values.stream().map(n->((Number)n).intValue()).toList();
+        if(custom.get("difficulty") instanceof String value) difficulty=value;
+        else difficulty="easy";
+        if(custom.get("input")==null) input=new ArrayList<>(pool.subList(0,difficulty.equals("easy")?5:difficulty.equals("medium")?7:8));
+      }
+    }
     int inversions=0;
     for(int i=0;i<input.size();i++)
       for(int j=i+1;j<input.size();j++)
         if(input.get(i)>input.get(j)) inversions++;
-    if(inversions<8) Collections.reverse(input);
+    if(custom==null && inversions<8) Collections.reverse(input);
     String id=s.id();
-    s.db().update("INSERT INTO bubble_challenges(id,user_id,input_json) VALUES (?,?,?)",id,uid,s.encode(input));
+    s.db().update("INSERT INTO bubble_challenges(id,user_id,input_json,assignment_id,difficulty) VALUES (?,?,?,?,?)",id,uid,s.encode(input),assignmentId,difficulty);
     return s.map("clientAttemptId",id,"input",input);
   }
   @PostMapping("/me/completions") Object complete(Authentication auth,@Valid @RequestBody Completion v) {
     String uid=user(auth);
+    if(!s.catalog().isCurrent(v.lessonId())) throw ApiException.missing();
+    if(v.assignmentId()!=null) {
+      var assignment=s.learnerAssignment(uid,v.assignmentId(),v.lessonId());
+      if(((Map<?,?>)assignment.get("lessonConfigs")).containsKey(v.lessonId())) {
+        var rules=s.db().queryForList("SELECT config FROM algorithms WHERE id=? AND status='Published'",v.lessonId());
+        if(rules.isEmpty()) throw ApiException.missing();
+        var required=new HashSet<>(prerequisites(v.lessonId()));
+        var config=(Map<?,?>)s.decode((String)rules.getFirst().get("config"));
+        if(config.get("prerequisites") instanceof List<?> extra) for(var lesson:extra) required.add((String)lesson);
+        if(!((Map<?,?>)state(uid).get("completed")).keySet().containsAll(required)) throw ApiException.bad("Hãy hoàn thành bài tiên quyết trước.");
+        if(v.stage()!=1) throw ApiException.bad("Chặng của bài giao không hợp lệ.");
+        if(v.lessonId().equals("bubble")) verifyAssignedBubble(uid,v.clientAttemptId(),v.assignmentId());
+        if(s.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=? AND lesson_id=?",Integer.class,v.assignmentId(),uid,v.lessonId())==0)
+          s.db().update("INSERT INTO assignment_completions(assignment_id,user_id,lesson_id) VALUES (?,?,?)",v.assignmentId(),uid,v.lessonId());
+        return state(uid);
+      }
+    }
     var old=s.db().queryForList("SELECT lesson_id,stage FROM practice_events WHERE user_id=? AND client_id=?",uid,v.clientAttemptId().toString());
     if(!old.isEmpty()) {
       if(!old.getFirst().get("lesson_id").equals(v.lessonId()) || ((Number)old.getFirst().get("stage")).intValue()!=v.stage()) throw ApiException.bad("Mã lượt chơi đã được dùng cho bài khác.");
@@ -98,6 +128,7 @@ public class GameController {
     if(updated.containsKey(v.lessonId())) for(var assignment:s.db().query("SELECT a.* FROM assignments a JOIN enrollments e ON e.class_id=a.class_id WHERE e.user_id=? AND a.status='Active'",(r,n)->s.assignment(r),uid)) {
       @SuppressWarnings("unchecked") var ids=(List<String>)assignment.get("lessonIds");
       String due=Objects.toString(assignment.get("due"),"");
+<<<<<<< Updated upstream
       if(!due.isEmpty() && LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).isAfter(LocalDate.parse(due))) continue;
       for(String assignedLesson:ids) {
         var required=Catalog.currentLessons(assignedLesson);
@@ -106,6 +137,10 @@ public class GameController {
         if(finished && s.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=? AND lesson_id=?",Integer.class,assignment.get("id"),uid,assignedLesson)==0)
           s.db().update("INSERT INTO assignment_completions(assignment_id,user_id,lesson_id) VALUES (?,?,?)",assignment.get("id"),uid,assignedLesson);
       }
+=======
+      if(!((Map<?,?>)assignment.get("lessonConfigs")).containsKey(v.lessonId()) && ids.contains(v.lessonId()) && (due.isEmpty() || !LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).isAfter(LocalDate.parse(due))) && s.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=? AND lesson_id=?",Integer.class,assignment.get("id"),uid,v.lessonId())==0)
+        s.db().update("INSERT INTO assignment_completions(assignment_id,user_id,lesson_id) VALUES (?,?,?)",assignment.get("id"),uid,v.lessonId());
+>>>>>>> Stashed changes
     }
     return state(uid);
   }
@@ -115,12 +150,21 @@ public class GameController {
     }
     return List.of();
   }
+  private void verifyAssignedBubble(String uid, UUID attempt, String assignment) {
+    var rows=s.db().queryForList("SELECT c.assignment_id FROM bubble_challenges c JOIN learning_attempts a ON a.client_attempt_id=c.id AND a.user_id=c.user_id WHERE c.id=? AND c.user_id=? AND a.status='completed'",attempt.toString(),uid);
+    if(rows.isEmpty() || !assignment.equals(rows.getFirst().get("assignment_id")))
+      throw ApiException.bad("Chưa có nhật ký hoàn thành hợp lệ cho bài giao này.");
+  }
   private void verifyBubbleCompletion(String uid, UUID attemptId) {
     var records=s.db().queryForList(
-        "SELECT a.metadata,c.input_json FROM learning_attempts a JOIN bubble_challenges c ON c.id=a.client_attempt_id AND c.user_id=a.user_id WHERE a.user_id=? AND a.client_attempt_id=? AND a.lesson_id='bubble' AND a.status='completed'",
+        "SELECT a.metadata,c.input_json,c.assignment_id FROM learning_attempts a JOIN bubble_challenges c ON c.id=a.client_attempt_id AND c.user_id=a.user_id WHERE a.user_id=? AND a.client_attempt_id=? AND a.lesson_id='bubble' AND a.status='completed'",
         uid,attemptId.toString());
     if(records.isEmpty()) throw ApiException.bad("Chưa có nhật ký hoàn thành Bubble Sort hợp lệ.");
     var row=records.getFirst();
+    if(row.get("assignment_id")!=null) {
+      var configs=(Map<?,?>)s.decode(s.db().queryForObject("SELECT lesson_configs FROM assignments WHERE id=?",String.class,row.get("assignment_id")));
+      if(configs.containsKey("bubble")) throw ApiException.bad("Lượt chơi tùy chỉnh chỉ ghi kết quả cho bài giao tương ứng.");
+    }
     var metadata=(Map<?,?>)s.decode((String)row.get("metadata"));
     if(!"hard".equals(metadata.get("difficulty")) || metadata.get("activity")!=null
         || !(metadata.get("input") instanceof List<?> input) || input.size()!=8
@@ -135,7 +179,7 @@ public class GameController {
     if(moves==0) throw ApiException.bad("Lượt Bubble Sort phải có thao tác đổi chỗ.");
   }
   @GetMapping("/curriculum") Object curriculum() {
-    return s.map("topics",s.catalog().topics,"lessons",s.db().query("SELECT id,name,status,config FROM algorithms ORDER BY id",(r,n)->s.map("id",r.getString(1),"name",r.getString(2),"status",r.getString(3),"config",s.decode(r.getString(4)))),"features",s.db().query("SELECT id,enabled FROM feature_toggles",(r,n)->s.map("id",r.getString(1),"enabled",r.getBoolean(2))));
+    return s.map("topics",s.catalog().topics,"lessons",s.db().query("SELECT id,name,status,config FROM algorithms WHERE status<>'Retired' ORDER BY id",(r,n)->s.map("id",r.getString(1),"name",r.getString(2),"status",r.getString(3),"config",s.decode(r.getString(4)))),"features",s.db().query("SELECT id,enabled FROM feature_toggles",(r,n)->s.map("id",r.getString(1),"enabled",r.getBoolean(2))));
   }
   @GetMapping("/leaderboard") Object leaderboard(Authentication auth,@RequestParam(defaultValue="weekly") String period) {
     if(!leaderboardEnabled()) throw ApiException.missing();

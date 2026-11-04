@@ -73,3 +73,23 @@ Backend: `backend/mvnw.cmd test`. Portal: `npm test`, `npm run lint`, `npm run b
 Production cần HTTPS, proxy /api cùng origin, SPA fallback và biến môi trường database. Dev proxy không có trong bundle production.
 
 Kiểm thử tích hợp thật có trong repo Game: bật backend 8081 và portal 5174, đặt `LIVE_INTEGRATION_TEST=1`, chạy `npx playwright test tests/live-integration.spec.ts`. Test tạo dữ liệu có tiền tố QA trong database phát triển. Game được Playwright chạy tại 5173 nếu chưa bật. Máy dùng Edge có thể đặt `PLAYWRIGHT_CHANNEL=msedge`.
+
+## Cấu hình module theo bài giao
+
+Bộ thử thách nhận `lessonConfigs` theo lesson ID. Hiện hỗ trợ `bubble`, `selection`, `insertion`, `merge`, `quick`:
+
+```json
+{"lessonConfigs":{"bubble":{"timeLimitSeconds":90,"difficulty":"easy","input":[8,3,-1,3,2]}}}
+```
+
+`timeLimitSeconds`: 30–3600 giây (mặc định 300). `difficulty`: easy/medium/hard. `input`: 2–8 số nguyên -99…99; bỏ trống để tạo đề. Chỉ cấu hình bài đã chọn; không đổi cấu hình sau khi công bố. Mỗi module mới cần khai báo các trường phù hợp với engine trước khi cho giảng viên chỉnh.
+
+Game đọc cấu hình trong API Classroom, áp dụng đồng hồ và chuỗi của bài giao. `POST /api/game/me/bubble-challenges?assignmentId=...` cấp đề Bubble đúng cấu hình, kiểm tra thành viên và hạn nộp. Nhật ký vẫn được server phát lại và kiểm tra thời gian. Completion gửi thêm `assignmentId`; bài tùy chỉnh ghi kết quả riêng cho bài giao, không mở khóa tiến trình tự do hay tính cho bài giao khác. Những bài chưa tùy chỉnh giữ luồng hoàn thành cũ.
+
+Migration V8 bổ sung cấu hình bài giao và liên kết đề Bubble. Cần chạy backend mới cùng game mới để sử dụng cấu hình.
+
+## Danh mục hiện hành và bài gộp đã ngừng dùng
+
+Danh mục hiện tại có 29 bài, khớp các ID trong `ALL_LESSONS` của game. `stack` và `queue` chỉ còn là tên nhóm hoặc dữ liệu lịch sử; không còn là bài được giao hoặc được mở. Stack dùng Push/Pop/Peek; Queue dùng Enqueue/Dequeue/Peek.
+
+Migration V9 chuyển mọi bộ bài cũ từ `stack` sang ba thao tác Stack, `queue` sang ba thao tác Queue, loại ID trùng và cập nhật bài tiên quyết. Các dòng kết quả cũ được giữ nguyên để bảo toàn lịch sử; chúng không tự hoàn thành các thao tác mới. Catalog, API Admin, Instructor và game không cung cấp hai bài đã ngừng dùng; server từ chối giao, mở lại hoặc ghi hoàn thành chúng.
