@@ -140,9 +140,9 @@ public class InstructorController {
         || file.getSize() > 10 * 1024 * 1024
         || filename.length() > 255
         || filename.chars().anyMatch(Character::isISOControl))
-      throw ApiException.bad("Tệp không hợp lệ. Hỗ trợ PDF, DOCX, PPTX, TXT tối đa 10 MB.");
+      throw ApiException.bad("Invalid file. Supports PDF, DOCX, PPTX, TXT up to 10 MB.");
     if (title.isBlank() || title.trim().length() > 120 || description.length() > 500)
-      throw ApiException.bad("Tên tài liệu tối đa 120 ký tự, mô tả tối đa 500 ký tự.");
+      throw ApiException.bad("Document title max 120 characters, description max 500 characters.");
     String id = store.id();
     store
         .db()
@@ -199,7 +199,7 @@ public class InstructorController {
             .db()
             .queryForObject(
                 "SELECT COUNT(*) FROM quiz_materials WHERE material_id=?", Integer.class, id)
-        > 0) throw ApiException.bad("Tài liệu đang được sử dụng bởi bộ câu hỏi.");
+        > 0) throw ApiException.bad("Material is being used by quiz questions.");
     if (store.db().update("DELETE FROM materials WHERE id=? AND class_id=?", id, cid) != 1)
       throw ApiException.missing();
     store.audit(owner, "material.delete");

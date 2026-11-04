@@ -47,8 +47,31 @@ public class PortalDtos {
       @NotNull @Pattern(regexp = "Active|Pending|Suspended") String status,
       @NotBlank @Size(min = 10, max = 72) String password) {}
 
+  // Admin User Management DTOs
   public record UpdateUser(
       @NotBlank @Size(max = 100) String name,
       @NotNull @Pattern(regexp = "admin|instructor|learner") String role,
       @NotNull @Pattern(regexp = "Active|Pending|Suspended") String status) {}
+
+  public record UpdateUserRole(@NotNull @Pattern(regexp = "admin|instructor|learner") String role) {}
+
+  public record UpdateUserStatus(@NotNull Boolean active) {}
+
+  public record PaginatedResponse<T>(
+      List<T> data, long total, int page, int size, int totalPages) {}
+
+  // Forgot/Reset Password DTOs
+  public record ForgotPasswordRequest(@NotBlank @Email @Size(max = 254) String email) {}
+
+  public record ResetPasswordRequest(
+      @NotBlank @Size(min = 36, max = 36) String token,
+      @NotBlank @Size(min = 10, max = 72) String password) {}
+
+  // Admin Instructor Management DTOs
+  public record CreateInstructor(
+      @NotBlank @Email @Size(max = 254) String email,
+      @NotBlank @Size(max = 100) String name,
+      @NotBlank @Size(min = 10, max = 72) String password) {}
+
+  public record UpdateInstructorInfo(@NotBlank @Size(max = 100) String name) {}
 }
