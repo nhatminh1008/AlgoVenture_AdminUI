@@ -1,4 +1,5 @@
 import ClassNavigation from "../components/ClassNavigation";
+import PracticeEvidence from "../components/PracticeEvidence";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Download, Search, Users, ChartNoAxesColumn, TrendingUp } from "lucide-react";
@@ -82,14 +83,14 @@ export default function Progress() {
                     </td>
                     <td>
                       <Link
-                        className="text-emerald-700"
+                        className="text-portal-purple-strong"
                         to={`/instructor/classes/${row.classId}`}
                       >
                         {classroom.name}
                       </Link>
                     </td>
                     <td>{getTopic(classroom.topicId).name}</td>
-                    <td><strong className="text-emerald-800">{row.score ?? "—"}</strong></td>
+                    <td><strong className="text-portal-ink">{row.score ?? "—"}</strong></td>
                     <td><ProgressMeter completed={row.completedLessons} total={row.assignedLessons} percent={row.progressPercent} /></td>
                   </tr>
                 );
@@ -112,6 +113,7 @@ export default function Progress() {
           {rows.length} sinh viên
         </p>
       </div>
+      {scope.classroom && <PracticeEvidence key={scope.classroom.id} classId={scope.classroom.id} />}
     </div>
   );
 }

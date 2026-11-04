@@ -1,14 +1,38 @@
 @import "tailwindcss";
 
 @theme {
-  /* Design tokens trích từ AlgoVenture Admin Console */
-  --color-brand: #10b981;
-  --color-brand-dark: #059669;
-  --color-sidebar: #111827;
+  /* Shared with the game's purple, lavender and yellow palette. */
+  --color-brand: #7656b6;
+  --color-brand-dark: #5c378c;
+  --color-sidebar: #181818;
+  --color-portal-ink: #181818;
+  --color-portal-purple: #7656b6;
+  --color-portal-purple-strong: #5c378c;
+  --color-portal-lavender: #f7f7f7;
+  --color-portal-line-strong: #d2bfe8;
+  --color-portal-yellow: #ffdb3b;
+}
+
+:root {
+  --portal-ink: #181818;
+  --portal-purple: #7656b6;
+  --portal-purple-strong: #5c378c;
+  --portal-purple-rgb: 118 86 182;
+  --portal-yellow: #ffdb3b;
+  --portal-yellow-hover: #f3ca21;
+  --portal-yellow-soft: #fff8da;
+  --portal-lavender: #f7f7f7;
+  --portal-lavender-strong: #eeeeee;
+  --portal-surface: #ffffff;
+  --portal-page: #fafafa;
+  --portal-line: #e5e5e5;
+  --portal-line-strong: #d2bfe8;
+  --portal-muted: #626262;
+  --portal-nav-text: #626262;
 }
 
 body {
-  background-color: var(--color-slate-50);
+  background-color: #ffffff;
   margin: 0;
 }
 
@@ -28,24 +52,8 @@ button:disabled {
   opacity: 0.5;
 }
 :focus-visible {
-  outline: 3px solid #059669;
+  outline: 3px solid var(--portal-purple);
   outline-offset: 3px;
-}
-.portal-shell {
-  display: flex;
-  min-height: 100dvh;
-  color: #334155;
-}
-.portal-sidebar {
-  width: 248px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  background: #111827;
-  position: sticky;
-  top: 0;
-  height: 100dvh;
-  overflow-y: auto;
 }
 .btn-primary,
 .btn-secondary {
@@ -60,11 +68,11 @@ button:disabled {
   text-align: center;
 }
 .btn-primary {
-  background: #059669;
+  background: #181818;
   color: white;
 }
 .btn-primary:hover {
-  background: #047857;
+  background: #353535;
 }
 .btn-secondary {
   background: white;
@@ -114,45 +122,4 @@ button:disabled {
 }
 .data-table tbody tr:last-child td {
   border-bottom: 0;
-}
-@media (max-width: 900px) {
-  .portal-shell {
-    flex-direction: column;
-  }
-  .portal-sidebar {
-    width: 100%;
-    height: auto;
-    position: static;
-  }
-  .portal-sidebar > div {
-    display: none;
-  }
-  .portal-sidebar > div:first-child {
-    display: flex;
-    padding: 1rem 1.25rem;
-  }
-  .portal-sidebar nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    padding: 0 0.75rem 0.75rem;
-    margin-top: 0;
-  }
-  .portal-sidebar nav a {
-    margin: 0;
-    padding: 0.65rem 0.75rem;
-    font-size: 0.75rem;
-  }
-}
-
-.mobile-logout {
-  display: none;
-}
-@media (max-width: 900px) {
-  .mobile-logout {
-    display: block;
-    color: white;
-    margin: 0 1.25rem 1rem;
-    text-align: left;
-  }
 }

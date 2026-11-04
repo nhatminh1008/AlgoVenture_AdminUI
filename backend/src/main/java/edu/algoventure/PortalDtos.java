@@ -18,7 +18,22 @@ public class PortalDtos {
       @NotNull @Size(max = 1000) String description,
       @Pattern(regexp = "Draft|Active|Closed") @NotNull String status,
       LocalDate due,
-      @NotEmpty @Size(max = 25) List<@NotBlank String> lessonIds) {}
+      @NotEmpty @Size(max = 25) List<@NotBlank String> lessonIds,
+      @Size(max=25) java.util.Map<String, @NotNull @Valid LessonConfig> lessonConfigs) {
+    public Assignment(String classId, String title, String description, String status, LocalDate due, List<String> lessonIds) {
+      this(classId, title, description, status, due, lessonIds, java.util.Map.of());
+    }
+  }
+
+  public record LessonConfig(
+      @Min(30) @Max(3600) Integer timeLimitSeconds,
+      @Pattern(regexp="easy|medium|hard") String difficulty,
+      @Size(min=2,max=8) List<@NotNull @Min(-99) @Max(99) Integer> input) {
+    public LessonConfig {
+      if(timeLimitSeconds == null) timeLimitSeconds = 300;
+      if(difficulty == null) difficulty = "easy";
+    }
+  }
 
   public record Option(
       @NotBlank @Size(max = 100) String id, @NotNull @Size(max = 500) String text) {}

@@ -51,14 +51,14 @@ function Detail({ classroom, quiz }) {
       {location.state?.message && (
         <p
           role="status"
-          className="mb-5 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800"
+          className="mb-5 rounded-xl bg-portal-lavender p-4 text-sm text-portal-ink"
         >
           {location.state.message}
         </p>
       )}
       <section className="panel mb-6 space-y-3 p-6">
         <div className="flex flex-wrap gap-3 text-xs text-slate-500">
-          <span className="font-semibold text-emerald-700">
+          <span className="font-semibold text-portal-purple-strong">
             {quiz.status === "Draft" ? "Bản nháp" : "Đã công bố"}
           </span>
           <span>{quiz.questions.length} câu hỏi</span>

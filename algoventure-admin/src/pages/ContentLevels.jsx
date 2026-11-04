@@ -11,9 +11,6 @@ export default function ContentLevels() {
     <div className="mx-auto max-w-5xl">
       <AdminHeader title="Content & Levels" />
       <ApiFeedback state={state} />
-      <p className="mb-5 text-sm text-slate-500">
-        Danh mục 25 bài học giữ mã bài ổn định để game và bài giao dùng chung.
-      </p>
       <input
         aria-label="Tìm bài học"
         className="field mb-5"
@@ -41,7 +38,7 @@ export default function ContentLevels() {
                 <td>{a.status}</td>
                 <td>
                   <Link
-                    className="font-semibold text-emerald-700"
+                    className="font-semibold text-portal-purple-strong"
                     to={`/admin/levels?lessonId=${a.id}`}
                   >
                     Cấu hình

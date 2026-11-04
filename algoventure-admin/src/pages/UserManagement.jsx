@@ -178,7 +178,7 @@ export default function UserManagement() {
                   <td>{u.status}</td>
                   <td>
                     <button
-                      className="text-emerald-700"
+                      className="text-portal-purple-strong"
                       onClick={() => setForm({ ...u })}
                     >
                       Chỉnh sửa

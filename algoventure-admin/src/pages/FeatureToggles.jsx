@@ -54,7 +54,7 @@ export default function FeatureToggles() {
                     aria-checked={f.enabled}
                     aria-label={f.title}
                     disabled={!!busy}
-                    className={`relative h-6 w-11 shrink-0 rounded-full ${f.enabled ? "bg-emerald-600" : "bg-slate-300"}`}
+                    className={`relative h-6 w-11 shrink-0 rounded-full ${f.enabled ? "bg-portal-purple" : "bg-slate-300"}`}
                     onClick={() => toggle(f)}
                   >
                     <span

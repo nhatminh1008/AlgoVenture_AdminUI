@@ -112,7 +112,7 @@ public class PortalStore {
         "due",
         Objects.toString(r.getDate("due"), ""),
         "lessonIds",
-        decode(r.getString("lesson_ids")));
+        decode(r.getString("lesson_ids")), "lessonConfigs", decode(r.getString("lesson_configs")));
   }
 
   Map<String, Object> quiz(ResultSet r) throws SQLException {
@@ -177,7 +177,8 @@ public class PortalStore {
     int required=0,finished=0;
     for(var assignment:db.query("SELECT * FROM assignments WHERE class_id=? AND status='Active'",(r,n)->assignment(r),cid)) {
       required+=((java.util.List<?>)assignment.get("lessonIds")).size();
-      finished+=db.queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=?",Integer.class,assignment.get("id"),uid);
+      var assigned=(java.util.List<?>)assignment.get("lessonIds");
+      finished+=db.query("SELECT lesson_id FROM assignment_completions WHERE assignment_id=? AND user_id=?",(r,n)->r.getString(1),assignment.get("id"),uid).stream().filter(assigned::contains).count();
     }
     return map("id",enrollmentId,"classId",cid,"name",name,"email",email,"score",score==null?null:Math.round(score),"quizzesSubmitted",scores.size(),"completedLessons",finished,"assignedLessons",required,"progressPercent",required==0?null:Math.round(finished*100.0/required));
   }
@@ -220,12 +221,26 @@ public class PortalStore {
     return ownedClass(classId, owner);
   }
 
+  Map<String,Object> learnerAssignment(String uid, String id, String lesson) {
+    var rows = db.query("SELECT a.* FROM assignments a JOIN enrollments e ON e.class_id=a.class_id WHERE a.id=? AND e.user_id=? AND a.status='Active'", (r,n)->assignment(r), id,uid);
+    if(rows.isEmpty()) throw ApiException.missing();
+    var item=rows.getFirst();
+    if(!((List<?>)item.get("lessonIds")).contains(lesson)) throw ApiException.missing();
+    String due=Objects.toString(item.get("due"),"");
+    if(!due.isEmpty() && java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).isAfter(java.time.LocalDate.parse(due)))
+      throw ApiException.bad("Bài giao đã quá hạn.");
+    return item;
+  }
+
   public Map<String, Object> saveAssignment(String owner, String assignmentId, Assignment v) {
     var c = ownedClass(v.classId(), owner);
     Set<String> lessons = catalog.lessons((String) c.get("topicId"));
     if (new HashSet<>(v.lessonIds()).size() != v.lessonIds().size()
         || !lessons.containsAll(v.lessonIds()))
       throw ApiException.bad("Bài học phải thuộc chủ đề của lớp và không trùng nhau.");
+    var configs = v.lessonConfigs() == null ? Map.<String, LessonConfig>of() : v.lessonConfigs();
+    if (!v.lessonIds().containsAll(configs.keySet()) || !Set.of("bubble","selection","insertion","merge","quick").containsAll(configs.keySet()))
+      throw ApiException.bad("Chỉ được cấu hình các bài Sorting đã chọn.");
     if (v.status().equals("Active") && v.due() == null)
       throw ApiException.bad("Hãy đặt hạn hoàn thành trước khi giao bài.");
     if (v.status().equals("Closed"))
@@ -244,25 +259,26 @@ public class PortalStore {
       if (!previous.get("status").equals("Draft"))
         throw ApiException.bad("Chỉ có thể sửa bản nháp.");
       db.update(
-          "UPDATE assignments SET title=?,description=?,status=?,due=?,lesson_ids=? WHERE id=?",
+          "UPDATE assignments SET title=?,description=?,status=?,due=?,lesson_ids=?,lesson_configs=? WHERE id=?",
           v.title().trim(),
           v.description(),
           v.status(),
           v.due(),
           encode(v.lessonIds()),
+          encode(configs),
           assignmentId);
     } else {
       assignmentId = id();
       db.update(
-          "INSERT INTO assignments(id,class_id,title,description,status,due,lesson_ids) VALUES"
-              + " (?,?,?,?,?,?,?)",
+          "INSERT INTO assignments(id,class_id,title,description,status,due,lesson_ids,lesson_configs) VALUES"
+              + " (?,?,?,?,?,?,?,?)",
           assignmentId,
           v.classId(),
           v.title().trim(),
           v.description(),
           v.status(),
           v.due(),
-          encode(v.lessonIds()));
+          encode(v.lessonIds()), encode(configs));
     }
     audit(owner, "assignment.save");
     return db.query("SELECT * FROM assignments WHERE id=?", (r, n) -> assignment(r), assignmentId)

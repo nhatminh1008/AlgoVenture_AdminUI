@@ -41,6 +41,62 @@ class BubbleInteractionIntegrationTest {
     return json.readTree(mvc.perform(get("/api/game/me/learning-attempts/"+id+suffix).header("Authorization",token)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
   }
 
+  @Test void assignedBubbleUsesTeacherInputClockAndIsolatedCompletion() throws Exception {
+    String token=register("bubble.custom"), stranger=register("bubble.custom-other");
+    String owner=store.db().queryForObject("SELECT id FROM app_users WHERE email='instructor@algoventure.edu'",String.class);
+    String uid=store.db().queryForObject("SELECT id FROM app_users WHERE email='bubble.custom@example.test'",String.class);
+    var c=store.saveClass(owner,null,new PortalDtos.Classroom("Custom","","sorting","basic"));
+    var a=store.saveAssignment(owner,null,new PortalDtos.Assignment((String)c.get("id"),"Custom","","Active",LocalDate.now().plusDays(1),List.of("bubble"),Map.of("bubble",new PortalDtos.LessonConfig(60,"easy",List.of(3,-1,2)))));
+    String assignment=(String)a.get("id");
+    store.db().update("INSERT INTO enrollments(id,class_id,user_id) VALUES (?,?,?)",store.id(),c.get("id"),uid);
+    mvc.perform(post("/api/game/me/bubble-challenges").param("assignmentId",assignment).header("Authorization",stranger)).andExpect(status().isNotFound());
+    mvc.perform(get("/api/learner/assignments/"+assignment).header("Authorization",token)).andExpect(status().isOk()).andExpect(jsonPath("$.lessonConfigs.bubble.timeLimitSeconds").value(60));
+    var issued=json.readTree(mvc.perform(post("/api/game/me/bubble-challenges").param("assignmentId",assignment).header("Authorization",token)).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+    UUID id=UUID.fromString(issued.path("clientAttemptId").asText());
+    assertEquals(json.valueToTree(List.of(3,-1,2)),issued.path("input"));
+    var trace=new BubbleTrace(List.of(3,-1,2)); var events=new ArrayList<Map<String,Object>>();
+    while(!trace.done) events.add(move(trace,events.size()+1,trace.items.get(trace.pair).id(),trace.pair+1));
+    events.add(event(events.size()+1,"completed",1000));
+    var log=header(List.of(3,-1,2),events); log.put("source","classroom");log.put("assignmentId",assignment);
+    upload(token,id,log).andExpect(status().isOk());
+    var claim=Map.of("clientAttemptId",id,"lessonId","bubble","stage",1,"assignmentId",assignment);
+    for(int i=0;i<2;i++) mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(json.writeValueAsString(claim))).andExpect(status().isOk()).andExpect(jsonPath("$.completed.bubble").doesNotExist());
+    assertEquals(1,store.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=?",Integer.class,assignment));
+    mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(json.writeValueAsString(Map.of("clientAttemptId",id,"lessonId","bubble","stage",1)))).andExpect(status().isBadRequest());
+    var timeout=json.readTree(mvc.perform(post("/api/game/me/bubble-challenges").param("assignmentId",assignment).header("Authorization",token)).andReturn().getResponse().getContentAsString());
+    var end=event(1,"timed_out",60000);end.put("reason","timeout");
+    var timeoutLog=header(List.of(3,-1,2),List.of(end));timeoutLog.put("source","classroom");timeoutLog.put("assignmentId",assignment);
+    upload(token,UUID.fromString(timeout.path("clientAttemptId").asText()),timeoutLog).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("timed_out"));
+  }
+
+  @Test void completionRequiresTheOwnersReplayedHardAttempt() throws Exception {
+    String owner=register("bubble.credit"), other=register("bubble.other-credit");
+    var issued=json.readTree(mvc.perform(post("/api/game/me/bubble-challenges").header("Authorization",owner))
+      .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+    UUID id=UUID.fromString(issued.path("clientAttemptId").asText());
+    var body=json.writeValueAsString(Map.of("lessonId","bubble","stage",1,"clientAttemptId",id));
+    var claim=post("/api/game/me/completions").contentType("application/json").content(body);
+    mvc.perform(claim.header("Authorization",owner)).andExpect(status().isBadRequest());
+    var altered=header(List.of(2,1,3,4,5,6,7,8),List.of());
+    altered.put("difficulty","hard");
+    upload(owner,id,altered).andExpect(status().isBadRequest());
+    upload(other,id,altered).andExpect(status().isNotFound());
+    var input=new ArrayList<Integer>();
+    issued.path("input").forEach(value -> input.add(value.asInt()));
+    var trace=new BubbleTrace(input);
+    var events=new ArrayList<Map<String,Object>>();
+    while(!trace.done) events.add(move(trace,events.size()+1,trace.items.get(trace.pair).id(),trace.pair+1));
+    assertTrue(events.size()>=8);
+    events.add(event(events.size()+1,"completed",(events.size()+1)*100));
+    var log=header(input,events);
+    log.put("difficulty","hard");
+    upload(owner,id,log).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("completed"));
+    mvc.perform(post("/api/game/me/completions").header("Authorization",other).contentType("application/json").content(body))
+      .andExpect(status().isBadRequest());
+    for(int i=0;i<2;i++) mvc.perform(claim).andExpect(status().isOk()).andExpect(jsonPath("$.completed.bubble").value(true));
+    assertEquals(1,store.db().queryForObject("SELECT COUNT(*) FROM practice_events WHERE client_id=?",Integer.class,id.toString()));
+  }
+
   @Test void preservesWrongDecisionsReplaysAndDeduplicatesPrefixesWithoutFakeMastery() throws Exception {
     String token=register("bubble.logs"); UUID id=UUID.randomUUID();
     var input=List.of(3,1,2); var trace=new BubbleTrace(input); var events=new ArrayList<Map<String,Object>>();

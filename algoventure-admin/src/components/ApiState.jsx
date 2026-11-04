@@ -44,7 +44,7 @@ export function ApiFeedback({ state, message }) {
       {message && (
         <p
           role="status"
-          className="mb-4 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800"
+          className="mb-4 rounded-xl bg-portal-lavender p-4 text-sm text-portal-ink"
         >
           {message}
         </p>
@@ -55,12 +55,9 @@ export function ApiFeedback({ state, message }) {
 
 export function AdminHeader({ title, children }) {
   return (
-    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <p className="mb-1 text-sm text-slate-500">Admin Console / {title}</p>
-        <h1 className="text-3xl font-bold text-slate-900">{title}</h1>
-      </div>
-      {children}
-    </div>
+    <header className="admin-page-header">
+      <h1>{title}</h1>
+      {children && <div>{children}</div>}
+    </header>
   );
 }

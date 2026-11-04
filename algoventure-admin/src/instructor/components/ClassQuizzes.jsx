@@ -46,7 +46,7 @@ export default function ClassQuizzes({ classId }) {
                 <ClipboardList size={21} />
               </span>
               <span
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${quiz.status === "Draft" ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${quiz.status === "Draft" ? "bg-amber-50 text-amber-700" : "bg-portal-lavender text-portal-purple-strong"}`}
               >
                 {quiz.status === "Draft" ? "Bản nháp" : "Đã công bố"}
               </span>

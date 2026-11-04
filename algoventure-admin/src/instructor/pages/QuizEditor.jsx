@@ -201,7 +201,7 @@ function Editor({ classroom, existing }) {
           <div className="min-w-0 space-y-5">
             <section className="panel space-y-5 p-6">
               <div className="flex flex-wrap gap-2 text-xs">
-                <span className="rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-700">
+                <span className="rounded-full bg-portal-lavender px-3 py-1 font-semibold text-portal-purple-strong">
                   {getTopic(classroom.topicId).name}
                 </span>
                 <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
@@ -316,13 +316,13 @@ function Editor({ classroom, existing }) {
                     {question.options.map((option, optionIndex) => (
                       <div
                         key={option.id}
-                        className={`flex items-center gap-2 rounded-xl border p-3 ${question.correctOptionId === option.id ? "border-emerald-300 bg-emerald-50/50" : "border-slate-200"}`}
+                        className={`flex items-center gap-2 rounded-xl border p-3 ${question.correctOptionId === option.id ? "border-portal-line-strong bg-portal-lavender/50" : "border-slate-200"}`}
                       >
                         <input
                           type="radio"
                           name={`correct-${question.id}`}
                           aria-label={`Đáp án đúng ${String.fromCharCode(65 + optionIndex)}`}
-                          className="h-4 w-4 shrink-0 accent-emerald-600"
+                          className="h-4 w-4 shrink-0 accent-portal-purple"
                           checked={question.correctOptionId === option.id}
                           onChange={() =>
                             updateQuestion(question.id, {
@@ -370,7 +370,7 @@ function Editor({ classroom, existing }) {
                     ))}
                   </div>
                   <button
-                    className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 disabled:text-slate-400"
+                    className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-portal-purple-strong disabled:text-slate-400"
                     disabled={question.options.length >= 6}
                     onClick={() =>
                       updateQuestion(question.id, {

@@ -30,7 +30,9 @@ Response auth có userId dạng số ổn định từ learner_profiles, liên k
 
 Migration V4 thêm learner_profiles, learner_sessions, practice_events. Tiến trình dùng lesson_completions và assignment_completions có sẵn từ V2. Không đổi checksum migration cũ.
 
-Hoàn thành màn chơi hiện do engine trình duyệt xác nhận rồi gửi sự kiện. Backend kiểm tra danh mục/tiên quyết/chặng, chống ghi trùng; chưa phát lại toàn bộ thao tác để chống giả mạo kết quả game. Quiz Classroom chấm hoàn toàn ở server. Leaderboard không nhận điểm client tự khai.
+Đối với Bubble Sort mức Khó, client gọi `POST /api/game/me/bubble-challenges` để nhận `{clientAttemptId,input}` gắn với tài khoản. Đề gồm 8 số khác nhau và yêu cầu ít nhất 8 lần đổi chỗ. Client gửi nhật ký qua `PUT /api/game/me/learning-attempts/{clientAttemptId}` trước khi yêu cầu ghi hoàn thành cùng mã lượt. Backend kiểm tra chủ sở hữu, khớp mảng đã cấp và phát lại thao tác. Sau khi nhận đề, lượt đang mở tiếp tục chơi được khi mất mạng và đồng bộ khi kết nối lại. Lượt bổ trợ không tính hoàn thành bài chính. Script tự giải đề được cấp vẫn có thể gửi lời giải hợp lệ.
+
+Các bài còn lại gửi sự kiện hoàn thành do engine trình duyệt xác nhận. Backend kiểm tra danh mục, bài tiên quyết và chặng, đồng thời chống ghi trùng. Quiz Classroom chấm hoàn toàn ở server.
 
 Chơi khách vẫn lưu cục bộ. Dữ liệu khách/local cũ không tự nhập thành kết quả server. Kết quả tài khoản lỗi mạng được xếp hàng theo userId, giữ clientAttemptId khi thử lại và hiển thị thông báo chưa đồng bộ. Sandbox không ghi điểm/hoàn thành.
 
@@ -54,6 +56,8 @@ Tất cả yêu cầu Bearer token Learner của backend chung:
 
 Bộ thử thách mở bài tương ứng trong game. Hoàn thành trong thời hạn sẽ ghi tiến độ cho bài giao Active của lớp đã đăng ký; vẫn áp dụng luật mở khóa bài học.
 
+Bài giao cũ có mã `stack` hoặc `queue` được mở thành ba thao tác hiện hành tương ứng. Backend chỉ ghi hoàn thành mã bài giao cũ sau khi đủ cả ba thao tác; không tạo thêm điểm hoặc hoàn thành bài chính cho mã cũ. Kết quả bài giao cũ đã có được giữ nguyên. Mỗi thao tác trên bản đồ cần vượt mức Khó để gửi hoàn thành; mức Dễ/Vừa chỉ lưu tiến trình độ khó cục bộ.
+
 Instructor state trả điểm trung bình các điểm cao nhất của từng quiz đã nộp, số quiz đã nộp, bài thực hành hoàn thành/được giao và phần trăm. Tiến độ, phân tích và CSV/JSON dùng số liệu này. Chưa có mô hình Knowledge Tracing.
 
 ## Chạy
@@ -69,3 +73,23 @@ Backend: `backend/mvnw.cmd test`. Portal: `npm test`, `npm run lint`, `npm run b
 Production cần HTTPS, proxy /api cùng origin, SPA fallback và biến môi trường database. Dev proxy không có trong bundle production.
 
 Kiểm thử tích hợp thật có trong repo Game: bật backend 8081 và portal 5174, đặt `LIVE_INTEGRATION_TEST=1`, chạy `npx playwright test tests/live-integration.spec.ts`. Test tạo dữ liệu có tiền tố QA trong database phát triển. Game được Playwright chạy tại 5173 nếu chưa bật. Máy dùng Edge có thể đặt `PLAYWRIGHT_CHANNEL=msedge`.
+
+## Cấu hình module theo bài giao
+
+Bộ thử thách nhận `lessonConfigs` theo lesson ID. Hiện hỗ trợ `bubble`, `selection`, `insertion`, `merge`, `quick`:
+
+```json
+{"lessonConfigs":{"bubble":{"timeLimitSeconds":90,"difficulty":"easy","input":[8,3,-1,3,2]}}}
+```
+
+`timeLimitSeconds`: 30–3600 giây (mặc định 300). `difficulty`: easy/medium/hard. `input`: 2–8 số nguyên -99…99; bỏ trống để tạo đề. Chỉ cấu hình bài đã chọn; không đổi cấu hình sau khi công bố. Mỗi module mới cần khai báo các trường phù hợp với engine trước khi cho giảng viên chỉnh.
+
+Game đọc cấu hình trong API Classroom, áp dụng đồng hồ và chuỗi của bài giao. `POST /api/game/me/bubble-challenges?assignmentId=...` cấp đề Bubble đúng cấu hình, kiểm tra thành viên và hạn nộp. Nhật ký vẫn được server phát lại và kiểm tra thời gian. Completion gửi thêm `assignmentId`; bài tùy chỉnh ghi kết quả riêng cho bài giao, không mở khóa tiến trình tự do hay tính cho bài giao khác. Những bài chưa tùy chỉnh giữ luồng hoàn thành cũ.
+
+Migration V8 bổ sung cấu hình bài giao và liên kết đề Bubble. Cần chạy backend mới cùng game mới để sử dụng cấu hình.
+
+## Danh mục hiện hành và bài gộp đã ngừng dùng
+
+Danh mục hiện tại có 29 bài, khớp các ID trong `ALL_LESSONS` của game. `stack` và `queue` chỉ còn là tên nhóm hoặc dữ liệu lịch sử; không còn là bài được giao hoặc được mở. Stack dùng Push/Pop/Peek; Queue dùng Enqueue/Dequeue/Peek.
+
+Migration V9 chuyển mọi bộ bài cũ từ `stack` sang ba thao tác Stack, `queue` sang ba thao tác Queue, loại ID trùng và cập nhật bài tiên quyết. Các dòng kết quả cũ được giữ nguyên để bảo toàn lịch sử; chúng không tự hoàn thành các thao tác mới. Catalog, API Admin, Instructor và game không cung cấp hai bài đã ngừng dùng; server từ chối giao, mở lại hoặc ghi hoàn thành chúng.

@@ -1,0 +1,29 @@
+{
+  "status": "completed",
+  "purpose": "experimental pipeline development",
+  "architecture": "simplekt",
+  "initialization": "random Game embeddings and weights; no CSEDM checkpoint transfer",
+  "predictionTarget": "first_swap_opportunity",
+  "encodingVersion": "bubble-board-v1",
+  "evaluationStatus": "deferred",
+  "deploymentReady": false,
+  "seed": 42,
+  "epochsRequested": 2,
+  "maxSteps": 2,
+  "sourceArchiveSha256": "16eaa53c856ca552f196b4216964ebbff64aa02c54ab2da8b725769cb7f0a3f3",
+  "datasetFilesSha256": {
+    "train.jsonl": "e8826bf23c60c665df4d00cc8be26ef7dea145e5d553d34477bea59fd6719f78",
+    "vocab.json": "2ce23d42378afb6679d4129c87535b0aa5570aee3052af305c600e4cd8d2c8df",
+    "dataset.json": "d435b18a9105bea0fb9b4a361167218c255d583682175d3b9cfd6b6f1597eb56",
+    "learner-splits.json": "79336b2f30c81c3f6421231f8c3085e659efde9085faea5d568668f9d657e668"
+  },
+  "optimizerSteps": 2,
+  "trainingSequences": 1,
+  "checkpointReloadPassed": true,
+  "currentResponseInvariant": true,
+  "meanTrainingLoss": 0.628439873456955,
+  "lastGradientNorm": 1.7151068449020386,
+  "checkpointSha256": "36a31fc69a538091ac6f7f6dc24888d558c9f00963f280a0f2c04b96d74eb8f4",
+  "torchVersion": "2.14.1+cpu",
+  "limitations": "Training loss is a pipeline diagnostic, not validation or evidence of recommendation quality."
+}

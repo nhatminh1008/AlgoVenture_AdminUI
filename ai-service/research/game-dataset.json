@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "encodingVersion": "bubble-board-v1",
+  "predictionTarget": "first_swap_opportunity",
+  "sequenceLength": 200,
+  "splitSeed": 42,
+  "splitMethod": "learner-disjoint snapshot hash rank; approximately 60/20/20",
+  "splits": {
+    "train": {
+      "learners": 1,
+      "observations": 59,
+      "questionOov": 0,
+      "kcOov": 0,
+      "correct": 52,
+      "scoredTargets": 58,
+      "sequences": 1
+    },
+    "validation": {
+      "learners": 0,
+      "observations": 0,
+      "questionOov": 0,
+      "kcOov": 0,
+      "correct": 0,
+      "scoredTargets": 0,
+      "sequences": 0
+    },
+    "test": {
+      "learners": 0,
+      "observations": 0,
+      "questionOov": 0,
+      "kcOov": 0,
+      "correct": 0,
+      "scoredTargets": 0,
+      "sequences": 0
+    }
+  },
+  "candidateCoverage": [
+    {
+      "id": "bubble-short-v1",
+      "questionId": "bubble-board-v1:f6553fb00593f9557befec7f9995308cc53168942fdb66c89a7d86ba751fe690",
+      "kcId": "bubble.next_swap.v1",
+      "inTrainVocab": true,
+      "trainObservations": 1,
+      "trainLearners": 1
+    },
+    {
+      "id": "bubble-duplicates-v1",
+      "questionId": "bubble-board-v1:f24a1db9b1eeb258572ccea9f7c8b63921299a0a78628d99fa6903f31d80909c",
+      "kcId": "bubble.next_swap.v1",
+      "inTrainVocab": true,
+      "trainObservations": 1,
+      "trainLearners": 1
+    },
+    {
+      "id": "bubble-mixed-v1",
+      "questionId": "bubble-board-v1:ef864db89c99ec230a9846816b60f4f79743e68b1756a11abeab14ce163b4db9",
+      "kcId": "bubble.next_swap.v1",
+      "inTrainVocab": true,
+      "trainObservations": 1,
+      "trainLearners": 1
+    }
+  ],
+  "datasetPrepared": true,
+  "evaluationDeferred": true,
+  "deploymentReady": false,
+  "warnings": [
+    "Fewer than 3 learners: all data stays in train; validation/test are empty.",
+    "Prepared data does not certify participant identity, calibration or model quality."
+  ],
+  "observationsSha256": "aba5076bc6eab3d459ce4c6dde579e7bbae124f2c659cffc07182e070b2f685c",
+  "catalogSha256": "ee1f0c50f3a021ef44a038d1f11ead1b01e6c1859750aae2f06e28104958eb90"
+}

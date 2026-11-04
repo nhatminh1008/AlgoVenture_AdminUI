@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import com.fasterxml.jackson.databind.*;
 import java.util.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -16,6 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test") @Transactional
 class SharedGameIntegrationTest {
   @Autowired MockMvc mvc; @Autowired ObjectMapper json; @Autowired PortalStore store;
+  @BeforeEach void enableLeaderboard() {
+    store.db().update("UPDATE feature_toggles SET enabled=true WHERE id='leaderboard'");
+  }
   JsonNode register(String email) throws Exception {
     return json.readTree(mvc.perform(post("/api/game/auth/register").contentType("application/json").content(json.writeValueAsString(Map.of("email",email,"password","Learner@12345","fullName","New Learner","role","admin","status","Suspended"))))
       .andExpect(status().isCreated()).andExpect(jsonPath("$.role").value("LEARNER")).andExpect(jsonPath("$.password_hash").doesNotExist()).andReturn().getResponse().getContentAsString());
@@ -23,6 +27,113 @@ class SharedGameIntegrationTest {
   String bearer(JsonNode auth) { return "Bearer "+auth.path("token").asText(); }
   JsonNode getState(String token) throws Exception { return json.readTree(mvc.perform(get("/api/game/me/state").header("Authorization",token)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString()); }
   String body(Object v) throws Exception { return json.writeValueAsString(v); }
+
+  @Test void gameStateExposesAdminLessonRulesAndEnforcesLeaderboardToggle() throws Exception {
+    String token=bearer(register("rules.shared@example.test"));
+    store.db().update("UPDATE algorithms SET status='Draft' WHERE id='bubble'");
+    store.db().update("UPDATE feature_toggles SET enabled=false WHERE id='leaderboard'");
+    var state=getState(token);
+    assertFalse(state.path("leaderboardEnabled").asBoolean(true));
+    var rules=state.path("lessonRules");
+    assertTrue(rules.isArray());
+    for(var rule:rules) if(rule.path("id").asText().equals("bubble")) {
+      assertFalse(rule.path("published").asBoolean(true));
+      assertTrue(rule.path("prerequisites").isArray());
+      mvc.perform(get("/api/game/leaderboard").header("Authorization",token)).andExpect(status().isNotFound());
+      return;
+    }
+    fail("Bubble lesson rules are missing");
+  }
+
+  @Test void retiringCombinedModulesUpgradesExistingAssignmentsWithoutInventingProgress() throws Exception {
+    String token=bearer(register("retired.operations@example.test"));
+    String uid=store.db().queryForObject("SELECT id FROM app_users WHERE email='retired.operations@example.test'",String.class);
+    String teacher=store.db().queryForObject("SELECT id FROM app_users WHERE email='instructor@algoventure.edu'",String.class);
+    var classroom=store.saveClass(teacher,null,new PortalDtos.Classroom("Legacy operations","","data-structures","basic"));
+    String cid=(String)classroom.get("id"),aid=store.id();
+    store.db().update("INSERT INTO enrollments(id,class_id,user_id) VALUES (?,?,?)",store.id(),cid,uid);
+    for(String id:List.of("stack","queue")) store.db().update("INSERT INTO algorithms(id,topic_id,name,difficulty,status,config) VALUES (?,'data-structures',?,'Easy','Published',?)",id,id,body(Map.of("prerequisites",List.of())));
+    store.db().update("INSERT INTO assignments(id,class_id,title,description,status,due,lesson_ids,lesson_configs) VALUES (?,?,?,'','Active',?,?,?)",aid,cid,"Legacy",java.time.LocalDate.now().plusDays(7),body(List.of("stack","stack-pop","queue")),body(Map.of()));
+    store.db().update("INSERT INTO lesson_completions(id,user_id,lesson_id,stage) VALUES (?,?,'stack',1)",store.id(),uid);
+    store.db().update("INSERT INTO assignment_completions(assignment_id,user_id,lesson_id) VALUES (?,?,'stack')",aid,uid);
+    var context=org.mockito.Mockito.mock(org.flywaydb.core.api.migration.Context.class);
+    org.mockito.Mockito.when(context.getConnection()).thenReturn(org.springframework.jdbc.datasource.DataSourceUtils.getConnection(store.db().getDataSource()));
+    var migration=new db.migration.V9__Retire_combined_stack_queue();
+    migration.migrate(context); migration.migrate(context);
+    var expected=List.of("stack-push","stack-pop","stack-peek","queue-enqueue","queue-dequeue","queue-peek");
+    assertEquals(expected,store.decode(store.db().queryForObject("SELECT lesson_ids FROM assignments WHERE id=?",String.class,aid)));
+    assertEquals(2,store.db().queryForObject("SELECT COUNT(*) FROM algorithms WHERE status='Retired'",Integer.class));
+    assertEquals(1,store.db().queryForObject("SELECT COUNT(*) FROM lesson_completions WHERE user_id=? AND lesson_id='stack'",Integer.class,uid));
+    assertEquals(0,store.student("enrollment",uid,cid,"Learner","test").get("completedLessons"));
+    var state=getState(token);
+    assertFalse(state.path("completed").has("stack"));
+    assertFalse(state.path("completed").has("stack-push"));
+    for(var rule:state.path("lessonRules")) assertFalse(Set.of("stack","queue").contains(rule.path("id").asText()));
+    for(String id:List.of("stack","queue")) {
+      mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(Map.of("clientAttemptId",UUID.randomUUID(),"lessonId",id,"stage",1)))).andExpect(status().isNotFound());
+      assertThrows(ApiException.class,()->store.saveAssignment(teacher,null,new PortalDtos.Assignment(cid,"Invalid","","Draft",null,List.of(id))));
+    }
+    var result=json.readTree(mvc.perform(get("/api/learner/assignments/"+aid).header("Authorization",token)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+    assertEquals(json.valueToTree(expected),result.path("lessonIds"));
+    assertEquals(0,result.path("completedLessonIds").size());
+  }
+
+  @Test void splitStackAndQueueLessonsPersistAndCountTowardInstructorAssignments() throws Exception {
+    String email="split.operations@example.test",token=bearer(register(email));
+    String uid=store.db().queryForObject("SELECT id FROM app_users WHERE email=?",String.class,email);
+    String teacher=store.db().queryForObject("SELECT id FROM app_users WHERE email='instructor@algoventure.edu'",String.class);
+    var classroom=store.saveClass(teacher,null,new PortalDtos.Classroom("Split operations","","data-structures","basic"));
+    String cid=(String)classroom.get("id");
+    store.db().update("INSERT INTO enrollments(id,class_id,user_id) VALUES (?,?,?)",store.id(),cid,uid);
+    var ids=List.of("stack-push","stack-pop","stack-peek","queue-enqueue","queue-dequeue","queue-peek");
+    var assignment=store.saveAssignment(teacher,null,new PortalDtos.Assignment(cid,"Operations","","Active",java.time.LocalDate.now().plusDays(7),ids));
+    for(String id:ids) {
+      assertEquals(1,store.db().queryForObject("SELECT COUNT(*) FROM algorithms WHERE id=? AND status='Published'",Integer.class,id));
+      var completion=Map.of("clientAttemptId",UUID.randomUUID(),"lessonId",id,"stage",1);
+      for(int retry=0;retry<2;retry++) mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(completion)))
+          .andExpect(status().isOk());
+      assertTrue(getState(token).path("completed").path(id).asBoolean(),id);
+    }
+    assertEquals(6,store.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=?",Integer.class,assignment.get("id"),uid));
+    assertEquals(6,store.db().queryForObject("SELECT COUNT(*) FROM practice_events WHERE user_id=?",Integer.class,uid));
+    assertEquals(0,store.db().queryForObject("SELECT COUNT(*) FROM algorithms WHERE id IN ('stack','queue')",Integer.class));
+    mvc.perform(get("/api/game/leaderboard").header("Authorization",token).param("period","all-time"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.player.score").value(600));
+  }
+
+  @Test void legacyAssignmentsRequireEveryCurrentOperationWithoutExtraRewards() throws Exception {
+    String email="legacy.operations@example.test",token=bearer(register(email));
+    String uid=store.db().queryForObject("SELECT id FROM app_users WHERE email=?",String.class,email);
+    String teacher=store.db().queryForObject("SELECT id FROM app_users WHERE email='instructor@algoventure.edu'",String.class);
+    var classroom=store.saveClass(teacher,null,new PortalDtos.Classroom("Legacy operations","","data-structures","basic"));
+    String cid=(String)classroom.get("id");
+    store.db().update("INSERT INTO enrollments(id,class_id,user_id) VALUES (?,?,?)",store.id(),cid,uid);
+    var due=java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).plusDays(7);
+    for(String legacy:List.of("stack","queue")) {
+      mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json")
+          .content(body(Map.of("clientAttemptId",UUID.randomUUID(),"lessonId",legacy,"stage",1))))
+          .andExpect(status().isBadRequest());
+      var assignment=store.saveAssignment(teacher,null,new PortalDtos.Assignment(cid,"Legacy "+legacy,"","Active",due,List.of(legacy)));
+      var expired=store.saveAssignment(teacher,null,new PortalDtos.Assignment(cid,"Expired "+legacy,"","Active",due.minusDays(8),List.of(legacy)));
+      var required=Catalog.currentLessons(legacy);
+      for(int index=0;index<required.size();index++) {
+        var completion=Map.of("clientAttemptId",UUID.randomUUID(),"lessonId",required.get(index),"stage",1);
+        for(int retry=0;retry<2;retry++) mvc.perform(post("/api/game/me/completions").header("Authorization",token)
+            .contentType("application/json").content(body(completion))).andExpect(status().isOk());
+        assertEquals(index==2?1:0,store.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=? AND lesson_id=?",Integer.class,assignment.get("id"),uid,legacy));
+        assertEquals(0,store.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=?",Integer.class,expired.get("id"),uid));
+      }
+      assertFalse(getState(token).path("completed").has(legacy));
+    }
+    assertEquals(6,store.db().queryForObject("SELECT COUNT(*) FROM practice_events WHERE user_id=?",Integer.class,uid));
+    mvc.perform(get("/api/game/leaderboard").header("Authorization",token).param("period","all-time"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.player.score").value(600));
+    @SuppressWarnings("unchecked") var students=(List<Map<String,Object>>)store.state(teacher).get("students");
+    var learner=students.stream().filter(value->value.get("email").equals(email)).findFirst().orElseThrow();
+    assertEquals(2,learner.get("completedLessons"));
+    assertEquals(4,learner.get("assignedLessons"));
+    assertEquals(50L,learner.get("progressPercent"));
+  }
 
   @Test void publicRegistrationUsesSharedAccountsAndRevocableHashedSessions() throws Exception {
     var auth=register(" Learner.Shared@EXAMPLE.test "); String token=bearer(auth);
@@ -53,10 +164,11 @@ class SharedGameIntegrationTest {
     store.db().update("UPDATE app_users SET status='Active',role='instructor' WHERE email=?","suspended.shared@example.test");
     mvc.perform(get("/api/learner/classes").header("Authorization",bearer(auth))).andExpect(status().isForbidden());
   }
-  @Test void constructionRequiresTwoOrderedStagesAndAwardsOneLessonScore() throws Exception {
+  @Test void constructionRequiresThreeOrderedStagesAndAwardsOneLessonScore() throws Exception {
     String token=bearer(register("construction.shared@example.test"));
     var first=Map.of("clientAttemptId",UUID.randomUUID(),"lessonId","linked-list","stage",1);
     var second=Map.of("clientAttemptId",UUID.randomUUID(),"lessonId","linked-list","stage",2);
+    var third=Map.of("clientAttemptId",UUID.randomUUID(),"lessonId","linked-list","stage",3);
     mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(second))).andExpect(status().isBadRequest());
     mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(first)))
       .andExpect(status().isOk()).andExpect(jsonPath("$.completed['linked-list']").doesNotExist()).andExpect(jsonPath("$.linkedLevels['linked-list'][0]").value(1));
@@ -64,15 +176,36 @@ class SharedGameIntegrationTest {
     // A stage needs its own attempt ID; retrying the same completed stage is safe.
     mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(Map.of("clientAttemptId",first.get("clientAttemptId"),"lessonId","linked-list","stage",2)))).andExpect(status().isBadRequest());
     for(int i=0;i<2;i++) mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(second)))
-      .andExpect(status().isOk()).andExpect(jsonPath("$.completed['linked-list']").value(true));
+      .andExpect(status().isOk()).andExpect(jsonPath("$.completed['linked-list']").doesNotExist());
     assertEquals(2,getState(token).path("profile").path("history").size());
-    mvc.perform(get("/api/game/leaderboard").header("Authorization",token).param("period","all-time")).andExpect(status().isOk()).andExpect(jsonPath("$.player.score").value(100));
-    mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(Map.of("clientAttemptId",UUID.randomUUID(),"lessonId","linked-list","stage",3)))).andExpect(status().isBadRequest());
-    // Existing three-stage progress remains complete and earns only one lesson score.
-    String uid=store.db().queryForObject("SELECT id FROM app_users WHERE email=?",String.class,"construction.shared@example.test");
-    store.db().update("INSERT INTO lesson_completions(id,user_id,lesson_id,stage) VALUES (?,?,?,?)",store.id(),uid,"linked-list",3);
+    mvc.perform(get("/api/game/leaderboard").header("Authorization",token).param("period","all-time")).andExpect(status().isOk()).andExpect(jsonPath("$.player.score").value(0));
+    mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(third)))
+      .andExpect(status().isOk()).andExpect(jsonPath("$.completed['linked-list']").value(true));
     assertTrue(getState(token).path("completed").path("linked-list").asBoolean());
     mvc.perform(get("/api/game/leaderboard").header("Authorization",token).param("period","all-time")).andExpect(status().isOk()).andExpect(jsonPath("$.player.score").value(100));
+    String uid=store.db().queryForObject("SELECT id FROM app_users WHERE email='construction.shared@example.test'",String.class);
+    String teacher=store.db().queryForObject("SELECT id FROM app_users WHERE email='instructor@algoventure.edu'",String.class);
+    var classroom=store.saveClass(teacher,null,new PortalDtos.Classroom("Linked stages","","data-structures","basic"));
+    String classId=(String)classroom.get("id");
+    store.db().update("INSERT INTO enrollments(id,class_id,user_id) VALUES (?,?,?)",store.id(),classId,uid);
+    var assignment=store.saveAssignment(teacher,null,new PortalDtos.Assignment(classId,"Traversal","","Active",java.time.LocalDate.now().plusDays(7),List.of("linked-traversal")));
+    var traversalFirst=Map.of("clientAttemptId",UUID.randomUUID(),"lessonId","linked-traversal","stage",1);
+    var traversalSecond=Map.of("clientAttemptId",UUID.randomUUID(),"lessonId","linked-traversal","stage",2);
+    var traversalThird=Map.of("clientAttemptId",UUID.randomUUID(),"lessonId","linked-traversal","stage",3);
+    mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(traversalThird)))
+      .andExpect(status().isBadRequest());
+    for(var stage:List.of(traversalFirst,traversalSecond)) {
+      mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(stage)))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.completed['linked-traversal']").doesNotExist());
+      assertEquals(0,store.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=?",Integer.class,assignment.get("id"),uid));
+    }
+    mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json")
+        .content(body(Map.of("clientAttemptId",UUID.randomUUID(),"lessonId","linked-search","stage",1))))
+      .andExpect(status().isBadRequest());
+    mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(traversalThird)))
+      .andExpect(status().isOk()).andExpect(jsonPath("$.completed['linked-traversal']").value(true));
+    assertEquals(1,store.db().queryForObject("SELECT COUNT(*) FROM assignment_completions WHERE assignment_id=? AND user_id=?",Integer.class,assignment.get("id"),uid));
+    mvc.perform(get("/api/game/leaderboard").header("Authorization",token).param("period","all-time")).andExpect(status().isOk()).andExpect(jsonPath("$.player.score").value(200));
   }
 
   @Test void gameStateIsPersistentIsolatedAndCompletionRetriesAreIdempotent() throws Exception {
@@ -80,13 +213,13 @@ class SharedGameIntegrationTest {
     String other=bearer(register("other.shared@example.test"));
     assertTrue(getState(token).path("completed").isEmpty());
     mvc.perform(put("/api/game/me/profile").header("Authorization",token).contentType("application/json").content(body(Map.of("name","Tên mới","avatar","buta")))).andExpect(status().isOk()).andExpect(jsonPath("$.profile.name").value("Tên mới"));
-    var completion=Map.of("clientAttemptId",UUID.randomUUID(),"lessonId","bubble","stage",1);
+    var completion=Map.of("clientAttemptId",UUID.randomUUID(),"lessonId","linear","stage",1);
     mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(Map.of("clientAttemptId",UUID.randomUUID(),"lessonId","selection","stage",1)))).andExpect(status().isBadRequest());
-    for(int i=0;i<2;i++) mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(completion))).andExpect(status().isOk()).andExpect(jsonPath("$.completed.bubble").value(true));
+    for(int i=0;i<2;i++) mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(completion))).andExpect(status().isOk()).andExpect(jsonPath("$.completed.linear").value(true));
     assertEquals(1,getState(token).path("profile").path("history").size());
     assertTrue(getState(other).path("completed").isEmpty());
     mvc.perform(get("/api/game/leaderboard").header("Authorization",token).param("period","all-time")).andExpect(status().isOk()).andExpect(jsonPath("$.player.score").value(100));
-    mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(Map.of("clientAttemptId",completion.get("clientAttemptId"),"lessonId","linear","stage",1)))).andExpect(status().isBadRequest());
+    mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(Map.of("clientAttemptId",completion.get("clientAttemptId"),"lessonId","bubble","stage",1)))).andExpect(status().isBadRequest());
     mvc.perform(post("/api/game/me/completions").header("Authorization",token).contentType("application/json").content(body(Map.of("clientAttemptId",UUID.randomUUID(),"lessonId","nonexistent","stage",1)))).andExpect(status().isNotFound());
   }
 }

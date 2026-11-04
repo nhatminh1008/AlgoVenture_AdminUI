@@ -59,7 +59,7 @@ export default function ClassDetail() {
       {location.state?.message && (
         <p
           role="status"
-          className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+          className="mb-6 rounded-xl border border-portal-line-strong bg-portal-lavender p-4 text-sm text-portal-ink"
         >
           {location.state.message}
         </p>
@@ -74,7 +74,7 @@ export default function ClassDetail() {
         {tab === "quizzes" && <ClassQuizzes key={classId} classId={classId} />}
         {tab === "assignments" && (
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">Bộ thử thách ({sets.length})</h2><Link className="btn-primary" to={`/instructor/challenges?classId=${classId}`}><Plus size={17} />Giao thử thách</Link></div>
+            <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">Bộ thử thách ({sets.length})</h2><Link className="btn-primary" to={`/instructor/challenges/new?classId=${classId}`}><Plus size={17} />Giao thử thách</Link></div>
             {sets.map((set) => (
               <article className="panel p-5 sm:p-6" key={set.id}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -87,7 +87,7 @@ export default function ClassDetail() {
                     </p>
                   </div>
                   <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${set.status === "Active" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}
+                    className={`rounded-full px-3 py-1 text-xs font-medium ${set.status === "Active" ? "bg-portal-lavender text-portal-purple-strong" : "bg-slate-100 text-slate-600"}`}
                   >
                     {assignmentStatus[set.status]}
                   </span>
@@ -104,7 +104,7 @@ export default function ClassDetail() {
                 </div>
                 <Link
                   to={`/instructor/challenges?classId=${classId}&assignmentId=${set.id}`}
-                  className="mt-4 inline-flex text-sm font-semibold text-emerald-700"
+                  className="mt-4 inline-flex text-sm font-semibold text-portal-purple-strong"
                 >
                   {set.status === "Draft"
                     ? "Chỉnh sửa bộ bài →"
@@ -118,7 +118,7 @@ export default function ClassDetail() {
                 <h2 className="font-semibold">Lớp chưa có bộ thử thách</h2>
                 <Link
                   className="btn-primary mt-5"
-                  to={`/instructor/challenges?classId=${classId}`}
+                  to={`/instructor/challenges/new?classId=${classId}`}
                 >
                   Tạo bộ thử thách
                 </Link>
@@ -144,14 +144,14 @@ export default function ClassDetail() {
                         <tr key={member.id}>
                           <td><StudentIdentity name={member.name} /></td>
                           <td>{member.email}</td>
-                          <td><strong className="text-emerald-800">{member.score ?? "—"}</strong></td>
+                          <td><strong className="text-portal-ink">{member.score ?? "—"}</strong></td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
                 <Link
-                  className="m-5 inline-flex text-sm font-semibold text-emerald-700"
+                  className="m-5 inline-flex text-sm font-semibold text-portal-purple-strong"
                   to={`/instructor/progress?classId=${classId}`}
                 >
                   Xem dữ liệu học tập →

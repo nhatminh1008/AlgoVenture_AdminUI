@@ -10,10 +10,6 @@ export default function AdminClasses() {
       <AdminHeader title="Classroom Management" />
       <ApiFeedback state={state} />
       <ApiFeedback state={users} />
-      <p className="mb-5 text-sm text-slate-500">
-        Giảng viên tạo lớp trong Instructor Portal. Admin phân công giảng viên
-        và quản lý sinh viên tham gia.
-      </p>
       <div className="panel overflow-x-auto">
         <table className="data-table">
           <thead>
@@ -35,7 +31,7 @@ export default function AdminClasses() {
                 </td>
                 <td>
                   <button
-                    className="text-emerald-700"
+                    className="text-portal-purple-strong"
                     onClick={() => setSelected(c)}
                   >
                     Quản lý
@@ -46,7 +42,7 @@ export default function AdminClasses() {
             {!state.data.length && (
               <tr>
                 <td colSpan={4}>
-                  Chưa có lớp học. Instructor có thể tạo lớp sau khi đăng nhập.
+                  Chưa có lớp học.
                 </td>
               </tr>
             )}

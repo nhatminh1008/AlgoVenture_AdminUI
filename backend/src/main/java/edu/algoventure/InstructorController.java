@@ -38,6 +38,29 @@ public class InstructorController {
     return store.catalog().topics;
   }
 
+  @GetMapping("/classes/{id}/practice")
+  Object practice(Authentication a,@PathVariable String id) {
+    store.ownedClass(id,owner(a));
+    var assignmentIds=new HashSet<>(store.db().query("SELECT id FROM assignments WHERE class_id=?",(r,n)->r.getString(1),id));
+    var students=store.db().query("SELECT u.id,u.name FROM enrollments e JOIN app_users u ON u.id=e.user_id WHERE e.class_id=? ORDER BY u.name,u.id",(r,n)->store.map("userId",r.getString(1),"name",r.getString(2)),id);
+    for(var student:students) {
+      int minigames=0,supplementary=0,observations=0,correct=0;
+      var attempts=store.db().queryForList("SELECT client_attempt_id,metadata,status FROM learning_attempts WHERE user_id=? ORDER BY received_at",student.get("userId"));
+      for(var attempt:attempts) {
+        var metadata=(Map<?,?>)store.decode((String)attempt.get("metadata"));
+        // Only evidence explicitly attached to this class; free practice remains private here.
+        if(!"classroom".equals(metadata.get("source")) || !assignmentIds.contains(metadata.get("assignmentId"))) continue;
+        if("supplementary".equals(metadata.get("activity"))) supplementary++; else minigames++;
+        for(var row:store.db().queryForList("SELECT evaluation FROM learning_interactions WHERE user_id=? AND client_attempt_id=? AND kind='move'",student.get("userId"),attempt.get("client_attempt_id"))) {
+          var evaluation=(Map<?,?>)store.decode((String)row.get("evaluation"));
+          if(Boolean.TRUE.equals(evaluation.get("firstResponse"))) { observations++; if(Boolean.TRUE.equals(evaluation.get("correct"))) correct++; }
+        }
+      }
+      student.putAll(store.map("minigameAttempts",minigames,"supplementaryAttempts",supplementary,"observations",observations,"correctFirstResponses",correct));
+    }
+    return store.map("students",students,"knowledgeComponent",LearningLogController.KC,"estimateStatus","not_available");
+  }
+
   @PostMapping("/classes")
   @ResponseStatus(HttpStatus.CREATED)
   Object createClass(Authentication a, @Valid @RequestBody Classroom v) {

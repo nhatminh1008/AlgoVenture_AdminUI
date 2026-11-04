@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, Braces, Eye, EyeOff, GitBranch, LockKeyhole, Mail, Sparkles } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { useAuth } from "./AuthContext";
 import { loginDestination, roleHome } from "./routing";
 import "./Login.css";
@@ -34,38 +34,14 @@ export default function Login() {
   }
   return (
     <main className="login-page">
-      <div className="login-shell">
-        <aside className="login-story" aria-labelledby="login-story-title">
-          <div className="login-story-kicker"><span /> KHÁM PHÁ. KẾT NỐI. PHÁT TRIỂN.</div>
-          <div className="login-story-copy">
-            <h2 id="login-story-title">Mỗi ý tưởng.<br />Một hành trình <em>mới.</em></h2>
-            <p>Cùng AlgoVenture kiến tạo những trải nghiệm học tập đầy cảm hứng.</p>
-          </div>
-          <div className="login-journey" aria-hidden="true">
-            <div className="login-orbit login-orbit-outer" />
-            <div className="login-orbit login-orbit-inner" />
-            <svg className="login-journey-lines" viewBox="0 0 400 280" fill="none">
-              <path d="M70 180V120Q70 100 90 100H180Q200 100 200 80V50M200 80V165Q200 185 220 185H330M200 130H290Q310 130 310 110V90" stroke="currentColor" strokeWidth="2" strokeDasharray="5 7" />
-            </svg>
-            <div className="login-node login-node-code"><Braces size={28} /></div>
-            <div className="login-node login-node-branch"><GitBranch size={29} /></div>
-            <div className="login-node login-node-spark"><Sparkles size={24} /></div>
-            <div className="login-code-card"><span className="login-code-dots"><i /><i /><i /></span><code><span>while</span> (curiosity) {'{'}<br />&nbsp; learn();<br />&nbsp; grow();<br />{'}'}</code></div>
-            <div className="login-journey-tag"><span /> Bắt đầu từ sự tò mò</div>
-          </div>
-          <div className="login-story-footer"><span className="login-footer-line" /> NƠI TRI THỨC MỞ RA CƠ HỘI</div>
-        </aside>
-        <section className="login-form-panel" aria-labelledby="login-title">
-          <div className="login-brand">
-            <div className="login-brand-lockup">
-              <BrandMark className="login-logo" />
-              <span>Algo<span className="login-brand-accent">Venture</span><span className="login-brand-possessive">'s</span></span>
-            </div>
-            <div className="login-portal-label"><span /> Web Portal <span /></div>
-          </div>
-          <div className="login-form-heading">
-            <h1 id="login-title">Đăng nhập</h1>
-          </div>
+      <header className="login-topbar">
+        <div className="login-brand">
+          <div className="login-brand-lockup"><BrandMark className="login-logo" /><span>AlgoVenture's</span></div>
+          <div className="login-portal-label">Web Portal</div>
+        </div>
+      </header>
+      <section className="login-form-panel" aria-labelledby="login-title">
+        <h1 id="login-title">Đăng nhập</h1>
           <form onSubmit={submit} className="login-form">
             <label className="block">
               <span className="field-label">Email</span>
@@ -127,9 +103,8 @@ export default function Login() {
               <ArrowRight size={18} aria-hidden="true" />
             </button>
           </form>
-        </section>
-      </div>
-      <footer className="login-page-footer">© {new Date().getFullYear()} AlgoVenture <span>·</span> Khơi nguồn tư duy, mở lối tương lai.</footer>
+      </section>
+      <footer className="login-page-footer">© {new Date().getFullYear()} AlgoVenture</footer>
     </main>
   );
 }
