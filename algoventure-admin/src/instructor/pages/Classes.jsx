@@ -56,7 +56,7 @@ export default function Classes() {
                 <td data-label="Sinh viên" className="class-number">{members}</td>
                 <td data-label="Bộ bài" className="class-number">{sets}</td>
                 <td className="class-actions-cell"><div>
-                  <Link className="class-assign" to={`/instructor/challenges?classId=${item.id}`} aria-label={`Giao thử thách cho ${item.name}`}><Send size={14} />Giao bài</Link>
+                  <Link className="class-assign" to={`/instructor/challenges/new?classId=${item.id}`} aria-label={`Giao thử thách cho ${item.name}`}><Send size={14} />Giao bài</Link>
                   <Link className="class-row-icon" to={`/instructor/progress?classId=${item.id}`} aria-label={`Xem tiến độ ${item.name}`} title="Xem tiến độ"><TrendingUp size={17} /></Link>
                   <Link className="class-row-icon" to={`/instructor/classes/${item.id}`} aria-label={`Mở lớp ${item.name}`} title="Mở lớp"><ArrowUpRight size={18} /></Link>
                 </div></td>

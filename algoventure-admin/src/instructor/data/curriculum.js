@@ -29,8 +29,6 @@ export const topics = [
     label: "Cấu trúc dữ liệu",
     description: "Stack, Queue, danh sách liên kết và cây tìm kiếm.",
     lessons: [
-      ["stack", "Stack"],
-      ["queue", "Queue"],
       ["stack-push", "Stack · Push"],
       ["stack-pop", "Stack · Pop"],
       ["stack-peek", "Stack · Peek"],

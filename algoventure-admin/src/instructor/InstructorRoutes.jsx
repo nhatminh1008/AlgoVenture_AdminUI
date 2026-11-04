@@ -36,6 +36,7 @@ function InstructorRoutes() {
             element={<QuizEditor />}
           />
           <Route path="challenges" element={<ChallengeSets />} />
+          <Route path="challenges/new" element={<ChallengeSets />} />
           <Route path="progress" element={<Progress />} />
           <Route
             path="analytics"

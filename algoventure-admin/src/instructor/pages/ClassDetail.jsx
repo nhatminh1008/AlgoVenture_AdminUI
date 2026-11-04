@@ -74,7 +74,7 @@ export default function ClassDetail() {
         {tab === "quizzes" && <ClassQuizzes key={classId} classId={classId} />}
         {tab === "assignments" && (
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">Bộ thử thách ({sets.length})</h2><Link className="btn-primary" to={`/instructor/challenges?classId=${classId}`}><Plus size={17} />Giao thử thách</Link></div>
+            <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">Bộ thử thách ({sets.length})</h2><Link className="btn-primary" to={`/instructor/challenges/new?classId=${classId}`}><Plus size={17} />Giao thử thách</Link></div>
             {sets.map((set) => (
               <article className="panel p-5 sm:p-6" key={set.id}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -118,7 +118,7 @@ export default function ClassDetail() {
                 <h2 className="font-semibold">Lớp chưa có bộ thử thách</h2>
                 <Link
                   className="btn-primary mt-5"
-                  to={`/instructor/challenges?classId=${classId}`}
+                  to={`/instructor/challenges/new?classId=${classId}`}
                 >
                   Tạo bộ thử thách
                 </Link>
