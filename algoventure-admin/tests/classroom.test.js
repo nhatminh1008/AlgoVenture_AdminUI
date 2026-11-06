@@ -8,7 +8,8 @@ import {
 } from "../src/instructor/data/classroom.js";
 test("curriculum matches current backend lessons and excludes retired lessons", () => {
   const ids = topics.flatMap((t) => t.lessons.map(([id]) => id));
-  const backend = JSON.parse(readFileSync(new URL('../../backend/src/main/resources/curriculum.json', import.meta.url), 'utf8'));
+  const backendCatalog = new URL("../../../AlgoVenture_Backend/src/main/resources/curriculum.json", import.meta.url);
+  const backend = JSON.parse(readFileSync(backendCatalog, "utf8"));
   assert.equal(new Set(ids).size, ids.length);
   const backendIds = backend.flatMap(t => t.lessons.map(([id]) => id));
   const legacyIds = ["stack", "queue", "tree-traversal", "bst"];
