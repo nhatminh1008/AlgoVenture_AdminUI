@@ -1,0 +1,1541 @@
+{
+  "tables": {
+    "app_users": {
+      "name": "app_users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "definition": "id VARCHAR(36) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(254)",
+          "definition": "email VARCHAR(254) NOT NULL UNIQUE",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "definition": "name VARCHAR(100) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "password_hash",
+          "type": "VARCHAR(100)",
+          "definition": "password_hash VARCHAR(100) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "definition": "role VARCHAR(20) NOT NULL CHECK (role IN ('admin','instructor','learner'))",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "definition": "status VARCHAR(20) NOT NULL CHECK (status IN ('Active','Pending','Suspended'))",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "joined",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "joined TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [
+        [
+          "email"
+        ]
+      ],
+      "constraints": [],
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+    },
+    "classrooms": {
+      "name": "classrooms",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "definition": "id VARCHAR(36) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "instructor_id",
+          "type": "VARCHAR(36)",
+          "definition": "instructor_id VARCHAR(36) NOT NULL REFERENCES app_users(id)",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "definition": "name VARCHAR(100) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "name_key",
+          "type": "VARCHAR(100)",
+          "definition": "name_key VARCHAR(100) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "description",
+          "type": "VARCHAR(500)",
+          "definition": "description VARCHAR(500) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "topic_id",
+          "type": "VARCHAR(40)",
+          "definition": "topic_id VARCHAR(40) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "level",
+          "type": "VARCHAR(20)",
+          "definition": "level VARCHAR(20) NOT NULL CHECK (level IN ('basic','advanced'))",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "invite_code",
+          "type": "VARCHAR(8)",
+          "definition": "invite_code VARCHAR(8) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [
+        [
+          "instructor_id",
+          "name_key"
+        ],
+        [
+          "invite_code"
+        ]
+      ],
+      "constraints": [
+        "UNIQUE (instructor_id, name_key)"
+      ],
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+    },
+    "enrollments": {
+      "name": "enrollments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "definition": "id VARCHAR(36) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "class_id",
+          "type": "VARCHAR(36)",
+          "definition": "class_id VARCHAR(36) NOT NULL REFERENCES classrooms(id) ON DELETE CASCADE",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "user_id",
+          "type": "VARCHAR(36)",
+          "definition": "user_id VARCHAR(36) NOT NULL REFERENCES app_users(id)",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [
+        [
+          "class_id",
+          "user_id"
+        ]
+      ],
+      "constraints": [
+        "UNIQUE(class_id,user_id)"
+      ],
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+    },
+    "assignments": {
+      "name": "assignments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "definition": "id VARCHAR(36) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "class_id",
+          "type": "VARCHAR(36)",
+          "definition": "class_id VARCHAR(36) NOT NULL REFERENCES classrooms(id) ON DELETE CASCADE",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(100)",
+          "definition": "title VARCHAR(100) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "description",
+          "type": "VARCHAR(1000)",
+          "definition": "description VARCHAR(1000) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "definition": "status VARCHAR(20) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "due",
+          "type": "DATE",
+          "definition": "due DATE",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "lesson_ids",
+          "type": "TEXT",
+          "definition": "lesson_ids TEXT NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "lesson_configs",
+          "type": "TEXT",
+          "definition": "lesson_configs TEXT NOT NULL DEFAULT '{}'",
+          "source": "backend/src/main/resources/db/migration/V8__assignment_lesson_configs.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [],
+      "constraints": [],
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+    },
+    "materials": {
+      "name": "materials",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "definition": "id VARCHAR(36) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "class_id",
+          "type": "VARCHAR(36)",
+          "definition": "class_id VARCHAR(36) NOT NULL REFERENCES classrooms(id) ON DELETE CASCADE",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(120)",
+          "definition": "title VARCHAR(120) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "description",
+          "type": "VARCHAR(500)",
+          "definition": "description VARCHAR(500) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "filename",
+          "type": "VARCHAR(255)",
+          "definition": "filename VARCHAR(255) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "size",
+          "type": "BIGINT",
+          "definition": "size BIGINT NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "type",
+          "type": "VARCHAR(150)",
+          "definition": "type VARCHAR(150) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "uploaded_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "uploaded_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "content",
+          "type": "BYTEA",
+          "definition": "content BYTEA NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [],
+      "constraints": [],
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+    },
+    "quizzes": {
+      "name": "quizzes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "definition": "id VARCHAR(36) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "class_id",
+          "type": "VARCHAR(36)",
+          "definition": "class_id VARCHAR(36) NOT NULL REFERENCES classrooms(id) ON DELETE CASCADE",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(100)",
+          "definition": "title VARCHAR(100) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "description",
+          "type": "VARCHAR(1000)",
+          "definition": "description VARCHAR(1000) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "definition": "status VARCHAR(20) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "due",
+          "type": "DATE",
+          "definition": "due DATE",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "questions",
+          "type": "TEXT",
+          "definition": "questions TEXT NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [],
+      "constraints": [],
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+    },
+    "quiz_materials": {
+      "name": "quiz_materials",
+      "columns": [
+        {
+          "name": "quiz_id",
+          "type": "VARCHAR(36)",
+          "definition": "quiz_id VARCHAR(36) NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "material_id",
+          "type": "VARCHAR(36)",
+          "definition": "material_id VARCHAR(36) NOT NULL REFERENCES materials(id)",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        }
+      ],
+      "pk": [
+        "quiz_id",
+        "material_id"
+      ],
+      "unique": [],
+      "constraints": [
+        "PRIMARY KEY (quiz_id,material_id)"
+      ],
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+    },
+    "algorithms": {
+      "name": "algorithms",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(50)",
+          "definition": "id VARCHAR(50) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "topic_id",
+          "type": "VARCHAR(40)",
+          "definition": "topic_id VARCHAR(40) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "definition": "name VARCHAR(100) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "difficulty",
+          "type": "VARCHAR(20)",
+          "definition": "difficulty VARCHAR(20) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "definition": "status VARCHAR(20) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "config",
+          "type": "TEXT",
+          "definition": "config TEXT NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [],
+      "constraints": [],
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+    },
+    "feature_toggles": {
+      "name": "feature_toggles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(60)",
+          "definition": "id VARCHAR(60) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "category",
+          "type": "VARCHAR(40)",
+          "definition": "category VARCHAR(40) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(100)",
+          "definition": "title VARCHAR(100) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "description",
+          "type": "VARCHAR(500)",
+          "definition": "description VARCHAR(500) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "enabled",
+          "type": "BOOLEAN",
+          "definition": "enabled BOOLEAN NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [],
+      "constraints": [],
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+    },
+    "system_settings": {
+      "name": "system_settings",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "definition": "id INTEGER PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "platform_name",
+          "type": "VARCHAR(100)",
+          "definition": "platform_name VARCHAR(100) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "maintenance",
+          "type": "BOOLEAN",
+          "definition": "maintenance BOOLEAN NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [],
+      "constraints": [],
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+    },
+    "audit_events": {
+      "name": "audit_events",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "definition": "id VARCHAR(36) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "actor_id",
+          "type": "VARCHAR(36)",
+          "definition": "actor_id VARCHAR(36) REFERENCES app_users(id)",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "action",
+          "type": "VARCHAR(100)",
+          "definition": "action VARCHAR(100) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP",
+          "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [],
+      "constraints": [],
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql"
+    },
+    "quiz_attempts": {
+      "name": "quiz_attempts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "definition": "id VARCHAR(36) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        },
+        {
+          "name": "user_id",
+          "type": "VARCHAR(36)",
+          "definition": "user_id VARCHAR(36) NOT NULL REFERENCES app_users(id)",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        },
+        {
+          "name": "quiz_id",
+          "type": "VARCHAR(36)",
+          "definition": "quiz_id VARCHAR(36) NOT NULL REFERENCES quizzes(id)",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        },
+        {
+          "name": "client_id",
+          "type": "VARCHAR(36)",
+          "definition": "client_id VARCHAR(36) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        },
+        {
+          "name": "submitted_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "submitted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        },
+        {
+          "name": "result",
+          "type": "TEXT",
+          "definition": "result TEXT NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        },
+        {
+          "name": "score",
+          "type": "INTEGER",
+          "definition": "score INTEGER NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [
+        [
+          "user_id",
+          "client_id"
+        ]
+      ],
+      "constraints": [
+        "UNIQUE(user_id,client_id)"
+      ],
+      "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+    },
+    "lesson_completions": {
+      "name": "lesson_completions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "definition": "id VARCHAR(36) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        },
+        {
+          "name": "user_id",
+          "type": "VARCHAR(36)",
+          "definition": "user_id VARCHAR(36) NOT NULL REFERENCES app_users(id)",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        },
+        {
+          "name": "lesson_id",
+          "type": "VARCHAR(50)",
+          "definition": "lesson_id VARCHAR(50) NOT NULL REFERENCES algorithms(id)",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        },
+        {
+          "name": "stage",
+          "type": "INTEGER",
+          "definition": "stage INTEGER NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        },
+        {
+          "name": "completed_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "completed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [
+        [
+          "user_id",
+          "lesson_id",
+          "stage"
+        ]
+      ],
+      "constraints": [
+        "UNIQUE(user_id,lesson_id,stage)"
+      ],
+      "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+    },
+    "assignment_completions": {
+      "name": "assignment_completions",
+      "columns": [
+        {
+          "name": "assignment_id",
+          "type": "VARCHAR(36)",
+          "definition": "assignment_id VARCHAR(36) NOT NULL REFERENCES assignments(id)",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        },
+        {
+          "name": "user_id",
+          "type": "VARCHAR(36)",
+          "definition": "user_id VARCHAR(36) NOT NULL REFERENCES app_users(id)",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        },
+        {
+          "name": "lesson_id",
+          "type": "VARCHAR(50)",
+          "definition": "lesson_id VARCHAR(50) NOT NULL REFERENCES algorithms(id)",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        },
+        {
+          "name": "completed_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "completed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP",
+          "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+        }
+      ],
+      "pk": [
+        "assignment_id",
+        "user_id",
+        "lesson_id"
+      ],
+      "unique": [],
+      "constraints": [
+        "PRIMARY KEY(assignment_id,user_id,lesson_id)"
+      ],
+      "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql"
+    },
+    "game_classroom_accounts": {
+      "name": "game_classroom_accounts",
+      "columns": [
+        {
+          "name": "game_user_id",
+          "type": "BIGINT",
+          "definition": "game_user_id BIGINT PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V3__classroom_game_identity.sql"
+        },
+        {
+          "name": "portal_user_id",
+          "type": "VARCHAR(36)",
+          "definition": "portal_user_id VARCHAR(36) NOT NULL UNIQUE REFERENCES app_users(id)",
+          "source": "backend/src/main/resources/db/migration/V3__classroom_game_identity.sql"
+        }
+      ],
+      "pk": [
+        "game_user_id"
+      ],
+      "unique": [
+        [
+          "portal_user_id"
+        ]
+      ],
+      "constraints": [],
+      "source": "backend/src/main/resources/db/migration/V3__classroom_game_identity.sql"
+    },
+    "learner_profiles": {
+      "name": "learner_profiles",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "VARCHAR(36)",
+          "definition": "user_id VARCHAR(36) PRIMARY KEY REFERENCES app_users(id)",
+          "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+        },
+        {
+          "name": "game_id",
+          "type": "BIGINT",
+          "definition": "game_id BIGINT GENERATED BY DEFAULT AS IDENTITY (START WITH 1000000000) NOT NULL UNIQUE",
+          "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+        },
+        {
+          "name": "display_name",
+          "type": "VARCHAR(24)",
+          "definition": "display_name VARCHAR(24) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+        },
+        {
+          "name": "avatar",
+          "type": "VARCHAR(10)",
+          "definition": "avatar VARCHAR(10) NOT NULL DEFAULT 'fox'",
+          "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+        },
+        {
+          "name": "avatar_image",
+          "type": "TEXT",
+          "definition": "avatar_image TEXT",
+          "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+        }
+      ],
+      "pk": [
+        "user_id"
+      ],
+      "unique": [
+        [
+          "game_id"
+        ]
+      ],
+      "constraints": [],
+      "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+    },
+    "learner_sessions": {
+      "name": "learner_sessions",
+      "columns": [
+        {
+          "name": "token_hash",
+          "type": "VARCHAR(64)",
+          "definition": "token_hash VARCHAR(64) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+        },
+        {
+          "name": "user_id",
+          "type": "VARCHAR(36)",
+          "definition": "user_id VARCHAR(36) NOT NULL REFERENCES app_users(id)",
+          "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+        },
+        {
+          "name": "expires_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "expires_at TIMESTAMP WITH TIME ZONE NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+        }
+      ],
+      "pk": [
+        "token_hash"
+      ],
+      "unique": [],
+      "constraints": [],
+      "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+    },
+    "practice_events": {
+      "name": "practice_events",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "definition": "id VARCHAR(36) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+        },
+        {
+          "name": "user_id",
+          "type": "VARCHAR(36)",
+          "definition": "user_id VARCHAR(36) NOT NULL REFERENCES app_users(id)",
+          "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+        },
+        {
+          "name": "client_id",
+          "type": "VARCHAR(36)",
+          "definition": "client_id VARCHAR(36) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+        },
+        {
+          "name": "lesson_id",
+          "type": "VARCHAR(50)",
+          "definition": "lesson_id VARCHAR(50) NOT NULL REFERENCES algorithms(id)",
+          "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+        },
+        {
+          "name": "stage",
+          "type": "INTEGER",
+          "definition": "stage INTEGER NOT NULL CHECK (stage BETWEEN 1 AND 3)",
+          "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+        },
+        {
+          "name": "completed_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "completed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP",
+          "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [
+        [
+          "user_id",
+          "client_id"
+        ]
+      ],
+      "constraints": [
+        "UNIQUE(user_id,client_id)"
+      ],
+      "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql"
+    },
+    "learning_attempts": {
+      "name": "learning_attempts",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "VARCHAR(36)",
+          "definition": "user_id VARCHAR(36) NOT NULL REFERENCES app_users(id)",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "client_attempt_id",
+          "type": "VARCHAR(36)",
+          "definition": "client_attempt_id VARCHAR(36) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "lesson_id",
+          "type": "VARCHAR(50)",
+          "definition": "lesson_id VARCHAR(50) NOT NULL REFERENCES algorithms(id)",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "metadata",
+          "type": "TEXT",
+          "definition": "metadata TEXT NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "started_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "started_at TIMESTAMP WITH TIME ZONE NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "received_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "received_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "definition": "status VARCHAR(20) NOT NULL CHECK (status IN ('in_progress','completed','abandoned','timed_out'))",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "event_count",
+          "type": "INTEGER",
+          "definition": "event_count INTEGER NOT NULL DEFAULT 0 CHECK (event_count >= 0)",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        }
+      ],
+      "pk": [
+        "user_id",
+        "client_attempt_id"
+      ],
+      "unique": [],
+      "constraints": [
+        "PRIMARY KEY(user_id,client_attempt_id)"
+      ],
+      "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+    },
+    "learning_interactions": {
+      "name": "learning_interactions",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "VARCHAR(36)",
+          "definition": "user_id VARCHAR(36) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "client_attempt_id",
+          "type": "VARCHAR(36)",
+          "definition": "client_attempt_id VARCHAR(36) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "sequence_no",
+          "type": "INTEGER",
+          "definition": "sequence_no INTEGER NOT NULL CHECK (sequence_no > 0)",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "event_id",
+          "type": "VARCHAR(36)",
+          "definition": "event_id VARCHAR(36) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "kind",
+          "type": "VARCHAR(20)",
+          "definition": "kind VARCHAR(20) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "occurred_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "occurred_at TIMESTAMP WITH TIME ZONE NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "raw_event",
+          "type": "TEXT",
+          "definition": "raw_event TEXT NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "evaluation",
+          "type": "TEXT",
+          "definition": "evaluation TEXT NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        },
+        {
+          "name": "received_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "received_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP",
+          "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+        }
+      ],
+      "pk": [
+        "user_id",
+        "client_attempt_id",
+        "sequence_no"
+      ],
+      "unique": [
+        [
+          "user_id",
+          "client_attempt_id",
+          "event_id"
+        ]
+      ],
+      "constraints": [
+        "PRIMARY KEY(user_id,client_attempt_id,sequence_no)",
+        "UNIQUE(user_id,client_attempt_id,event_id)",
+        "FOREIGN KEY(user_id,client_attempt_id) REFERENCES learning_attempts(user_id,client_attempt_id) ON DELETE CASCADE"
+      ],
+      "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql"
+    },
+    "adaptive_recommendations": {
+      "name": "adaptive_recommendations",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "definition": "id VARCHAR(36) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V6__adaptive_recommendations.sql"
+        },
+        {
+          "name": "user_id",
+          "type": "VARCHAR(36)",
+          "definition": "user_id VARCHAR(36) NOT NULL REFERENCES app_users(id)",
+          "source": "backend/src/main/resources/db/migration/V6__adaptive_recommendations.sql"
+        },
+        {
+          "name": "client_request_id",
+          "type": "VARCHAR(36)",
+          "definition": "client_request_id VARCHAR(36) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V6__adaptive_recommendations.sql"
+        },
+        {
+          "name": "context_json",
+          "type": "TEXT",
+          "definition": "context_json TEXT NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V6__adaptive_recommendations.sql"
+        },
+        {
+          "name": "response_json",
+          "type": "TEXT",
+          "definition": "response_json TEXT NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V6__adaptive_recommendations.sql"
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP",
+          "source": "backend/src/main/resources/db/migration/V6__adaptive_recommendations.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [
+        [
+          "user_id",
+          "client_request_id"
+        ]
+      ],
+      "constraints": [
+        "UNIQUE(user_id,client_request_id)"
+      ],
+      "source": "backend/src/main/resources/db/migration/V6__adaptive_recommendations.sql"
+    },
+    "password_reset_tokens": {
+      "name": "password_reset_tokens",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "definition": "id VARCHAR(36) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V6__password_reset_tokens.sql"
+        },
+        {
+          "name": "user_id",
+          "type": "VARCHAR(36)",
+          "definition": "user_id VARCHAR(36) NOT NULL REFERENCES app_users(id)",
+          "source": "backend/src/main/resources/db/migration/V6__password_reset_tokens.sql"
+        },
+        {
+          "name": "token_hash",
+          "type": "VARCHAR(64)",
+          "definition": "token_hash VARCHAR(64) NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V6__password_reset_tokens.sql"
+        },
+        {
+          "name": "expires_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "expires_at TIMESTAMP WITH TIME ZONE NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V6__password_reset_tokens.sql"
+        },
+        {
+          "name": "used_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "used_at TIMESTAMP WITH TIME ZONE",
+          "source": "backend/src/main/resources/db/migration/V6__password_reset_tokens.sql"
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "definition": "created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP",
+          "source": "backend/src/main/resources/db/migration/V6__password_reset_tokens.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [],
+      "constraints": [],
+      "source": "backend/src/main/resources/db/migration/V6__password_reset_tokens.sql"
+    },
+    "bubble_challenges": {
+      "name": "bubble_challenges",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "definition": "id VARCHAR(36) PRIMARY KEY",
+          "source": "backend/src/main/resources/db/migration/V7__bubble_challenges.sql"
+        },
+        {
+          "name": "user_id",
+          "type": "VARCHAR(36)",
+          "definition": "user_id VARCHAR(36) NOT NULL REFERENCES app_users(id)",
+          "source": "backend/src/main/resources/db/migration/V7__bubble_challenges.sql"
+        },
+        {
+          "name": "input_json",
+          "type": "TEXT",
+          "definition": "input_json TEXT NOT NULL",
+          "source": "backend/src/main/resources/db/migration/V7__bubble_challenges.sql"
+        },
+        {
+          "name": "assignment_id",
+          "type": "VARCHAR(36)",
+          "definition": "assignment_id VARCHAR(36) REFERENCES assignments(id)",
+          "source": "backend/src/main/resources/db/migration/V8__assignment_lesson_configs.sql"
+        },
+        {
+          "name": "difficulty",
+          "type": "VARCHAR(10)",
+          "definition": "difficulty VARCHAR(10) NOT NULL DEFAULT 'hard'",
+          "source": "backend/src/main/resources/db/migration/V8__assignment_lesson_configs.sql"
+        }
+      ],
+      "pk": [
+        "id"
+      ],
+      "unique": [],
+      "constraints": [],
+      "source": "backend/src/main/resources/db/migration/V7__bubble_challenges.sql"
+    }
+  },
+  "foreign_keys": [
+    {
+      "parent": "app_users",
+      "child": "classrooms",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "instructor_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql",
+      "single": false
+    },
+    {
+      "parent": "classrooms",
+      "child": "enrollments",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "class_id"
+      ],
+      "nullable": false,
+      "cascade": true,
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql",
+      "single": false
+    },
+    {
+      "parent": "app_users",
+      "child": "enrollments",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "user_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql",
+      "single": false
+    },
+    {
+      "parent": "classrooms",
+      "child": "assignments",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "class_id"
+      ],
+      "nullable": false,
+      "cascade": true,
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql",
+      "single": false
+    },
+    {
+      "parent": "classrooms",
+      "child": "materials",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "class_id"
+      ],
+      "nullable": false,
+      "cascade": true,
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql",
+      "single": false
+    },
+    {
+      "parent": "classrooms",
+      "child": "quizzes",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "class_id"
+      ],
+      "nullable": false,
+      "cascade": true,
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql",
+      "single": false
+    },
+    {
+      "parent": "quizzes",
+      "child": "quiz_materials",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "quiz_id"
+      ],
+      "nullable": false,
+      "cascade": true,
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql",
+      "single": false
+    },
+    {
+      "parent": "materials",
+      "child": "quiz_materials",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "material_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql",
+      "single": false
+    },
+    {
+      "parent": "app_users",
+      "child": "audit_events",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "actor_id"
+      ],
+      "nullable": true,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V1__portal.sql",
+      "single": false
+    },
+    {
+      "parent": "app_users",
+      "child": "quiz_attempts",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "user_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql",
+      "single": false
+    },
+    {
+      "parent": "quizzes",
+      "child": "quiz_attempts",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "quiz_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql",
+      "single": false
+    },
+    {
+      "parent": "app_users",
+      "child": "lesson_completions",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "user_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql",
+      "single": false
+    },
+    {
+      "parent": "algorithms",
+      "child": "lesson_completions",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "lesson_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql",
+      "single": false
+    },
+    {
+      "parent": "assignments",
+      "child": "assignment_completions",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "assignment_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql",
+      "single": false
+    },
+    {
+      "parent": "app_users",
+      "child": "assignment_completions",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "user_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql",
+      "single": false
+    },
+    {
+      "parent": "algorithms",
+      "child": "assignment_completions",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "lesson_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V2__learner_integration.sql",
+      "single": false
+    },
+    {
+      "parent": "app_users",
+      "child": "game_classroom_accounts",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "portal_user_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V3__classroom_game_identity.sql",
+      "single": true
+    },
+    {
+      "parent": "app_users",
+      "child": "learner_profiles",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "user_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql",
+      "single": true
+    },
+    {
+      "parent": "app_users",
+      "child": "learner_sessions",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "user_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql",
+      "single": false
+    },
+    {
+      "parent": "app_users",
+      "child": "practice_events",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "user_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql",
+      "single": false
+    },
+    {
+      "parent": "algorithms",
+      "child": "practice_events",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "lesson_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V4__shared_game_backend.sql",
+      "single": false
+    },
+    {
+      "parent": "app_users",
+      "child": "learning_attempts",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "user_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql",
+      "single": false
+    },
+    {
+      "parent": "algorithms",
+      "child": "learning_attempts",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "lesson_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql",
+      "single": false
+    },
+    {
+      "parent": "learning_attempts",
+      "child": "learning_interactions",
+      "from": [
+        "user_id",
+        "client_attempt_id"
+      ],
+      "to": [
+        "user_id",
+        "client_attempt_id"
+      ],
+      "nullable": false,
+      "cascade": true,
+      "source": "backend/src/main/resources/db/migration/V5__bubble_interaction_logs.sql",
+      "single": false
+    },
+    {
+      "parent": "app_users",
+      "child": "adaptive_recommendations",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "user_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V6__adaptive_recommendations.sql",
+      "single": false
+    },
+    {
+      "parent": "app_users",
+      "child": "password_reset_tokens",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "user_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V6__password_reset_tokens.sql",
+      "single": false
+    },
+    {
+      "parent": "app_users",
+      "child": "bubble_challenges",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "user_id"
+      ],
+      "nullable": false,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V7__bubble_challenges.sql",
+      "single": false
+    },
+    {
+      "parent": "assignments",
+      "child": "bubble_challenges",
+      "from": [
+        "id"
+      ],
+      "to": [
+        "assignment_id"
+      ],
+      "nullable": true,
+      "cascade": false,
+      "source": "backend/src/main/resources/db/migration/V8__assignment_lesson_configs.sql",
+      "single": false
+    }
+  ],
+  "notes": [
+    "Phạm vi: backend Spring Boot + portal Admin/Instructor trong AlgoVenture_AdminUI, đối chiếu Game algoven5/proto_algo và ai-service. Đây là schema suy ra từ mã nguồn ngày 05/11/2026; chưa truy vấn database đang chạy.",
+    "Hai migration trùng phiên bản V6: V6__adaptive_recommendations.sql và V6__password_reset_tokens.sql. Flyway thông thường sẽ từ chối phiên bản trùng. Sơ đồ bao gồm định nghĩa của cả hai file; chưa chứng minh chúng đã được áp dụng trên database.",
+    "Admin, Instructor và Learner dùng chung app_users; role là cột, không có bảng roles, admins, instructors hoặc students riêng. Giới hạn vai trò trong quan hệ lớp học do mã ứng dụng kiểm tra.",
+    "game_classroom_accounts còn trong migration V3, không có tham chiếu trong Java runtime hiện tại. Giữ bảng này trong ERD và đánh dấu legacy; game_id hiện hành nằm trong learner_profiles.",
+    "assignments là bộ thử thách minigame; quizzes là thực thể riêng. Dù API Classroom gọi cả hai là assignment, quiz_attempts.quiz_id chỉ tham chiếu quizzes.id.",
+    "quizzes.questions chứa JSON Question/Option; quiz_attempts.result chứa JSON đáp án/kết quả. Không có bảng questions, options hoặc answers riêng.",
+    "assignments.lesson_ids và lesson_configs lưu JSON trong TEXT. Quan hệ bài giao–algorithms là liên kết ứng dụng, không có bảng assignment_lessons hoặc khóa ngoại SQL cho danh sách này.",
+    "algorithms.config chứa JSON, gồm prerequisites. topic_id của algorithms/classrooms được đối chiếu curriculum.json; không có bảng topics hay bảng prerequisites.",
+    "learning_attempts.metadata chứa assignmentId, recommendationId, exerciseId và ngữ cảnh lượt chơi. adaptive_recommendations.context_json chứa assignmentId; các liên kết này không phải FK SQL.",
+    "GameController nối bubble_challenges.id với learning_attempts.client_attempt_id cùng user_id. Đây là phép nối trong code, không phải FK; một đề có thể chưa có log, và log bổ trợ có thể không có đề cấp từ bubble_challenges.",
+    "Leaderboard, điểm trung bình, phần trăm tiến độ và ngày thực hành được tính từ dữ liệu lưu sẵn; không có bảng leaderboard, mastery hoặc knowledge_components. Danh sách bài bổ trợ nằm trong PracticeCatalog.java; ai-service không định nghĩa bảng riêng.",
+    "Portal dùng HttpSession, không có Spring Session JDBC trong pom.xml và không có bảng session portal trong migration. learner_sessions chỉ là phiên Bearer của Game/Classroom.",
+    "V9 và V10 là migration Java chỉnh dữ liệu JSON/catalog và giữ lịch sử hoàn thành, không thêm bảng/cột. Vì giữ dữ liệu cũ, algorithms có thể có các ID Retired bên cạnh 29 bài hiện hành.",
+    "Cardinality trong sơ đồ là ràng buộc SQL: bảng con luôn có thể có 0 dòng. learner_profiles và game_classroom_accounts tối đa 1 dòng cho mỗi app_users nhờ PK/UNIQUE; audit_events.actor_id và bubble_challenges.assignment_id cho phép NULL."
+  ]
+}

@@ -1,0 +1,208 @@
+erDiagram
+    %% Source-derived physical relationships; JSON/application references are documented separately.
+    app_users {
+        VARCHAR(36) id PK
+        VARCHAR(254) email UK
+        VARCHAR(100) name
+        VARCHAR(100) password_hash
+        VARCHAR(20) role
+        VARCHAR(20) status
+        TIMESTAMP_WITH_TIME_ZONE joined
+    }
+    classrooms {
+        VARCHAR(36) id PK
+        VARCHAR(36) instructor_id FK
+        VARCHAR(100) name
+        VARCHAR(100) name_key
+        VARCHAR(500) description
+        VARCHAR(40) topic_id
+        VARCHAR(20) level
+        TIMESTAMP_WITH_TIME_ZONE created_at
+        VARCHAR(8) invite_code UK
+    }
+    enrollments {
+        VARCHAR(36) id PK
+        VARCHAR(36) class_id FK
+        VARCHAR(36) user_id FK
+    }
+    assignments {
+        VARCHAR(36) id PK
+        VARCHAR(36) class_id FK
+        VARCHAR(100) title
+        VARCHAR(1000) description
+        VARCHAR(20) status
+        DATE due
+        TEXT lesson_ids
+        TEXT lesson_configs
+    }
+    materials {
+        VARCHAR(36) id PK
+        VARCHAR(36) class_id FK
+        VARCHAR(120) title
+        VARCHAR(500) description
+        VARCHAR(255) filename
+        BIGINT size
+        VARCHAR(150) type
+        TIMESTAMP_WITH_TIME_ZONE uploaded_at
+        BYTEA content
+    }
+    quizzes {
+        VARCHAR(36) id PK
+        VARCHAR(36) class_id FK
+        VARCHAR(100) title
+        VARCHAR(1000) description
+        VARCHAR(20) status
+        DATE due
+        TEXT questions
+        TIMESTAMP_WITH_TIME_ZONE created_at
+        TIMESTAMP_WITH_TIME_ZONE updated_at
+    }
+    quiz_materials {
+        VARCHAR(36) quiz_id PK,FK
+        VARCHAR(36) material_id PK,FK
+    }
+    algorithms {
+        VARCHAR(50) id PK
+        VARCHAR(40) topic_id
+        VARCHAR(100) name
+        VARCHAR(20) difficulty
+        VARCHAR(20) status
+        TEXT config
+    }
+    feature_toggles {
+        VARCHAR(60) id PK
+        VARCHAR(40) category
+        VARCHAR(100) title
+        VARCHAR(500) description
+        BOOLEAN enabled
+    }
+    system_settings {
+        INTEGER id PK
+        VARCHAR(100) platform_name
+        BOOLEAN maintenance
+    }
+    audit_events {
+        VARCHAR(36) id PK
+        VARCHAR(36) actor_id FK
+        VARCHAR(100) action
+        TIMESTAMP_WITH_TIME_ZONE created_at
+    }
+    quiz_attempts {
+        VARCHAR(36) id PK
+        VARCHAR(36) user_id FK
+        VARCHAR(36) quiz_id FK
+        VARCHAR(36) client_id
+        TIMESTAMP_WITH_TIME_ZONE submitted_at
+        TEXT result
+        INTEGER score
+    }
+    lesson_completions {
+        VARCHAR(36) id PK
+        VARCHAR(36) user_id FK
+        VARCHAR(50) lesson_id FK
+        INTEGER stage
+        TIMESTAMP_WITH_TIME_ZONE completed_at
+    }
+    assignment_completions {
+        VARCHAR(36) assignment_id PK,FK
+        VARCHAR(36) user_id PK,FK
+        VARCHAR(50) lesson_id PK,FK
+        TIMESTAMP_WITH_TIME_ZONE completed_at
+    }
+    game_classroom_accounts {
+        BIGINT game_user_id PK
+        VARCHAR(36) portal_user_id FK,UK
+    }
+    learner_profiles {
+        VARCHAR(36) user_id PK,FK
+        BIGINT game_id UK
+        VARCHAR(24) display_name
+        VARCHAR(10) avatar
+        TEXT avatar_image
+    }
+    learner_sessions {
+        VARCHAR(64) token_hash PK
+        VARCHAR(36) user_id FK
+        TIMESTAMP_WITH_TIME_ZONE expires_at
+    }
+    practice_events {
+        VARCHAR(36) id PK
+        VARCHAR(36) user_id FK
+        VARCHAR(36) client_id
+        VARCHAR(50) lesson_id FK
+        INTEGER stage
+        TIMESTAMP_WITH_TIME_ZONE completed_at
+    }
+    learning_attempts {
+        VARCHAR(36) user_id PK,FK
+        VARCHAR(36) client_attempt_id PK
+        VARCHAR(50) lesson_id FK
+        TEXT metadata
+        TIMESTAMP_WITH_TIME_ZONE started_at
+        TIMESTAMP_WITH_TIME_ZONE received_at
+        TIMESTAMP_WITH_TIME_ZONE updated_at
+        VARCHAR(20) status
+        INTEGER event_count
+    }
+    learning_interactions {
+        VARCHAR(36) user_id PK,FK
+        VARCHAR(36) client_attempt_id PK,FK
+        INTEGER sequence_no PK
+        VARCHAR(36) event_id
+        VARCHAR(20) kind
+        TIMESTAMP_WITH_TIME_ZONE occurred_at
+        TEXT raw_event
+        TEXT evaluation
+        TIMESTAMP_WITH_TIME_ZONE received_at
+    }
+    adaptive_recommendations {
+        VARCHAR(36) id PK
+        VARCHAR(36) user_id FK
+        VARCHAR(36) client_request_id
+        TEXT context_json
+        TEXT response_json
+        TIMESTAMP_WITH_TIME_ZONE created_at
+    }
+    password_reset_tokens {
+        VARCHAR(36) id PK
+        VARCHAR(36) user_id FK
+        VARCHAR(64) token_hash
+        TIMESTAMP_WITH_TIME_ZONE expires_at
+        TIMESTAMP_WITH_TIME_ZONE used_at
+        TIMESTAMP_WITH_TIME_ZONE created_at
+    }
+    bubble_challenges {
+        VARCHAR(36) id PK
+        VARCHAR(36) user_id FK
+        TEXT input_json
+        VARCHAR(36) assignment_id FK
+        VARCHAR(10) difficulty
+    }
+    app_users ||..o{ classrooms : "instructor_id"
+    classrooms ||..o{ enrollments : "class_id"
+    app_users ||..o{ enrollments : "user_id"
+    classrooms ||..o{ assignments : "class_id"
+    classrooms ||..o{ materials : "class_id"
+    classrooms ||..o{ quizzes : "class_id"
+    quizzes ||--o{ quiz_materials : "quiz_id"
+    materials ||--o{ quiz_materials : "material_id"
+    app_users |o..o{ audit_events : "actor_id"
+    app_users ||..o{ quiz_attempts : "user_id"
+    quizzes ||..o{ quiz_attempts : "quiz_id"
+    app_users ||..o{ lesson_completions : "user_id"
+    algorithms ||..o{ lesson_completions : "lesson_id"
+    assignments ||--o{ assignment_completions : "assignment_id"
+    app_users ||--o{ assignment_completions : "user_id"
+    algorithms ||--o{ assignment_completions : "lesson_id"
+    app_users ||..o| game_classroom_accounts : "portal_user_id"
+    app_users ||--o| learner_profiles : "user_id"
+    app_users ||..o{ learner_sessions : "user_id"
+    app_users ||..o{ practice_events : "user_id"
+    algorithms ||..o{ practice_events : "lesson_id"
+    app_users ||--o{ learning_attempts : "user_id"
+    algorithms ||..o{ learning_attempts : "lesson_id"
+    learning_attempts ||--o{ learning_interactions : "user_id, client_attempt_id"
+    app_users ||..o{ adaptive_recommendations : "user_id"
+    app_users ||..o{ password_reset_tokens : "user_id"
+    app_users ||..o{ bubble_challenges : "user_id"
+    assignments |o..o{ bubble_challenges : "assignment_id"
