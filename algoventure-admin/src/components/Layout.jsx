@@ -14,42 +14,42 @@ import {
 const Layout = () => {
   const { user, logout } = useAuth();
   const navItems = [
-    { path: "/admin", name: "Dashboard", icon: <LayoutDashboard size={20} /> },
+    { path: "/admin", name: "Tổng quan", group: "Quản lý", icon: <LayoutDashboard size={20} /> },
     {
       path: "/admin/users",
-      name: "User Management",
+      name: "Tài khoản", group: "Quản lý",
       icon: <Users size={20} />,
     },
     {
       path: "/admin/classes",
-      name: "Classroom Management",
+      name: "Lớp học", group: "Quản lý",
       icon: <Users size={20} />,
     },
     {
       path: "/admin/content",
-      name: "Content & Levels",
+      name: "Thư viện bài học", group: "Nội dung học tập",
       icon: <BookOpen size={20} />,
     },
     {
       path: "/admin/levels",
-      name: "Level Config",
+      name: "Cấu hình bài học", group: "Nội dung học tập",
       icon: <Sliders size={20} />,
     },
     {
       path: "/admin/analytics",
-      name: "System Analytics",
+      name: "Phân tích hệ thống", group: "Hệ thống",
       icon: <BarChart2 size={20} />,
     },
     {
       path: "/admin/features",
-      name: "Feature Toggles",
+      name: "Tính năng", group: "Hệ thống",
       icon: <ToggleLeft size={20} />,
     },
-    { path: "/admin/settings", name: "Settings", icon: <Settings size={20} /> },
+    { path: "/admin/settings", name: "Cài đặt", group: "Hệ thống", icon: <Settings size={20} /> },
   ];
 
   return (
-    <PortalFrame user={user} logout={logout} navItems={navItems} roleLabel="Quản trị viên" className="admin-shell">
+    <PortalFrame user={user} logout={logout} navItems={navItems} className="admin-shell">
       <Outlet />
     </PortalFrame>
   );

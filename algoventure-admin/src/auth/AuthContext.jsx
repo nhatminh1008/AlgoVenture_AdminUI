@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { roleHome } from "./routing";
 import { api } from "../api/client";
+import BrandMark from "../components/BrandMark";
 const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -44,9 +45,7 @@ export function AuthProvider({ children }) {
   }
   if (loading)
     return (
-      <p role="status" className="p-8">
-        Đang kiểm tra phiên đăng nhập…
-      </p>
+      <div className="app-loading"><BrandMark /><p role="status"><span className="loading-dot" />Đang kiểm tra đăng nhập…</p></div>
     );
   return (
     <AuthContext.Provider value={{ user, login, logout }}>

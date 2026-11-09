@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { Plus, Check, BookOpen } from "lucide-react";
+import { Plus, Check, BookOpen, ClipboardList, FilePenLine, Send } from "lucide-react";
 import ClassFilter, { useClassScope } from "../components/ClassFilter";
 import { PageHeader } from "../components/ui";
 import { useClassrooms } from "../data/ClassroomContext";
 import { getTopic, getLevel, lessonName } from "../data/curriculum";
+import { WorkspaceStats } from "../../components/WorkspaceWidgets";
 
 const statusLabels = {
   Draft: "Bản nháp",
@@ -36,13 +37,12 @@ function ChallengeList() {
   const createUrl = `/instructor/challenges/new${scope.classroom ? `?classId=${encodeURIComponent(scope.classroom.id)}` : ""}`;
   return <div className="mx-auto max-w-6xl">
     <PageHeader title="Bộ thử thách"><Link to={createUrl} className="btn-primary"><Plus size={17} />Tạo bộ thử thách</Link></PageHeader>
-    <p className="mb-6 text-sm text-slate-500">Quản lý các bộ thử thách trong tất cả lớp bạn phụ trách.</p>
     {location.state?.message && <p role="status" className="mb-5 rounded-xl bg-portal-lavender p-4 text-sm text-portal-ink">{location.state.message}</p>}
-    <dl className="classes-summary mb-6">
-      <div><dt>Tổng bộ thử thách</dt><dd>{scope.sets.length}</dd></div>
-      <div><dt>Đang giao</dt><dd>{scope.sets.filter(item => item.status === "Active").length}</dd></div>
-      <div><dt>Bản nháp</dt><dd>{scope.sets.filter(item => item.status === "Draft").length}</dd></div>
-    </dl>
+    <WorkspaceStats items={[
+      { label: "Tổng bộ thử thách", value: scope.sets.length, icon: <ClipboardList /> },
+      { label: "Đang giao", value: scope.sets.filter(item => item.status === "Active").length, icon: <Send /> },
+      { label: "Bản nháp", value: scope.sets.filter(item => item.status === "Draft").length, icon: <FilePenLine /> },
+    ]} />
     <section className="panel overflow-hidden" aria-label="Danh sách bộ thử thách">
       <div className="flex flex-wrap items-end gap-3 border-b border-slate-100 p-5">
         <ClassFilter scope={scope} />
@@ -50,7 +50,7 @@ function ChallengeList() {
         <label><span className="sr-only">Lọc theo trạng thái</span><select className="field" value={status} onChange={event => setStatus(event.target.value)}><option value="">Tất cả trạng thái</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       </div>
       {scope.invalid && <p role="alert" className="p-5 text-sm text-amber-800">Lớp không tồn tại trong danh sách bạn phụ trách. Hãy chọn một lớp khác.</p>}
-      <div className="overflow-x-auto"><table className="data-table">
+      <div className="relative overflow-x-auto"><table className="data-table">
         <thead><tr><th>Tên bộ thử thách</th><th>Lớp nhận bài</th><th>Nội dung</th><th>Hạn hoàn thành</th><th>Trạng thái</th><th><span className="sr-only">Thao tác</span></th></tr></thead>
         <tbody>{sets.map(item => <tr key={item.id}>
           <td className="font-semibold text-slate-900">{item.title}</td><td>{classNames.get(item.classId) ?? "Lớp không khả dụng"}</td>
@@ -184,7 +184,7 @@ function ChallengeEditor({ classes, saveAssignment, initialClassId, existing }) 
           </label>
           {classroom && (
             <p className="rounded-lg bg-portal-lavender p-3 text-xs text-portal-ink">
-              {topic.name} · {getLevel(classroom.level).name}
+              {topic.label} · {getLevel(classroom.level).label}
             </p>
           )}
           <fieldset disabled={readOnly || busy} className="space-y-5">

@@ -53,11 +53,22 @@ export function ApiFeedback({ state, message }) {
   );
 }
 
-export function AdminHeader({ title, children }) {
+const pageCopy = {
+  "User Management": ["Quản lý tài khoản", "Tạo tài khoản, phân quyền và cập nhật trạng thái."],
+  "Classroom Management": ["Quản lý lớp học", "Theo dõi các lớp học, phân công giảng viên và quản lý thành viên."],
+  "Content & Levels": ["Thư viện bài học", "Danh sách bài học, chủ đề và độ khó."],
+  "Level Configuration": ["Cấu hình bài học", "Điều chỉnh độ khó, mục tiêu và điều kiện mở khóa cho từng bài học."],
+  "System Analytics": ["Phân tích hệ thống", "Theo dõi cơ cấu người dùng và các hoạt động quản trị gần đây."],
+  "Feature Toggles": ["Quản lý tính năng", "Chủ động bật hoặc tắt các tính năng của nền tảng."],
+  Settings: ["Cài đặt nền tảng", "Tùy chỉnh thông tin chung và quản lý dữ liệu AlgoVenture."],
+};
+
+export function AdminHeader({ title, description, children }) {
+  const [label, subtitle] = pageCopy[title] || [title, description];
   return (
     <header className="admin-page-header">
-      <h1>{title}</h1>
-      {children && <div>{children}</div>}
+      <div className="page-heading"><h1>{label}</h1>{(description || subtitle) && <p>{description || subtitle}</p>}</div>
+      {children && <div className="page-header-actions">{children}</div>}
     </header>
   );
 }

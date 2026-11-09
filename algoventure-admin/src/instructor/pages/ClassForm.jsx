@@ -135,9 +135,8 @@ export default function ClassForm() {
                       className="accent-portal-purple"
                     />
                     <strong className="text-sm text-slate-800">
-                      {item.name}
+                      {item.label}
                     </strong>
-                    <span className="text-xs text-slate-500">{item.label}</span>
                   </span>
                 </label>
               ))}
@@ -193,10 +192,10 @@ export default function ClassForm() {
             Nội dung của lớp
           </p>
           <h2 className="mt-2 text-lg font-bold text-slate-900">
-            {topic?.name ?? "Chọn chủ đề để xem bài học"}
+            {topic?.label ?? "Chọn chủ đề để xem bài học"}
           </h2>
           <span className="mt-4 inline-block rounded-full bg-portal-lavender px-3 py-1 text-xs font-semibold text-portal-purple-strong">
-            {getLevel(values.level).name}
+            {getLevel(values.level).label}
           </span>
           {topic && (
             <>

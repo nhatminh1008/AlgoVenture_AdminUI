@@ -1,39 +1,40 @@
 import { Link } from "react-router-dom";
+import { ArrowUpRight, BookOpen, ClipboardList, FileText, GraduationCap, Library, Settings2, ShieldCheck, UserPlus, Users } from "lucide-react";
 import { useApiData, ApiFeedback, AdminHeader } from "../components/ApiState";
+import { WorkspaceStats } from "../components/WorkspaceWidgets";
+import { actionLabel } from "../components/RecordBadge";
+
 export default function Dashboard() {
   const state = useApiData("/admin/analytics", null);
+  const counts = state.data?.counts;
   return (
     <div className="mx-auto max-w-6xl">
-      <AdminHeader title="System Overview">
-        <Link className="btn-primary" to="/admin/users">
-          Quản lý tài khoản
-        </Link>
+      <AdminHeader title="Tổng quan hệ thống">
+        <Link className="btn-primary" to="/admin/users"><UserPlus size={16} />Quản lý tài khoản</Link>
       </AdminHeader>
-      <ApiFeedback state={state} />
-      {state.data && (
-        <>
-          <dl className="admin-summary">
-            {Object.entries({
-              "Tài khoản": state.data.counts.users,
-              "Lớp học": state.data.counts.classrooms,
-              "Lượt đăng ký lớp": state.data.counts.enrollments,
-            }).map(([label, value]) => (
-              <div key={label}>
-                <dt>{label}</dt><dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
-          <section className="admin-resource-section">
-            <h2>Nội dung học tập</h2>
-            <dl className="admin-resources">{Object.entries({
-              "Bộ thử thách": state.data.counts.assignments,
-              "Bộ trắc nghiệm": state.data.counts.quizzes,
-              "Tài liệu": state.data.counts.materials,
-              "Bài học": state.data.counts.algorithms,
-            }).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
-          </section>
-        </>
-      )}
+      <div className="mt-5"><ApiFeedback state={state} /></div>
+      {counts && <>
+        <WorkspaceStats items={[
+          { label: "Tổng tài khoản", value: counts.users, icon: <Users />, tone: "mint", to: "/admin/users" },
+          { label: "Lớp học", value: counts.classrooms, icon: <GraduationCap />, tone: "peach", to: "/admin/classes" },
+          { label: "Lượt đăng ký lớp", value: counts.enrollments, icon: <UserPlus />, tone: "lilac", to: "/admin/classes" },
+        ]} />
+        <div className="dashboard-columns">
+          <section className="panel dashboard-section"><div className="dashboard-section-heading"><h2>Nội dung học tập</h2><Link to="/admin/content">Xem thư viện<ArrowUpRight size={14} /></Link></div><div className="resource-grid">
+            {[["Bài học thuật toán", counts.algorithms, <BookOpen />], ["Bộ thử thách", counts.assignments, <ClipboardList />], ["Bộ trắc nghiệm", counts.quizzes, <Library />], ["Tài liệu", counts.materials, <FileText />]].map(([label, value, icon]) => <div className="resource-tile" key={label}><div>{icon}<strong>{value.toLocaleString("vi-VN")}</strong></div><span>{label}</span></div>)}
+          </div></section>
+          <section className="panel dashboard-section"><div className="dashboard-section-heading"><h2>Truy cập nhanh</h2></div><div className="quick-actions">
+            {[
+              { to: "/admin/users", icon: <ShieldCheck />, title: "Tài khoản & phân quyền", note: "Quản lý vai trò và quyền truy cập", tone: "mint" },
+              { to: "/admin/classes", icon: <GraduationCap />, title: "Quản lý lớp học", note: "Phân công giảng viên, quản lý thành viên", tone: "peach" },
+              { to: "/admin/levels", icon: <Settings2 />, title: "Cấu hình bài học", note: "Thiết lập độ khó và mục tiêu học tập", tone: "lilac" },
+            ].map((item) => <Link className="quick-action" to={item.to} key={item.to}><span className={`tone-${item.tone}`}>{item.icon}</span><div><strong>{item.title}</strong><small>{item.note}</small></div><ArrowUpRight /></Link>)}
+          </div></section>
+        </div>
+        <section className="panel dashboard-activity"><div className="dashboard-section-heading"><h2>Hoạt động gần đây</h2><Link to="/admin/analytics">Xem tất cả<ArrowUpRight size={14} /></Link></div>
+          {state.data.logs.length ? <div className="activity-list">{state.data.logs.slice(0, 4).map((row, i) => <div className="activity-row" key={i}><span className="activity-dot" /><div><strong>{actionLabel(row.action)}</strong><small>{row.actor}</small></div><time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString("vi-VN")}</time></div>)}</div> : <p className="dashboard-empty">Chưa có hoạt động.</p>}
+        </section>
+      </>}
     </div>
   );
 }

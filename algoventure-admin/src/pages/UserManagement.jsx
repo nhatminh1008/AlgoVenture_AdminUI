@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api } from "../api/client";
 import { useApiData, ApiFeedback, AdminHeader } from "../components/ApiState";
+import RecordBadge, { roleLabels, statusLabels } from "../components/RecordBadge";
 const empty = {
   email: "",
   name: "",
@@ -105,7 +106,7 @@ export default function UserManagement() {
                 onChange={(e) => field("role", e.target.value)}
               >
                 {["admin", "instructor", "learner"].map((v) => (
-                  <option key={v}>{v}</option>
+                  <option key={v} value={v}>{roleLabels[v]}</option>
                 ))}
               </select>
             </label>
@@ -117,7 +118,7 @@ export default function UserManagement() {
                 onChange={(e) => field("status", e.target.value)}
               >
                 {["Active", "Pending", "Suspended"].map((v) => (
-                  <option key={v}>{v}</option>
+                  <option key={v} value={v}>{statusLabels[v]}</option>
                 ))}
               </select>
             </label>
@@ -154,7 +155,7 @@ export default function UserManagement() {
           >
             <option value="all">Tất cả vai trò</option>
             {["admin", "instructor", "learner"].map((v) => (
-              <option key={v}>{v}</option>
+              <option key={v} value={v}>{roleLabels[v]}</option>
             ))}
           </select>
         </div>
@@ -174,8 +175,8 @@ export default function UserManagement() {
                 <tr key={u.id}>
                   <td>{u.name}</td>
                   <td>{u.email}</td>
-                  <td>{u.role}</td>
-                  <td>{u.status}</td>
+                  <td><RecordBadge value={u.role} role /></td>
+                  <td><RecordBadge value={u.status} /></td>
                   <td>
                     <button
                       className="text-portal-purple-strong"

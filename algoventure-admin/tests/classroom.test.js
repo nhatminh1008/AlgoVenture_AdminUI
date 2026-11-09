@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { topics } from "../src/instructor/data/curriculum.js";
 import {
   csvCell,
@@ -8,7 +9,14 @@ import {
 } from "../src/instructor/data/classroom.js";
 test("curriculum matches current backend lessons and excludes retired lessons", () => {
   const ids = topics.flatMap((t) => t.lessons.map(([id]) => id));
-  const backendCatalog = new URL("../../../AlgoVenture_Backend/src/main/resources/curriculum.json", import.meta.url);
+  const backendCatalog = process.env.BACKEND_CURRICULUM_PATH
+    ? resolve(process.env.BACKEND_CURRICULUM_PATH)
+    : [
+        "../../../AlgoVenture_Backend/src/main/resources/curriculum.json",
+        "../../../../Backend_AlgoVenture/AlgoVenture_Backend/src/main/resources/curriculum.json",
+        "../../backend/src/main/resources/curriculum.json",
+      ].map((path) => new URL(path, import.meta.url)).find((path) => existsSync(path));
+  assert.ok(backendCatalog, "Backend curriculum not found. Set BACKEND_CURRICULUM_PATH to curriculum.json.");
   const backend = JSON.parse(readFileSync(backendCatalog, "utf8"));
   assert.equal(new Set(ids).size, ids.length);
   const backendIds = backend.flatMap(t => t.lessons.map(([id]) => id));

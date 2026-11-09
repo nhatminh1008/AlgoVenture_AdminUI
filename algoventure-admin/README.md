@@ -14,3 +14,9 @@ Luồng Instructor theo UC9: chọn lớp → tạo/giao bộ thử thách → t
 Giao diện Instructor không còn tải lên hay đính kèm tài liệu. API tài liệu và các liên kết dữ liệu cũ được giữ để tương thích; thay đổi này không xóa dữ liệu đã lưu. Điểm, tiến độ và mức thành thạo vẫn chờ tích hợp kết quả từ game.
 
 Kiểm tra: `npm test`, `npm run lint`, `npm run build`.
+
+Giao diện dùng màu xanh dương, sidebar theo vai trò, tìm trang bằng `Ctrl+K` và danh sách lớp dạng thẻ hoặc bảng. Các trang dùng chung kiểu nút, biểu mẫu, bảng dữ liệu và trạng thái. Menu chuyển sang dạng thu gọn trên điện thoại.
+
+Logo SVG nằm trong `public/brand`: biểu tượng, bản chữ dùng trên nền sáng và bản chữ dùng trên nền tối. Ảnh `public/images/algoventure-learning-map.png` được sao chép nguyên bản từ `AlgoVenture_Unity/Documentation/Previews/Map_Web.png`; đây là ảnh bản đồ học tập của dự án Unity, không phải ảnh minh họa tạo mới.
+
+Test đối chiếu curriculum tự tìm backend ở các cấu trúc thư mục dự án hiện có. Nếu đặt backend ở vị trí khác, đặt `BACKEND_CURRICULUM_PATH` tới tệp `src/main/resources/curriculum.json` trước khi chạy `npm test`.

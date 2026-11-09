@@ -28,13 +28,12 @@ export default function FeatureToggles() {
       <AdminHeader title="Feature Toggles" />
       <ApiFeedback state={state} message={message} />
       <p className="mb-5 text-sm text-slate-500">
-        Cấu hình được lưu trên server. Game và adaptive service cần đọc API cấu
-        hình khi tích hợp.
+        Thay đổi có hiệu lực khi game hỗ trợ tính năng tương ứng.
       </p>
       <div className="space-y-5">
         {["Learning", "Social", "System"].map((category) => (
           <section className="panel p-6" key={category}>
-            <h2 className="mb-3 text-lg font-bold">{category}</h2>
+            <h2 className="mb-3 text-lg font-bold">{{ Learning: "Học tập", Social: "Cộng đồng", System: "Hệ thống" }[category]}</h2>
             {state.data
               .filter((f) => f.category === category)
               .map((f) => (

@@ -3,7 +3,8 @@ import PracticeEvidence from "../components/PracticeEvidence";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Download, Search, Users, ChartNoAxesColumn, TrendingUp } from "lucide-react";
-import { PageHeader, MetricCard, StudentIdentity, ProgressMeter } from "../components/ui";
+import { PageHeader, StudentIdentity, ProgressMeter } from "../components/ui";
+import { WorkspaceStats } from "../../components/WorkspaceWidgets";
 import ClassFilter, { useClassScope } from "../components/ClassFilter";
 import { exportStudentRows, downloadFile } from "../data/classroom";
 import { getTopic } from "../data/curriculum";
@@ -38,11 +39,23 @@ export default function Progress() {
         </button>
       </PageHeader>
       {scope.classroom && <ClassNavigation classId={scope.classroom.id} active="progress" />}
-      <div className="instructor-metrics">
-        <MetricCard label="Sinh viên" value={rows.length} icon={<Users size={22} />} />
-        <MetricCard label="Điểm quiz trung bình / 100" value={graded.length ? Math.round(graded.reduce((sum, row) => sum + row.score, 0) / graded.length) : "—"} icon={<ChartNoAxesColumn size={22} />} />
-        <MetricCard label="Tiến độ trung bình" value={assigned.length ? `${Math.round(assigned.reduce((sum, row) => sum + row.progressPercent, 0) / assigned.length)}%` : "—"} icon={<TrendingUp size={22} />} />
-      </div>
+      <WorkspaceStats items={[
+        { label: "Sinh viên", value: rows.length, icon: <Users /> },
+        {
+          label: "Điểm quiz trung bình / 100",
+          value: graded.length
+            ? Math.round(graded.reduce((sum, row) => sum + row.score, 0) / graded.length)
+            : "—",
+          icon: <ChartNoAxesColumn />,
+        },
+        {
+          label: "Tiến độ trung bình",
+          value: assigned.length
+            ? `${Math.round(assigned.reduce((sum, row) => sum + row.progressPercent, 0) / assigned.length)}%`
+            : "—",
+          icon: <TrendingUp />,
+        },
+      ]} />
       <div className="panel overflow-hidden">
         <div className="flex flex-wrap gap-3 border-b border-slate-100 p-5">
           <label className="relative min-w-48 flex-1">

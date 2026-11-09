@@ -9,7 +9,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Users, Layers, ChartNoAxesColumn, GraduationCap } from "lucide-react";
-import { PageHeader, MetricCard } from "../components/ui";
+import { PageHeader } from "../components/ui";
+import { WorkspaceStats } from "../../components/WorkspaceWidgets";
 import ClassFilter, { useClassScope } from "../components/ClassFilter";
 
 export default function Analytics() {
@@ -34,11 +35,16 @@ export default function Analytics() {
       </PageHeader>
       {scope.classroom && <ClassNavigation classId={scope.classroom.id} active="analytics" />}
       {scope.invalid && <p role="alert" className="mb-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">Lớp không khả dụng.</p>}
-      <div className="instructor-metrics">
-        <MetricCard label="Sinh viên" value={scope.rows.length} icon={<Users size={22} />} />
-        <MetricCard label="Bộ bài đang giao" value={scope.sets.filter((item) => item.status === "Active").length + scope.quizzes.filter((item) => item.status === "Published").length} icon={<Layers size={22} />} />
-        <MetricCard label="Điểm quiz trung bình / 100" value={average ?? "—"} icon={<ChartNoAxesColumn size={22} />} />
-      </div>
+      <WorkspaceStats items={[
+        { label: "Sinh viên", value: scope.rows.length, icon: <Users /> },
+        {
+          label: "Bộ bài đang giao",
+          value: scope.sets.filter((item) => item.status === "Active").length
+            + scope.quizzes.filter((item) => item.status === "Published").length,
+          icon: <Layers />,
+        },
+        { label: "Điểm quiz trung bình / 100", value: average ?? "—", icon: <ChartNoAxesColumn /> },
+      ]} />
       <div className="analytics-layout">
         <section className="panel min-w-0 p-6">
           <h2 className="instructor-chart-title"><GraduationCap size={19} />Sinh viên theo lớp</h2>
@@ -68,7 +74,7 @@ export default function Analytics() {
                   <Bar
                     dataKey="students"
                     name="Sinh viên"
-                    fill="#242424"
+                    fill="var(--portal-purple)"
                     radius={[0, 5, 5, 0]}
                     maxBarSize={18}
                     isAnimationActive={false}

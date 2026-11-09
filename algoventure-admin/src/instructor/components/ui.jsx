@@ -60,19 +60,11 @@ export const StatCard = ({
   </div>
 );
 
-// Header trang: title + actions
 export const PageHeader = ({ title, children }) => (
   <header className="instructor-page-header">
-    <h1>{title}</h1>
-    {children && <div>{children}</div>}
+    <div className="page-heading"><h1>{title}</h1></div>
+    {children && <div className="page-header-actions">{children}</div>}
   </header>
-);
-
-export const MetricCard = ({ label, value, icon }) => (
-  <div className="instructor-metric">
-    <span className="instructor-metric-icon" aria-hidden="true">{icon}</span>
-    <dl><dt>{label}</dt><dd>{value}</dd></dl>
-  </div>
 );
 
 export const StudentIdentity = ({ name, email }) => (

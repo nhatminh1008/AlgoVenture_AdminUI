@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useApiData, ApiFeedback, AdminHeader } from "../components/ApiState";
+import RecordBadge from "../components/RecordBadge";
 export default function ContentLevels() {
   const state = useApiData("/admin/algorithms", []);
   const [query, setQuery] = useState("");
@@ -35,7 +36,7 @@ export default function ContentLevels() {
                 <td>{a.name}</td>
                 <td>{a.topicId}</td>
                 <td>{a.difficulty}</td>
-                <td>{a.status}</td>
+                <td><RecordBadge value={a.status} /></td>
                 <td>
                   <Link
                     className="font-semibold text-portal-purple-strong"

@@ -1,5 +1,6 @@
 import { useApiData, ApiFeedback, AdminHeader } from "../components/ApiState";
 import { saveBlob } from "../api/client";
+import { actionLabel, roleLabels } from "../components/RecordBadge";
 export default function SystemAnalytics() {
   const state = useApiData("/admin/analytics", null);
   return (
@@ -26,7 +27,7 @@ export default function SystemAnalytics() {
           <dl className="admin-summary">
             {state.data.roles.map((role) => (
               <div key={role.name}>
-                <dt>{role.name}</dt><dd>{role.value}</dd>
+                <dt>{roleLabels[role.name] || role.name}</dt><dd>{role.value}</dd>
               </div>
             ))}
           </dl>
@@ -46,7 +47,7 @@ export default function SystemAnalytics() {
                     <tr key={i}>
                       <td>{new Date(row.createdAt).toLocaleString("vi-VN")}</td>
                       <td>{row.actor}</td>
-                      <td>{row.action}</td>
+                      <td>{actionLabel(row.action)}</td>
                     </tr>
                   ))}
                   {!state.data.logs.length && (
