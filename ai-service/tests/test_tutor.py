@@ -43,12 +43,33 @@ class TutorTests(unittest.TestCase):
         result = tutor.recommend(history, candidates)
         self.assertEqual("b", result['exerciseId'])
         self.assertEqual(.72, result['predictedCorrectness'])
+        self.assertEqual("first_swap_opportunity", result['predictionTarget'])
+        self.assertEqual("bubble-board-v1", result['encodingVersion'])
         feed = tutor.session.run.call_args.args[1]
         np.testing.assert_array_equal(feed['rseqs'], [[0, 1], [0, 1]])
         np.testing.assert_array_equal(feed['shft_qseqs'], [[0, 1], [0, 2]])
         np.testing.assert_array_equal(feed['shft_rseqs'], [[1, 0], [1, 0]])
         tutor.session.run.return_value = [np.array([.7, .8])]
         self.assertEqual("temporarily_unavailable", tutor.recommend(history, candidates)['status'])
+
+    def test_multi_skill_contract_rejects_incompatible_artifact(self):
+        tutor = Tutor()
+        tutor.manifest = dict(sequenceLength=3, predictionTarget="first_graded_response",
+                              encodingVersion="game-item-v2", questionVocab={"h": 0, "q": 1},
+                              kcVocab={"graph.bfs.next_node.v1": 0},
+                              outputName="probabilities", modelVersion="graph-test")
+        tutor.session = Mock()
+        tutor.session.run.return_value = [np.array([[.4, .68]])]
+        history = [dict(questionId="h", kcId="graph.bfs.next_node.v1", response=1)]
+        candidates = [dict(id="graph-q", questionId="q", kcId="graph.bfs.next_node.v1")]
+        self.assertEqual("incompatible_model_contract", tutor.recommend(history, candidates)["reasonCode"])
+        tutor.session.run.assert_not_called()
+        result = tutor.recommend(history, candidates, prediction_target="first_graded_response",
+                                 encoding_version="game-item-v2")
+        self.assertEqual("ready", result["status"])
+        self.assertEqual("graph-q", result["exerciseId"])
+        self.assertEqual("first_graded_response", result["predictionTarget"])
+        self.assertEqual("game-item-v2", result["encodingVersion"])
 
     def test_api_validation_and_honest_not_ready(self):
         with TestClient(app) as client:

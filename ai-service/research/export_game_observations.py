@@ -10,6 +10,7 @@ import hashlib
 import hmac
 import json
 from pathlib import Path
+import re
 import secrets
 import subprocess
 
@@ -18,12 +19,11 @@ SELECT json_build_object(
  'userId',a.user_id,'attemptId',a.client_attempt_id,
  'sequence',i.sequence_no,'arrival',a.received_at,
  'metadata',a.metadata::jsonb,'evaluation',i.evaluation::jsonb,
- 'isQa',lower(u.email) LIKE 'qa.%')
+ 'isQa',lower(u.email) LIKE 'qa.%' OR lower(u.email) LIKE '%@example.test')
 FROM learning_attempts a
 JOIN app_users u ON u.id=a.user_id
 JOIN learning_interactions i ON i.user_id=a.user_id AND i.client_attempt_id=a.client_attempt_id
-WHERE a.lesson_id='bubble' AND i.kind='move'
- AND i.evaluation::jsonb->>'firstResponse'='true'
+WHERE i.evaluation::jsonb->>'firstResponse'='true'
 ORDER BY a.received_at,a.client_attempt_id,i.sequence_no
 """
 
@@ -34,13 +34,20 @@ def question_id(snapshot):
     return "bubble-board-v1:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
-def transform(rows, key, include_qa=False):
+def transform(rows, key, include_qa=False, *, encoding_version="bubble-board-v1",
+              prediction_target="first_swap_opportunity"):
     observations = []
     seen = set()
-    excluded = 0
+    excluded, out_of_scope = 0, 0
+    bubble = encoding_version == "bubble-board-v1" and prediction_target == "first_swap_opportunity"
     def pseudonym(kind, value):
         return hmac.new(key, f"{kind}:{value}".encode(), hashlib.sha256).hexdigest()
-    for row in rows:
+    for row in sorted(rows, key=lambda item: (item.get("arrival", ""), item["attemptId"], item["sequence"])):
+        e, m = row["evaluation"], row["metadata"]
+        if (m.get("engineVersion") != "bubble-v1" if bubble else
+                e.get("encodingVersion") != encoding_version or e.get("predictionTarget") != prediction_target):
+            out_of_scope += 1
+            continue
         if row["isQa"] and not include_qa:
             excluded += 1
             continue
@@ -48,25 +55,30 @@ def transform(rows, key, include_qa=False):
         if identity in seen:
             raise ValueError("Duplicate observation")
         seen.add(identity)
-        e, m = row["evaluation"], row["metadata"]
         if (e.get("firstResponse") is not True or type(e.get("correct")) is not bool
-                or e.get("kcId") != "bubble.next_swap.v1" or m.get("engineVersion") != "bubble-v1"):
+                or not isinstance(e.get("kcId"), str)
+                or (bubble and e.get("kcId") != "bubble.next_swap.v1")
+                or (not bubble and e.get("serverVerified") is not True)):
             raise ValueError("Incompatible observation")
+        qid = question_id(e["before"]) if bubble else e.get("questionId")
+        if not isinstance(qid, str) or not re.fullmatch(re.escape(encoding_version) + r":[0-9a-f]{64}", qid):
+            raise ValueError("Incompatible question ID")
         observations.append(dict(
             learnerId=pseudonym("learner", row["userId"]),
             attemptId=pseudonym("attempt", row["attemptId"]),
-            sequence=row["sequence"], questionId=question_id(e["before"]),
+            sequence=row["sequence"], questionId=qid,
             kcId=e["kcId"], response=int(e["correct"]),
             activity=m.get("activity") or "minigame", source=m["source"],
             exerciseId=m.get("exerciseId"), isQa=row["isQa"]))
     counts = Counter(o["activity"] for o in observations)
-    report = dict(schemaVersion=1, encodingVersion="bubble-board-v1",
-                  predictionTarget="first_swap_opportunity", observations=len(observations),
+    report = dict(schemaVersion=1, encodingVersion=encoding_version,
+                  predictionTarget=prediction_target, observations=len(observations),
                   learners=len({o["learnerId"] for o in observations}),
                   attempts=len({o["attemptId"] for o in observations}),
                   questions=len({o["questionId"] for o in observations}),
                   correct=sum(o["response"] for o in observations),
                   activityCounts=dict(counts), excludedQaObservations=excluded,
+                  excludedOutOfScopeObservations=out_of_scope,
                   includesQa=include_qa, trainingApproved=False,
                   limitations=["Non-QA accounts are not verified study participants.",
                                "Split by learner before fitting vocabulary or training; never split random events.",
@@ -80,6 +92,8 @@ def main():
     parser.add_argument("--psql", default="psql")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--include-qa", action="store_true", help="Pipeline debugging only")
+    parser.add_argument("--encoding-version", default="bubble-board-v1")
+    parser.add_argument("--prediction-target", default="first_swap_opportunity")
     args = parser.parse_args()
     result = subprocess.run([args.psql, "-X", "-qAt", "-v", "ON_ERROR_STOP=1", "-c", QUERY],
                             capture_output=True, text=True, encoding="utf-8", timeout=60)
@@ -91,7 +105,9 @@ def main():
     key_path = args.output / "pseudonym.key"
     if not key_path.exists():
         key_path.write_bytes(secrets.token_bytes(32))
-    observations, report = transform(rows, key_path.read_bytes(), args.include_qa)
+    observations, report = transform(rows, key_path.read_bytes(), args.include_qa,
+                                     encoding_version=args.encoding_version,
+                                     prediction_target=args.prediction_target)
     (args.output / "observations.jsonl").write_text(
         "".join(json.dumps(o) + "\n" for o in observations), encoding="utf-8")
     (args.output / "readiness.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

@@ -35,6 +35,25 @@ class ExportTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             transform([self.row(), self.row()], b"test")
 
+    def test_generic_skill_requires_server_verification_and_preserves_order(self):
+        def graph(sequence, arrival):
+            row = self.row()
+            row.update(sequence=sequence, arrival=arrival)
+            row["metadata"] = dict(engineVersion="graph-v2", source="map")
+            row["evaluation"] = dict(firstResponse=True, correct=sequence == 1,
+                                     kcId="graph.bfs.next_node.v1", serverVerified=True,
+                                     encodingVersion="game-state-v1", predictionTarget="next_action",
+                                     questionId="game-state-v1:" + hashlib.sha256(str(sequence).encode()).hexdigest())
+            return row
+        rows = [graph(2, "2026-11-02T00:00:02Z"), graph(1, "2026-11-02T00:00:01Z")]
+        observations, report = transform(rows, b"key", encoding_version="game-state-v1",
+                                         prediction_target="next_action")
+        self.assertEqual([row["sequence"] for row in observations], [1, 2])
+        self.assertEqual(report["encodingVersion"], "game-state-v1")
+        rows[0]["evaluation"]["serverVerified"] = False
+        with self.assertRaises(ValueError):
+            transform(rows, b"key", encoding_version="game-state-v1", prediction_target="next_action")
+
 
 if __name__ == "__main__":
     unittest.main()

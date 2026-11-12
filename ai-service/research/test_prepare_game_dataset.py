@@ -1,13 +1,15 @@
 import copy
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import unittest
 
-from prepare_game_dataset import candidate_questions, prepare
+from prepare_game_dataset import candidate_questions, learner_split, prepare
 
 ROOT = Path(__file__).resolve().parents[2]
+BACKEND = Path(os.environ.get("ALGOVENTURE_BACKEND_ROOT", ROOT.parent / "AlgoVenture_Backend"))
 CATALOG = json.loads(Path(__file__).with_name("bubble-candidates.json").read_text())
 
 
@@ -22,7 +24,7 @@ class DatasetTests(unittest.TestCase):
         rows = [observation(f"learner-{i}", j) for i in range(10) for j in (1, 2, 3)]
         sequences, vocab, splits, report = prepare(rows, CATALOG)
         self.assertEqual(prepare(rows, CATALOG), (sequences, vocab, splits, report))
-        self.assertEqual([len(sequences[s]) for s in ("train", "validation", "test")], [6, 2, 2])
+        self.assertEqual([len(sequences[s]) for s in ("train", "validation", "test")], [6, 1, 3])
         for row in rows:
             self.assertEqual(row["questionId"] in vocab["questionVocab"], splits[row["learnerId"]] == "train")
         for split in ("validation", "test"):
@@ -30,7 +32,7 @@ class DatasetTests(unittest.TestCase):
         self.assertFalse(report["deploymentReady"])
 
     def test_one_learner_preserves_cross_attempt_order_and_scores_each_target_once(self):
-        rows = [observation("one", j, f"q{j}") for j in range(1, 10)]
+        rows = [observation("learner-0", j, f"q{j}") for j in range(1, 10)]
         rows[-1]["attemptId"] = "new-attempt"
         rows[-1]["sequence"] = 1
         rows[-1].update(activity="supplementary", exerciseId="bubble-short-v1")
@@ -50,8 +52,29 @@ class DatasetTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 prepare(rows, CATALOG)
 
+    def test_stable_learner_split_and_generic_verified_kc(self):
+        original = [observation(f"learner-{i}", j) for i in range(10) for j in (1, 2)]
+        split = prepare(original, CATALOG)[2]
+        expanded = original + [observation("new-learner", j) for j in (1, 2)]
+        self.assertEqual(split, {key: value for key, value in prepare(expanded, CATALOG)[2].items()
+                                 if key in split})
+        self.assertEqual(split["learner-0"], learner_split(42, "learner-0"))
+        generic = dict(schemaVersion=1, encodingVersion="game-state-v1", predictionTarget="next_action",
+                       exercises=[dict(id="graph-bfs-easy-v1", kcId="graph.bfs.next_node.v1",
+                                       questionId="game-state-v1:" + "a" * 64)])
+        rows = [{**observation("learner-0", j), "kcId": "graph.bfs.next_node.v1",
+                 "questionId": "game-state-v1:" + hashlib.sha256(str(j).encode()).hexdigest()}
+                for j in (1, 2)]
+        _, vocab, _, report = prepare(rows, generic)
+        self.assertIn("graph.bfs.next_node.v1", vocab["kcVocab"])
+        self.assertEqual(report["predictionTarget"], "next_action")
+        self.assertEqual(report["encodingVersion"], "game-state-v1")
+
     def test_candidate_snapshot_matches_backend_catalog(self):
-        source = (ROOT / "backend/src/main/java/edu/algoventure/PracticeCatalog.java").read_text(encoding="utf-8")
+        catalog_source = BACKEND / "src/main/java/edu/algoventure/service/impl/PracticeCatalogServiceImpl.java"
+        if not catalog_source.is_file():
+            self.skipTest("Backend checkout is unavailable; set ALGOVENTURE_BACKEND_ROOT")
+        source = catalog_source.read_text(encoding="utf-8")
         records = re.findall(r'new Exercise\("([^\"]+)".*?List\.of\(([^)]+)\)\)', source, re.S)
         actual = {name: [int(v.strip()) for v in values.split(",")] for name, values in records}
         self.assertEqual(actual, {e["id"]: e["input"] for e in CATALOG["exercises"]})

@@ -1,4 +1,4 @@
-"""Export an experimental Bubble checkpoint; validate mechanics, not model quality."""
+"""Export an experimental Game checkpoint; validate mechanics, not model quality."""
 import argparse
 import copy
 import hashlib
@@ -49,15 +49,22 @@ def main():
             or hashlib.sha256(args.archive.read_bytes()).hexdigest() != ARCHIVE_SHA):
         raise ValueError("Incompatible experimental checkpoint/source")
     for name, expected in run["datasetFilesSha256"].items():
-        if name not in {"train.jsonl", "vocab.json", "dataset.json", "learner-splits.json"}:
+        if name not in {"train.jsonl", "validation.jsonl", "vocab.json", "dataset.json", "learner-splits.json"}:
             raise ValueError("Unexpected dataset file")
         if hashlib.sha256((args.dataset / name).read_bytes()).hexdigest() != expected:
             raise ValueError("Dataset changed since training")
     vocab = read(args.dataset / "vocab.json")
     config = read(args.experiment / "model-config.json")
     dataset = read(args.dataset / "dataset.json")
-    candidates = candidate_questions(read(args.catalog))
-    if any(row["questionId"] not in vocab["questionVocab"] for row in candidates):
+    catalog = read(args.catalog)
+    if (catalog.get("encodingVersion") != dataset.get("encodingVersion")
+            or catalog.get("predictionTarget", "first_swap_opportunity" if dataset.get("encodingVersion") == "bubble-board-v1" else None)
+            != dataset.get("predictionTarget")
+            or run.get("encodingVersion") != dataset.get("encodingVersion")
+            or run.get("predictionTarget") != dataset.get("predictionTarget")):
+        raise ValueError("Catalog, dataset and checkpoint contracts differ")
+    candidates = candidate_questions(catalog)
+    if any(row["questionId"] not in vocab["questionVocab"] or row["kcId"] not in vocab["kcVocab"] for row in candidates):
         raise ValueError("Practice candidate missing from training vocabulary")
     args.output.mkdir(parents=True, exist_ok=False)
     torch.set_num_threads(2)
@@ -73,7 +80,7 @@ def main():
     records = [json.loads(line) for line in (args.dataset / "train.jsonl").read_text().splitlines() if line]
     history = records[0]
     example_feed = feed_for(history, candidates, vocab, dataset["sequenceLength"])
-    model_path = args.output / "simplekt-bubble-experimental.onnx"
+    model_path = args.output / "simplekt-game-experimental.onnx"
     torch.onnx.export(wrapper, tuple(torch.from_numpy(example_feed[n]) for n in INPUTS), str(model_path),
                       input_names=list(INPUTS), output_names=["probabilities"], opset_version=17, dynamo=False,
                       dynamic_axes={**{n: {0: "batch", 1: "history"} for n in INPUTS},
@@ -113,8 +120,8 @@ def main():
     evidence_path = args.output / "technical-validation.json"
     evidence_path.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
     manifest = dict(schemaVersion=1, architecture="simplekt", deploymentMode="experimental",
-                    modelVersion="bubble-experimental-" + run["checkpointSha256"][:12],
-                    predictionTarget="first_swap_opportunity", encodingVersion="bubble-board-v1",
+                    modelVersion="game-experimental-" + run["checkpointSha256"][:12],
+                    predictionTarget=dataset["predictionTarget"], encodingVersion=dataset["encodingVersion"],
                     sequenceLength=dataset["sequenceLength"], modelFile=model_path.name,
                     modelSha256=hashlib.sha256(model_path.read_bytes()).hexdigest(),
                     outputName="probabilities", questionVocab=vocab["questionVocab"], kcVocab=vocab["kcVocab"],

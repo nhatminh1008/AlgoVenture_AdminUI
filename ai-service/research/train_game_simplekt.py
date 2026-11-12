@@ -18,14 +18,14 @@ def load_json(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def tensors(record, vocab, sequence_length):
+def tensors(record, vocab, sequence_length, *, allow_oov=False):
     arrays = [record[key] for key in ("questions", "concepts", "responses")]
     length = len(arrays[0])
     if not 2 <= length <= sequence_length or any(len(a) != length for a in arrays):
         raise ValueError("Invalid training sequence length")
-    limits = (vocab["questionOovId"], vocab["kcOovId"], 2)
+    limits = (vocab["questionOovId"] + int(allow_oov), vocab["kcOovId"] + int(allow_oov), 2)
     for array, limit in zip(arrays, limits):
-        # No OOV items may enter training: vocab must come from this training set.
+        # OOV IDs occur only in held-out learners; the vocabulary is fitted on train.
         if any(type(value) is not int or not 0 <= value < limit for value in array):
             raise ValueError("Invalid/OOV training value")
     result = {}
@@ -49,27 +49,30 @@ def main():
         raise ValueError("Invalid training limits")
     dataset = load_json(args.dataset / "dataset.json")
     vocab = load_json(args.dataset / "vocab.json")
-    if (dataset.get("schemaVersion") != 1 or dataset.get("encodingVersion") != "bubble-board-v1"
-            or dataset.get("predictionTarget") != "first_swap_opportunity"
+    if (dataset.get("schemaVersion") != 1 or not isinstance(dataset.get("encodingVersion"), str)
+            or not dataset["encodingVersion"] or not isinstance(dataset.get("predictionTarget"), str)
+            or not dataset["predictionTarget"]
             or not dataset.get("datasetPrepared") or dataset.get("deploymentReady") is not False):
         raise ValueError("Incompatible experimental dataset")
     records = [json.loads(line) for line in (args.dataset / "train.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
-    if not records:
-        raise ValueError("No trainable sequences")
+    validation_records = [json.loads(line) for line in (args.dataset / "validation.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    if not records or not validation_records:
+        raise ValueError("Checkpoint selection requires both train and validation sequences")
     sequence_length = dataset["sequenceLength"]
     feeds = [tensors(record, vocab, sequence_length) for record in records]
+    validation_feeds = [tensors(record, vocab, sequence_length, allow_oov=True) for record in validation_records]
     if hashlib.sha256(args.archive.read_bytes()).hexdigest() != ARCHIVE_SHA:
         raise ValueError("Frozen source archive checksum mismatch")
     args.output.mkdir(parents=True, exist_ok=False)
     run_path = args.output / "run.json"
     run = dict(status="running", purpose="experimental pipeline development",
                architecture="simplekt", initialization="random Game embeddings and weights; no CSEDM checkpoint transfer",
-               predictionTarget="first_swap_opportunity", encodingVersion="bubble-board-v1",
+               predictionTarget=dataset["predictionTarget"], encodingVersion=dataset["encodingVersion"],
                evaluationStatus="deferred", deploymentReady=False, seed=args.seed,
                epochsRequested=args.epochs, maxSteps=args.max_steps,
                sourceArchiveSha256=ARCHIVE_SHA,
                datasetFilesSha256={name: hashlib.sha256((args.dataset / name).read_bytes()).hexdigest()
-                                   for name in ("train.jsonl", "vocab.json", "dataset.json", "learner-splits.json")})
+                                   for name in ("train.jsonl", "validation.jsonl", "vocab.json", "dataset.json", "learner-splits.json")})
     run_path.write_text(json.dumps(run, indent=2) + "\n", encoding="utf-8")
     torch.set_num_threads(2)
     torch.manual_seed(args.seed)
@@ -83,8 +86,9 @@ def main():
     model = cls(n_question=vocab["numConcepts"], n_pid=vocab["numQuestions"], **config)
     model.train()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
-    losses, steps = [], 0
-    for _ in range(args.epochs):
+    losses, steps, best_loss, best_epoch = [], 0, float("inf"), None
+    checkpoint = args.output / "experimental-simplekt.pt"
+    for epoch in range(1, args.epochs + 1):
         order = list(range(len(feeds)))
         random.shuffle(order)
         for index in order:
@@ -101,11 +105,28 @@ def main():
             steps += 1
             if args.max_steps and steps >= args.max_steps:
                 break
+        model.eval()
+        with torch.inference_mode():
+            total_loss, total_targets = 0.0, 0
+            for feed in validation_feeds:
+                prediction = model(feed)[:, 1:]
+                target = feed["shft_rseqs"].float()
+                loss = torch.nn.functional.binary_cross_entropy(prediction, target, reduction="sum")
+                if not torch.isfinite(loss):
+                    raise ValueError("Non-finite validation loss")
+                total_loss += float(loss)
+                total_targets += target.numel()
+            validation_loss = total_loss / total_targets
+        if validation_loss < best_loss:
+            best_loss, best_epoch = validation_loss, epoch
+            torch.save(model.state_dict(), checkpoint)
+        model.train()
         if args.max_steps and steps >= args.max_steps:
             break
+    if best_epoch is None:
+        raise ValueError("No complete epoch available for validation selection")
+    model.load_state_dict(torch.load(checkpoint, map_location="cpu", weights_only=True), strict=True)
     model.eval()
-    checkpoint = args.output / "experimental-simplekt.pt"
-    torch.save(model.state_dict(), checkpoint)
     restored = cls(n_question=vocab["numConcepts"], n_pid=vocab["numQuestions"], **config)
     restored.load_state_dict(torch.load(checkpoint, map_location="cpu", weights_only=True), strict=True)
     restored.eval()
@@ -120,11 +141,12 @@ def main():
     (args.output / "model-config.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
     (args.output / "vocab.json").write_text(json.dumps(vocab, indent=2) + "\n", encoding="utf-8")
     run.update(status="completed", optimizerSteps=steps, trainingSequences=len(feeds),
+               validationSequences=len(validation_feeds), selectedEpoch=best_epoch, bestValidationLoss=best_loss,
                checkpointReloadPassed=True, currentResponseInvariant=True,
                meanTrainingLoss=float(np.mean(losses)), lastGradientNorm=float(norm),
                checkpointSha256=hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
                torchVersion=torch.__version__,
-               limitations="Training loss is a pipeline diagnostic, not validation or evidence of recommendation quality.")
+               limitations="Validation loss selects a checkpoint; it is not calibration or held-out test evidence.")
     run_path.write_text(json.dumps(run, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(run, indent=2))
 

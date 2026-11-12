@@ -12,17 +12,24 @@ from export_game_observations import question_id
 
 KC = "bubble.next_swap.v1"
 SPLITS = ("train", "validation", "test")
+IDENTIFIER = re.compile(r"[a-z][a-z0-9._-]*")
 
 
-def validate_rows(rows):
+def learner_split(seed, learner_id):
+    """Stable split: adding learners never moves an existing learner."""
+    bucket = int.from_bytes(hashlib.sha256(f"{seed}:{learner_id}".encode()).digest()[:8], "big") % 10
+    return "train" if bucket < 6 else "validation" if bucket < 8 else "test"
+
+
+def validate_rows(rows, encoding_version):
     seen, previous = set(), {}
     for row in rows:
         if (not isinstance(row.get("learnerId"), str) or not row["learnerId"]
                 or not isinstance(row.get("attemptId"), str) or not row["attemptId"]
                 or type(row.get("sequence")) is not int or row["sequence"] < 1
                 or type(row.get("response")) is not int or row["response"] not in (0, 1)
-                or row.get("kcId") != KC
-                or not re.fullmatch(r"bubble-board-v1:[0-9a-f]{64}", row.get("questionId", ""))
+                or not isinstance(row.get("kcId"), str) or not IDENTIFIER.fullmatch(row["kcId"])
+                or not re.fullmatch(re.escape(encoding_version) + r":[0-9a-f]{64}", row.get("questionId", ""))
                 or row.get("activity") not in ("minigame", "supplementary")
                 or row.get("source") not in ("map", "classroom")
                 or row.get("isQa") is not False
@@ -37,20 +44,32 @@ def validate_rows(rows):
 
 
 def candidate_questions(catalog):
-    if catalog.get("schemaVersion") != 1 or catalog.get("encodingVersion") != "bubble-board-v1":
+    encoding = catalog.get("encodingVersion")
+    if (catalog.get("schemaVersion") != 1 or not isinstance(encoding, str)
+            or not IDENTIFIER.fullmatch(encoding)):
         raise ValueError("Incompatible catalog")
     result = []
     for exercise in catalog["exercises"]:
-        values = exercise["input"]
-        if (exercise["kcId"] != KC or not 2 <= len(values) <= 8
-                or any(type(v) is not int or not -99 <= v <= 99 for v in values)):
-            raise ValueError("Incompatible exercise")
-        # BubbleTrace skips automatic keeps before the first required swap.
-        pair = next((i for i in range(len(values) - 1) if values[i] > values[i + 1]), None)
-        if pair is None:
-            raise ValueError("Exercise has no learner swap opportunity")
-        board = dict(items=[dict(value=v) for v in values], pair=pair, end=len(values) - 1, **{"pass": 1})
-        result.append(dict(id=exercise["id"], questionId=question_id(board), kcId=KC))
+        kc = exercise.get("kcId")
+        if not isinstance(kc, str) or not IDENTIFIER.fullmatch(kc):
+            raise ValueError("Incompatible exercise KC")
+        supplied = exercise.get("questionId")
+        if supplied is not None:
+            if not re.fullmatch(re.escape(encoding) + r":[0-9a-f]{64}", supplied):
+                raise ValueError("Incompatible exercise question ID")
+            qid = supplied
+        else:
+            values = exercise["input"]
+            if (encoding != "bubble-board-v1" or kc != KC or not 2 <= len(values) <= 8
+                    or any(type(v) is not int or not -99 <= v <= 99 for v in values)):
+                raise ValueError("Incompatible exercise")
+            # BubbleTrace skips automatic keeps before the first required swap.
+            pair = next((i for i in range(len(values) - 1) if values[i] > values[i + 1]), None)
+            if pair is None:
+                raise ValueError("Exercise has no learner swap opportunity")
+            board = dict(items=[dict(value=v) for v in values], pair=pair, end=len(values) - 1, **{"pass": 1})
+            qid = question_id(board)
+        result.append(dict(id=exercise["id"], questionId=qid, kcId=kc))
     if not result or len({r["id"] for r in result}) != len(result):
         raise ValueError("Empty or duplicate catalog")
     return result
@@ -59,15 +78,17 @@ def candidate_questions(catalog):
 def prepare(rows, catalog, seed=42, sequence_length=200):
     if not 2 <= sequence_length <= 200:
         raise ValueError("Sequence length must be 2..200")
-    validate_rows(rows)
+    candidates = candidate_questions(catalog)
+    encoding = catalog["encodingVersion"]
+    target = catalog.get("predictionTarget", "first_swap_opportunity" if encoding == "bubble-board-v1" else None)
+    if not isinstance(target, str) or not IDENTIFIER.fullmatch(target):
+        raise ValueError("Missing prediction target")
+    validate_rows(rows, encoding)
     grouped = defaultdict(list)
     for row in rows:
         grouped[row["learnerId"]].append(row)
-    # Deterministic for an identical snapshot/key/seed; freeze split file for a study.
-    learners = sorted(grouped, key=lambda uid: hashlib.sha256(f"{seed}:{uid}".encode()).hexdigest())
-    heldout = max(1, len(learners) // 5) if len(learners) >= 3 else 0
-    assignment = {uid: ("validation" if i < heldout else "test" if i < 2 * heldout else "train")
-                  for i, uid in enumerate(learners)}
+    learners = sorted(grouped)
+    assignment = {uid: learner_split(seed, uid) for uid in learners}
     train_rows = [r for r in rows if assignment[r["learnerId"]] == "train"]
     qv = {qid: i for i, qid in enumerate(sorted({r["questionId"] for r in train_rows}))}
     cv = {cid: i for i, cid in enumerate(sorted({r["kcId"] for r in train_rows}))}
@@ -96,20 +117,20 @@ def prepare(rows, catalog, seed=42, sequence_length=200):
                 responses=[r["response"] for r in window]))
             count["scoredTargets"] += len(window) - 1
     coverage = []
-    for candidate in candidate_questions(catalog):
+    for candidate in candidates:
         matching = [r for r in train_rows if r["questionId"] == candidate["questionId"]]
         coverage.append(dict(**candidate, inTrainVocab=candidate["questionId"] in qv,
                              trainObservations=len(matching),
                              trainLearners=len({r["learnerId"] for r in matching})))
-    report = dict(schemaVersion=1, encodingVersion="bubble-board-v1",
-                  predictionTarget="first_swap_opportunity", sequenceLength=sequence_length,
-                  splitSeed=seed, splitMethod="learner-disjoint snapshot hash rank; approximately 60/20/20",
+    report = dict(schemaVersion=1, encodingVersion=encoding,
+                  predictionTarget=target, sequenceLength=sequence_length,
+                  splitSeed=seed, splitMethod="learner-disjoint stable hash bucket; approximately 60/20/20",
                   splits={split: {**dict(counts[split]), "sequences": len(sequences[split])} for split in SPLITS},
                   candidateCoverage=coverage, datasetPrepared=bool(sequences["train"]),
                   evaluationDeferred=True, deploymentReady=False,
                   warnings=[])
-    if len(learners) < 3:
-        report["warnings"].append("Fewer than 3 learners: all data stays in train; validation/test are empty.")
+    if not all(counts[split]["learners"] for split in SPLITS):
+        report["warnings"].append("At least one learner split is empty; evaluation is unavailable.")
     if any(not c["inTrainVocab"] for c in coverage):
         report["warnings"].append("Some practice candidates are missing from training vocabulary.")
     report["warnings"].append("Prepared data does not certify participant identity, calibration or model quality.")

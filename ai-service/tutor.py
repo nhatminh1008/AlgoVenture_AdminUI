@@ -42,8 +42,10 @@ class Tutor:
 
         manifest = json.loads(path.read_text(encoding="utf-8"))
         if (manifest["schemaVersion"] != 1 or manifest["architecture"] != "simplekt"
-                or manifest["predictionTarget"] != TARGET
-                or manifest["encodingVersion"] != "bubble-board-v1"
+                or not isinstance(manifest.get("predictionTarget"), str)
+                or not manifest["predictionTarget"]
+                or not isinstance(manifest.get("encodingVersion"), str)
+                or not manifest["encodingVersion"]
                 or not manifest["modelVersion"]):
             raise ValueError("Unverified or incompatible artifact")
         mode = manifest.get("deploymentMode", "validated")
@@ -67,8 +69,6 @@ class Tutor:
             values = list(vocab.values())
             if not values or any(type(v) is not int or v < 0 for v in values) or len(set(values)) != len(values):
                 raise ValueError("Invalid vocabulary")
-        if "bubble.next_swap.v1" not in manifest["kcVocab"]:
-            raise ValueError("Game KC missing")
         model_path = path.parent / manifest["modelFile"]
         if model_path.resolve().parent != path.parent.resolve():
             raise ValueError("Artifact must be adjacent to manifest")
@@ -84,11 +84,15 @@ class Tutor:
         self.experimental = experimental
         self.reason = "experimental_ready" if experimental else "ready"
 
-    def recommend(self, history: list[dict], candidates: list[dict]) -> dict:
+    def recommend(self, history: list[dict], candidates: list[dict],
+                  *, prediction_target: str = TARGET, encoding_version: str = "bubble-board-v1") -> dict:
         if not history:
             return unavailable("insufficient_history", "no_observations")
         if self.session is None:
             return unavailable("model_not_ready", self.reason)
+        if (prediction_target != self.manifest.get("predictionTarget", TARGET)
+                or encoding_version != self.manifest.get("encodingVersion", "bubble-board-v1")):
+            return unavailable("model_not_ready", "incompatible_model_contract")
         if not candidates:
             return unavailable("model_not_ready", "no_eligible_exercises")
         manifest = self.manifest
@@ -125,7 +129,8 @@ class Tutor:
             selected = choose_target_correctness(scores)
             result = dict(status="ready", exerciseId=selected, predictedCorrectness=scores[selected],
                         modelVersion=manifest["modelVersion"], policyVersion=POLICY,
-                        reasonCode="experimental_target_correctness" if self.experimental else "target_correctness")
+                        reasonCode="experimental_target_correctness" if self.experimental else "target_correctness",
+                        predictionTarget=prediction_target, encodingVersion=encoding_version)
             if self.experimental:
                 result.update(historyUsed=len(history), historySkipped=skipped)
             return result
