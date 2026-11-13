@@ -2,15 +2,16 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { createCurriculum } from "../src/instructor/data/curriculum.js";
+import { createCurriculum } from "../src/shared/curriculum/curriculumCatalog.js";
 import {
   csvCell,
   exportStudentRows,
-} from "../src/instructor/data/classroom.js";
+} from "../src/features/instructor/reports/studentResultsExport.js";
 test("instructor resolves lessons from the backend curriculum, including Matrix", () => {
   const backendCatalog = process.env.BACKEND_CURRICULUM_PATH
     ? resolve(process.env.BACKEND_CURRICULUM_PATH)
     : [
+        "../../../Backend/src/main/resources/curriculum.json",
         "../../../AlgoVenture_Backend/src/main/resources/curriculum.json",
         "../../../../Backend_AlgoVenture/AlgoVenture_Backend/src/main/resources/curriculum.json",
         "../../backend/src/main/resources/curriculum.json",

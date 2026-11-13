@@ -51,7 +51,7 @@ Từ thư mục gốc AdminUI, chạy hai terminal:
 .\scripts\start-backend.ps1 -SkipBuild -ExperimentalAi
 ```
 
-Backend jar cần build lại sau khi sửa Java (`backend/mvnw.cmd package`, JDK 21).
+Sau khi sửa Java, chạy `.\mvnw.cmd package` bằng JDK 21 trong repo [Backend](../../Backend/README.md) bên cạnh Portal để build lại JAR.
 Trên Windows, dừng backend cũ trước bước package để tránh jar bị khóa.
 Game vẫn tại http://127.0.0.1:5173; vào **Bài luyện bổ trợ → Xem đề xuất cho tôi**.
 Tài khoản chưa có history phù hợp cần luyện một bài trong thư viện trước.
@@ -124,7 +124,7 @@ metadata đã nhận vẫn bất biến. Bài bổ trợ lưu log nhưng UI khô
 
 ## Kiểm tra
 
-Backend: `mvnw.cmd test` trong `backend` (H2 test database).
+Chạy `.\mvnw.cmd test` trong repo [Backend](../../Backend/README.md) với PostgreSQL test riêng theo hướng dẫn của repo.
 Game: unit tests recorder/queue và `tests/practice.spec.ts`, `tests/shared-backend.spec.ts`.
 E2E practice dùng API/model response giả lập để kiểm tra UI; không chứng minh
 chất lượng model thật. Test backend dùng gateway mock để kiểm tra contract,

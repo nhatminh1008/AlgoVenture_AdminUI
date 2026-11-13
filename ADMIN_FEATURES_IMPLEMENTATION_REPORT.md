@@ -1,5 +1,7 @@
 # Admin Features Implementation Report
 
+> Báo cáo lịch sử ngày 2026-11-04. Xem [danh mục API hiện tại](API_REPORT.md) và [repo Backend](../Backend/README.md) để tra cứu endpoint và đường dẫn đang dùng.
+
 **Project:** AlgoVenture Backend + Frontend  
 **Date:** 2026-11-04  
 **Author:** Devin AI Assistant  
@@ -24,7 +26,7 @@
 **Frontend:**
 - React with JSX
 - Session-based authentication with CSRF
-- API client: `src/api/client.js`
+- API client: `src/api/apiClient.js`
 
 **Database:**
 - PostgreSQL
@@ -81,12 +83,12 @@
 ### 2.2 Frontend State
 
 **Pages:**
-- `UserManagement.jsx` - Calls PUT `/api/admin/users/{id}` with `{email, name, role, status}`
-- `AdminClasses.jsx` - Calls GET `/api/admin/users` to filter instructors
+- `UserManagementPage.jsx` - Calls PUT `/api/admin/users/{id}` with `{email, name, role, status}`
+- `AdminClassroomsPage.jsx` - Calls GET `/api/admin/users` to filter instructors
 - ❌ No dedicated Instructor Management page (decided to use UserManagement with filter)
 
 **API Client:**
-- `src/api/client.js` - Handles CSRF, session, error handling
+- `src/api/apiClient.js` - Handles CSRF, session, error handling
 
 ---
 
@@ -226,7 +228,7 @@
 
 ### 6.2 Planned Changes (Not Yet Implemented)
 
-1. **`UserManagement.jsx`**
+1. **`UserManagementPage.jsx`**
    - Add "Change Role" button → calls `PUT /api/admin/users/{id}/role`
    - Add "Active/Inactive" button → calls `PUT /api/admin/users/{id}/status`
 
@@ -459,7 +461,7 @@ Reset Link: http://localhost:3000/reset-password?token=abc-123-def-456-ghi-789
 ### 12.1 Incomplete Items
 
 1. **Frontend Not Updated**
-   - UserManagement.jsx needs role/status buttons
+   - UserManagementPage.jsx needs role/status buttons
    - ForgotPassword.jsx not created
    - ResetPassword.jsx not created
    - App.jsx needs new routes
@@ -511,7 +513,7 @@ Reset Link: http://localhost:3000/reset-password?token=abc-123-def-456-ghi-789
 ### 13.2 Pending ❌
 
 **Frontend:**
-- ❌ Update UserManagement.jsx with role/status buttons
+- ❌ Update UserManagementPage.jsx with role/status buttons
 - ❌ Create ForgotPassword.jsx page
 - ❌ Create ResetPassword.jsx page
 - ❌ Update App.jsx with new routes

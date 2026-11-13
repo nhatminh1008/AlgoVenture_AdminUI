@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { loginDestination } from "../src/auth/routing.js";
+import { loginDestination } from "../src/auth/authRoutes.js";
 
 test("return URLs stay within the authenticated role and retain query filters", () => {
   assert.equal(

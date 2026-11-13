@@ -1,6 +1,11 @@
 param([switch]$SkipBuild,[switch]$ExperimentalAi)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
+$backendRoot = Join-Path (Split-Path -Parent $projectRoot) 'Backend'
+if (-not (Test-Path -LiteralPath (Join-Path $backendRoot 'pom.xml') -PathType Leaf) -or
+    -not (Test-Path -LiteralPath (Join-Path $backendRoot 'mvnw.cmd') -PathType Leaf)) {
+    throw "Backend repository not found at '$backendRoot'. Clone Backend next to the Portal repository."
+}
 $runtimeDir = Join-Path $projectRoot '.runtime'
 New-Item -ItemType Directory -Force -Path $runtimeDir | Out-Null
 
@@ -26,13 +31,13 @@ if (-not $env:POSTGRES_BIN -and -not (Test-Path (Join-Path $postgresBin 'initdb.
 }
 if (-not (Test-Path (Join-Path $postgresBin 'initdb.exe'))) { throw 'Set POSTGRES_BIN to the PostgreSQL bin directory.' }
 if (-not $SkipBuild) {
-    Push-Location (Join-Path $projectRoot 'backend')
+    Push-Location -LiteralPath $backendRoot
     try {
         & '.\mvnw.cmd' -B -ntp package
         if ($LASTEXITCODE -ne 0) { throw 'Backend build failed.' }
     } finally { Pop-Location }
 }
-$backendJar = Join-Path $projectRoot 'backend\target\algoventure-api-0.1.0.jar'
+$backendJar = Join-Path $backendRoot 'target\algoventure-api-0.1.0.jar'
 if (-not (Test-Path -LiteralPath $backendJar)) { throw 'Build the backend before using -SkipBuild.' }
 $secretsFile = Join-Path $runtimeDir 'dev-secrets.json'
 if (-not (Test-Path -LiteralPath $secretsFile)) {
@@ -91,11 +96,11 @@ $env:SEED_ENABLED = 'true'
 if ($ExperimentalAi) { $env:AI_SERVICE_URL = 'http://127.0.0.1:8000' }
 if (-not $env:SEED_ADMIN_PASSWORD) { $env:SEED_ADMIN_PASSWORD = 'Admin@12345' }
 if (-not $env:SEED_INSTRUCTOR_PASSWORD) { $env:SEED_INSTRUCTOR_PASSWORD = 'Instructor@12345' }
-Push-Location (Join-Path $projectRoot 'backend')
+Push-Location -LiteralPath $backendRoot
 try {
     # This Windows host rejects AF_UNIX connect. A nonexistent socket directory
     # makes the JDK selector use its built-in TCP loopback fallback instead.
     $socketDir = Join-Path $toolsDir 'tcp-loopback-only\unavailable'
-    & (Join-Path $env:JAVA_HOME 'bin\java.exe') "-Djdk.net.unixdomain.tmpdir=$socketDir" -jar 'target\algoventure-api-0.1.0.jar'
+    & (Join-Path $env:JAVA_HOME 'bin\java.exe') "-Djdk.net.unixdomain.tmpdir=$socketDir" -jar $backendJar
     if ($LASTEXITCODE -ne 0) { throw 'Backend process stopped with an error.' }
 } finally { Pop-Location }

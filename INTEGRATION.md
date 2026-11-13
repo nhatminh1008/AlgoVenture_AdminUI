@@ -1,12 +1,12 @@
 # Backend chung cho Admin, Instructor và Learner
 
-Backend duy nhất: `AlgoVenture_AdminUI/backend`, cổng **8081**, PostgreSQL local **55432**. Web game `AlgoVenture_Game` chạy **5173**; Admin/Instructor chạy **5174**. Cả hai Vite proxy `/api` về 8081. Không cần backend game 8080.
+Portal và Game dùng chung repo [Backend](../Backend/README.md) bên cạnh Portal, lắng nghe ở cổng **8081**. Web Game chạy **5173**, Portal chạy **5174**. Cả hai Vite proxy `/api` về 8081.
 
 ## Tài khoản
 
 Tất cả tài khoản nằm trong `app_users`. Learner tự đăng ký chỉ được tạo role learner và trạng thái Active. Admin thấy tài khoản mới ngay trong quản lý người dùng. Portal giữ `/api/auth/*`, cookie HttpOnly và CSRF.
 
-Game/Classroom dùng Bearer token do backend chung cấp: token ngẫu nhiên 256 bit, thời hạn 8 giờ, database chỉ lưu SHA-256. Đây là phiên opaque có thể thu hồi, không phải JWT. Logout thu hồi token ngay; mỗi request kiểm tra vai trò/trạng thái hiện tại. Game gửi credentials omit nên phiên cookie portal không bị thay đổi.
+Game và Classroom xác thực bằng JWT Bearer do Backend cấp với thời hạn 8 giờ. Khi đăng xuất, Game xóa token ở phía client. Các lệnh gọi xác thực bằng Bearer không gửi cookie Portal.
 
 Tài khoản/mật khẩu trong backend 8080 trước đây không tự được chuyển sang backend chung. Các bảng/liên kết V2/V3 cũ được giữ nguyên, nhưng xác thực mới không gọi identity 8080.
 
@@ -16,17 +16,17 @@ Tài khoản/mật khẩu trong backend 8080 trước đây không tự được
 | --- | --- | --- |
 | POST | `/api/game/auth/register` | `{email,password,fullName}` → 201, tài khoản và token |
 | POST | `/api/game/auth/login` | `{email,password}` → tài khoản và token |
-| GET | `/api/game/auth/me` | Danh tính trong phiên |
-| POST | `/api/game/auth/logout` | Thu hồi token → 204 |
+| POST | `/api/game/auth/logout` | Trả 204. Game xóa token cục bộ. |
 | GET | `/api/game/me/state` | `{profile,completed,linkedLevels}` từ database |
 | PUT | `/api/game/me/profile` | `{name,avatar,avatarImage?}`; không nhận tiến trình từ client |
 | POST | `/api/game/me/completions` | `{clientAttemptId,lessonId,stage}`; chống trùng, kiểm tra bài công bố, tiên quyết và chặng |
 | GET | `/api/game/curriculum` | Danh mục, trạng thái, cấu hình bài và feature flags |
+| GET | `/api/game/features` | Danh sách cờ `{id, enabled}` cho Game, kể cả trước khi đăng nhập |
 | GET | `/api/game/leaderboard?period=weekly` | weekly hoặc all-time; 100 điểm/bài hoàn thành lần đầu |
 
 Register: tên tối đa 100 ký tự, email 254, mật khẩu 6–72 ký tự và không quá 72 byte UTF-8. Tên hiển thị game tối đa 24 ký tự. Avatar JPG/PNG/WebP dạng data URL, tối đa 500.000 ký tự sau khi frontend thu nhỏ.
 
-Response auth có userId dạng số ổn định từ learner_profiles, liên kết UUID app_users.id; role LEARNER, tokenType Bearer, expiresIn tính bằng millisecond, expiresAt là Unix epoch millisecond. Game giữ token trong sessionStorage theo tab. Tải lại/đăng nhập lấy dữ liệu chuẩn từ server.
+Phản hồi xác thực có `userId` kiểu chuỗi, `role` là `LEARNER`, `tokenType` là `Bearer`, `expiresIn` tính bằng mili giây và `expiresAt` là Unix epoch tính bằng mili giây. Game giữ token trong sessionStorage theo tab. Tải lại/đăng nhập lấy dữ liệu chuẩn từ server.
 
 Migration V4 thêm learner_profiles, learner_sessions, practice_events. Tiến trình dùng lesson_completions và assignment_completions có sẵn từ V2. Không đổi checksum migration cũ.
 
@@ -35,6 +35,16 @@ Migration V4 thêm learner_profiles, learner_sessions, practice_events. Tiến t
 Các bài còn lại gửi sự kiện hoàn thành do engine trình duyệt xác nhận. Backend kiểm tra danh mục, bài tiên quyết và chặng, đồng thời chống ghi trùng. Quiz Classroom chấm hoàn toàn ở server.
 
 Chơi khách vẫn lưu cục bộ. Dữ liệu khách/local cũ không tự nhập thành kết quả server. Kết quả tài khoản lỗi mạng được xếp hàng theo userId, giữ clientAttemptId khi thử lại và hiển thị thông báo chưa đồng bộ. Sandbox không ghi điểm/hoàn thành.
+
+## Công tắc Game
+
+Game đọc cờ khi mở, khi quay lại tab, khi có mạng trở lại và mỗi 15 giây khi tab hiển thị.
+
+- **Practice Mode** mở bài luyện bổ trợ. **Adaptive Difficulty** mở đề xuất cá nhân trong thư viện bài luyện. API tương ứng trả 404 khi tính năng bị tắt.
+- **Sandbox** mở khu thực hành tùy chỉnh. **Leaderboard** mở bảng xếp hạng.
+- **XP** hiển thị 100 XP cho mỗi bài đã hoàn thành trong hồ sơ. **Badges** hiển thị mục Thành tựu. Hai công tắc dùng tiến trình hiện có.
+- **Offline Mode** cho phép tài khoản đã mở Game bắt đầu các lượt hỗ trợ chơi ngoại tuyến. Khi tắt, người chơi cần kết nối để bắt đầu lượt mới. Các lượt đã bắt đầu và dữ liệu chờ gửi được giữ lại.
+- **Bilingual Support** mở lựa chọn tiếng Việt và tiếng Anh. Khi tắt, Game dùng tiếng Việt và giữ lựa chọn trước đó để khôi phục khi bật lại.
 
 ## API Classroom
 
@@ -62,13 +72,13 @@ Instructor state trả điểm trung bình các điểm cao nhất của từng 
 
 ## Chạy
 
-1. Repo AdminUI: `.\scripts\start-backend.ps1`.
+1. Chạy Backend theo [hướng dẫn Backend](../Backend/README.md). Từ thư mục gốc Portal, có thể dùng `.\scripts\start-backend.ps1` để chạy Backend với PostgreSQL phát triển ở cổng 55432.
 2. Terminal khác, thư mục algoventure-admin: `npm run dev`.
 3. Terminal khác, thư mục AlgoVenture_Game: `npm run dev`.
 
 Swagger: http://127.0.0.1:8081/swagger-ui/index.html. API game: đăng ký/đăng nhập rồi nhập token vào Authorize → game. API portal: lấy CSRF rồi đăng nhập bằng cookie.
 
-Backend: `backend/mvnw.cmd test`. Portal: `npm test`, `npm run lint`, `npm run build`. Game: `npm run build`; kiểm thử hợp đồng/UI bằng API giả lập: `npx playwright test tests/auth.spec.ts tests/guest.spec.ts tests/shared-backend.spec.ts`. Test live validation trong auth.spec.ts cần `LIVE_AUTH_TEST=1` và backend 8081 đang chạy. Xem thêm `../AlgoVenture_Game/INTEGRATION.md`.
+Chạy `.\mvnw.cmd test` trong repo Backend. Trong `algoventure-admin`, chạy `npm ci`, `npm test`, `npm run lint` và `npm run build`. Game: `npm run build`; kiểm thử hợp đồng/UI bằng API giả lập: `npx playwright test tests/auth.spec.ts tests/guest.spec.ts tests/shared-backend.spec.ts`. Test live validation trong auth.spec.ts cần `LIVE_AUTH_TEST=1` và backend 8081 đang chạy. Xem thêm `../AlgoVenture_Game/INTEGRATION.md`.
 
 Production cần HTTPS, proxy /api cùng origin, SPA fallback và biến môi trường database. Dev proxy không có trong bundle production.
 
@@ -90,7 +100,7 @@ Migration V8 bổ sung cấu hình bài giao và liên kết đề Bubble. Cần
 
 ## Danh mục hiện hành và bài gộp đã ngừng dùng
 
-Danh mục hiện tại có 29 bài, khớp các ID trong `ALL_LESSONS` của game. `stack` và `queue` chỉ còn là tên nhóm hoặc dữ liệu lịch sử; không còn là bài được giao hoặc được mở. Stack dùng Push/Pop/Peek; Queue dùng Enqueue/Dequeue/Peek.
+Backend có thêm 5 bài Matrix và Instructor tải danh mục từ Backend. Game trên nhánh main hiện có 29 bài chơi; các bài Matrix chưa có màn chơi. `stack` và `queue` chỉ còn là tên nhóm hoặc dữ liệu lịch sử; không còn là bài được giao hoặc được mở. Stack dùng Push/Pop/Peek; Queue dùng Enqueue/Dequeue/Peek.
 
 Migration V9 chuyển mọi bộ bài cũ từ `stack` sang ba thao tác Stack, `queue` sang ba thao tác Queue, loại ID trùng và cập nhật bài tiên quyết. Các dòng kết quả cũ được giữ nguyên để bảo toàn lịch sử; chúng không tự hoàn thành các thao tác mới. Catalog, API Admin, Instructor và game không cung cấp hai bài đã ngừng dùng; server từ chối giao, mở lại hoặc ghi hoàn thành chúng.
 

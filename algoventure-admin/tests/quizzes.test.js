@@ -1,14 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  createQuestion,
-  validateQuiz,
-  gradeQuiz,
-} from "../src/instructor/data/quizzes.js";
+import { createQuestion, validateQuiz } from "../src/features/instructor/quizzes/quizValidation.js";
+import { gradeQuiz } from "../src/features/instructor/quizzes/quizPreviewScoring.js";
 import {
   validateMaterialFile,
   MAX_FILE_SIZE,
-} from "../src/instructor/data/materials.js";
+} from "../src/features/instructor/classrooms/materials.js";
 
 const classroom = { id: "sorting-basic" };
 function fixture() {
