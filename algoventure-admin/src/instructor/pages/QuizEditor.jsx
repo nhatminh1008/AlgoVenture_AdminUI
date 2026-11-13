@@ -13,7 +13,6 @@ import {
 import { PageHeader } from "../components/ui";
 import { useClassrooms } from "../data/ClassroomContext";
 import { createQuestion, validateQuiz, MAX_QUESTIONS } from "../data/quizzes";
-import { getTopic } from "../data/curriculum";
 import QuizPreview from "../components/QuizPreview";
 
 export default function QuizEditor() {
@@ -59,7 +58,7 @@ export default function QuizEditor() {
 }
 
 function Editor({ classroom, existing }) {
-  const { saveQuiz } = useClassrooms();
+  const { saveQuiz, getTopic } = useClassrooms();
   const navigate = useNavigate();
   const [form, setForm] = useState(() =>
     existing
@@ -202,7 +201,7 @@ function Editor({ classroom, existing }) {
             <section className="panel space-y-5 p-6">
               <div className="flex flex-wrap gap-2 text-xs">
                 <span className="rounded-full bg-portal-lavender px-3 py-1 font-semibold text-portal-purple-strong">
-                  {getTopic(classroom.topicId).name}
+                  {getTopic(classroom.topicId)?.label ?? classroom.topicId}
                 </span>
                 <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
                   Bản nháp · Một đáp án đúng/câu

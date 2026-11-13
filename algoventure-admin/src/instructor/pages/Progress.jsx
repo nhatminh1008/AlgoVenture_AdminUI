@@ -7,9 +7,10 @@ import { PageHeader, StudentIdentity, ProgressMeter } from "../components/ui";
 import { WorkspaceStats } from "../../components/WorkspaceWidgets";
 import ClassFilter, { useClassScope } from "../components/ClassFilter";
 import { exportStudentRows, downloadFile } from "../data/classroom";
-import { getTopic } from "../data/curriculum";
+import { useClassrooms } from "../data/ClassroomContext";
 
 export default function Progress() {
+  const { getTopic } = useClassrooms();
   const scope = useClassScope();
   const [query, setQuery] = useState("");
   const rows = scope.rows.filter((row) =>
@@ -102,7 +103,7 @@ export default function Progress() {
                         {classroom.name}
                       </Link>
                     </td>
-                    <td>{getTopic(classroom.topicId).name}</td>
+                    <td>{getTopic(classroom.topicId)?.label ?? classroom.topicId}</td>
                     <td><strong className="text-portal-ink">{row.score ?? "—"}</strong></td>
                     <td><ProgressMeter completed={row.completedLessons} total={row.assignedLessons} percent={row.progressPercent} /></td>
                   </tr>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Search, GraduationCap, ArrowUpRight, ArrowRight, TrendingUp, Send, X, Users, BookOpen, LayoutGrid, List, SlidersHorizontal, Network, Layers3, ChartNoAxesColumnIncreasing } from "lucide-react";
 import { useClassrooms } from "../data/ClassroomContext";
-import { topics, levels, getTopic, getLevel } from "../data/curriculum";
+import { levels, getLevel } from "../data/curriculum";
 import { WorkspaceStats } from "../../components/WorkspaceWidgets";
 import { PageHeader } from "../components/ui";
 
@@ -14,7 +14,7 @@ const topicIcons = {
 };
 
 export default function Classes() {
-  const { classes, students, assignments, quizzes } = useClassrooms();
+  const { classes, students, assignments, quizzes, topics, getTopic } = useClassrooms();
   const [query, setQuery] = useState("");
   const [topic, setTopic] = useState("all");
   const [level, setLevel] = useState("all");

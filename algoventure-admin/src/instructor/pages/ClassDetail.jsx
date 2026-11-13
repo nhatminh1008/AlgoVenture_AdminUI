@@ -7,7 +7,7 @@ import {
 import { Plus, Pencil, Users, Layers, Download } from "lucide-react";
 import { PageHeader, StudentIdentity } from "../components/ui";
 import { useClassrooms } from "../data/ClassroomContext";
-import { getTopic, getLevel, lessonName } from "../data/curriculum";
+import { getLevel } from "../data/curriculum";
 import ClassNavigation from "../components/ClassNavigation";
 import { downloadFile, exportStudentRows } from "../data/classroom";
 import ClassQuizzes from "../components/ClassQuizzes";
@@ -19,7 +19,7 @@ export const assignmentStatus = {
 };
 export default function ClassDetail() {
   const { classId } = useParams();
-  const { classes, students, assignments } = useClassrooms();
+  const { classes, students, assignments, getTopic, lessonName } = useClassrooms();
   const [params] = useSearchParams();
   const location = useLocation();
   const classroom = classes.find((item) => item.id === classId);
@@ -65,7 +65,7 @@ export default function ClassDetail() {
         </p>
       )}
       <div className="instructor-detail-summary">
-        <div className="instructor-detail-tags"><span>{topic.name}</span><span>{getLevel(classroom.level).label}</span><span><Users size={15} />{members.length} sinh viên</span></div>
+        <div className="instructor-detail-tags"><span>{topic?.label ?? classroom.topicId}</span><span>{getLevel(classroom.level).label}</span><span><Users size={15} />{members.length} sinh viên</span></div>
         <div className="instructor-invite"><span>Mã tham gia</span><strong>{classroom.inviteCode}</strong></div>
       </div>
       {classroom.description && <p className="mb-5 whitespace-pre-wrap text-sm text-slate-600">{classroom.description}</p>}

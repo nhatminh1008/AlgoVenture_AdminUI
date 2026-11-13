@@ -4,19 +4,27 @@ import {
   useEffect,
   useState,
   useCallback,
+  useMemo,
 } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { api } from "../../api/client";
+import { createCurriculum } from "./curriculum";
 
 const ClassroomContext = createContext(null);
 export function ClassroomProvider({ children }) {
   const { user } = useAuth();
   const [data, setData] = useState(null);
+  const [topics, setTopics] = useState(null);
+  const curriculum = useMemo(() => topics && createCurriculum(topics), [topics]);
   const [storageError, setError] = useState("");
   const refresh = useCallback(async () => {
     try {
-      const next = await api("/instructor/state");
+      const [next, nextTopics] = await Promise.all([
+        api("/instructor/state"),
+        api("/instructor/curriculum"),
+      ]);
       setData(next);
+      setTopics(nextTopics);
       setError("");
     } catch (failure) {
       setError(failure.message);
@@ -48,7 +56,7 @@ export function ClassroomProvider({ children }) {
       quizzes: previous.quizzes.filter((item) => item.id !== id),
     }));
   }
-  if (!data)
+  if (!data || !curriculum)
     return (
       <div className="p-8">
         {storageError ? (
@@ -67,6 +75,7 @@ export function ClassroomProvider({ children }) {
     <ClassroomContext.Provider
       value={{
         ...data,
+        ...curriculum,
         instructor: user,
         storageError,
         refresh,

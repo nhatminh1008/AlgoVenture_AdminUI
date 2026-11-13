@@ -3,11 +3,11 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Check, BookOpen } from "lucide-react";
 import { PageHeader } from "../components/ui";
 import { useClassrooms } from "../data/ClassroomContext";
-import { topics, levels, getTopic, getLevel } from "../data/curriculum";
+import { levels, getLevel } from "../data/curriculum";
 
 export default function ClassForm() {
   const { classId } = useParams();
-  const { classes, assignments, quizzes, saveClass } = useClassrooms();
+  const { classes, assignments, quizzes, saveClass, topics, getTopic } = useClassrooms();
   const existing = classes.find((item) => item.id === classId);
   const navigate = useNavigate();
   const [values, setValues] = useState(

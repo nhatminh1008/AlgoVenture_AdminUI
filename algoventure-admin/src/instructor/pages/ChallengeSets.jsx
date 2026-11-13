@@ -4,7 +4,7 @@ import { Plus, Check, BookOpen, ClipboardList, FilePenLine, Send } from "lucide-
 import ClassFilter, { useClassScope } from "../components/ClassFilter";
 import { PageHeader } from "../components/ui";
 import { useClassrooms } from "../data/ClassroomContext";
-import { getTopic, getLevel, lessonName } from "../data/curriculum";
+import { getLevel } from "../data/curriculum";
 import { WorkspaceStats } from "../../components/WorkspaceWidgets";
 
 const statusLabels = {
@@ -27,6 +27,7 @@ export default function ChallengeSets() {
 }
 
 function ChallengeList() {
+  const { lessonName } = useClassrooms();
   const scope = useClassScope();
   const location = useLocation();
   const [query, setQuery] = useState("");
@@ -67,6 +68,7 @@ function ChallengeList() {
 }
 
 function ChallengeEditor({ classes, saveAssignment, initialClassId, existing }) {
+  const { getTopic, lessonName } = useClassrooms();
   const navigate = useNavigate();
   const [form, setForm] = useState(
     () =>
@@ -184,7 +186,7 @@ function ChallengeEditor({ classes, saveAssignment, initialClassId, existing }) 
           </label>
           {classroom && (
             <p className="rounded-lg bg-portal-lavender p-3 text-xs text-portal-ink">
-              {topic.label} · {getLevel(classroom.level).label}
+              {topic?.label ?? classroom.topicId} · {getLevel(classroom.level).label}
             </p>
           )}
           <fieldset disabled={readOnly || busy} className="space-y-5">
