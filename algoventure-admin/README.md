@@ -2,7 +2,7 @@
 
 Frontend React cho Admin và Instructor, kết nối Spring Boot API. Xem [hướng dẫn chạy ở thư mục gốc](../README.md).
 
-Máy mới cần Node.js 22.12 trở lên và npm. Clone [AlgoVenture_Backend](../../AlgoVenture_Backend/README.md) cùng cấp với repo AdminUI, chạy `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1 -PrepareOnly` trong Backend rồi Run `AlgoVentureApplication` bằng JDK 21. Setup Windows mới sinh mật khẩu Admin/Instructor trong file `.runtime/dev-secrets.json` của Backend và bật seed cho lần khởi động đầu. Xem README Backend để lấy đúng khóa mật khẩu hoặc dùng cách thiết lập thủ công. Lệnh dưới đây chạy từ thư mục `algoventure-admin`:
+Máy mới cần Node.js 22.12 trở lên và npm. Clone [AlgoVenture_Backend](../../AlgoVenture_Backend/README.md) cùng cấp với repo AdminUI. Trên Windows đã cài JDK 21 và PostgreSQL 18, mở Backend trong IDE rồi Run `AlgoVentureApplication`: lần đầu tự tạo cấu hình/database, sinh mật khẩu Admin/Instructor trong `.runtime/dev-secrets.json` và khởi động API. Xem README Backend để lấy đúng khóa mật khẩu hoặc thiết lập database trên macOS/Linux. Lệnh dưới đây chạy từ thư mục `algoventure-admin`:
 
 ```sh
 npm ci

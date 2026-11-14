@@ -19,15 +19,11 @@ AlgoVenture/
 
 ## Chạy trên Windows
 
-### 1. Chuẩn bị và chạy Backend
+### 1. Run Backend
 
-Trong thư mục `AlgoVenture_Backend`, chạy một lần trên máy mới:
+Mở `AlgoVenture_Backend` trong IntelliJ IDEA hoặc VS Code, chọn **JDK 21**, chờ Maven đồng bộ rồi bấm **Run `AlgoVentureApplication`**. Working directory là thư mục gốc repo Backend; repo đã có cấu hình Run cho hai IDE.
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1 -PrepareOnly
-```
-
-Script của Backend chuẩn bị PostgreSQL phát triển riêng, mặc định `127.0.0.1:55433/algoventure`, sinh mật khẩu riêng và ghi cấu hình local được bỏ qua bởi Git vào `AlgoVenture_Backend/.runtime/application-local.properties`. `-PrepareOnly` chưa chạy Backend; cấu hình Windows mới bật seed để tạo tài khoản Portal ở lần Backend khởi động đầu tiên. Sau đó mở repo Backend trong IDE, chọn JDK 21 và Run `AlgoVentureApplication`. Backend hướng dẫn chi tiết cách dùng database ngoài và xử lý cổng đã được dùng trong [README của Backend](../AlgoVenture_Backend/README.md).
+Trên Windows đã cài PostgreSQL 18, lần Run đầu tự tìm công cụ, tạo PostgreSQL phát triển riêng, sinh mật khẩu và ghi `AlgoVenture_Backend/.runtime/application-local.properties`. Bootstrap chọn cổng database từ `55433` trở lên nếu cổng mặc định bận, tạo tài khoản Portal rồi chạy API ở `8081` trong cùng lần Run. Các lần sau dùng lại cấu hình và dữ liệu đã tạo. Nếu cài PostgreSQL ở chỗ tùy chỉnh, đặt `POSTGRES_BIN` trong Run Configuration. Xem [README Backend](../AlgoVenture_Backend/README.md) cho database ngoài, macOS/Linux và cấu hình nâng cao.
 
 Có thể chạy Backend bằng terminal thay cho IDE:
 
@@ -39,7 +35,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1
 Hai script `start-backend.ps1` và `stop-dev-database.ps1` trong repo này chỉ chuyển tiếp tới repo Backend cùng cấp; chúng không tạo database hoặc mật khẩu riêng của Portal. Hỗ trợ `-PrepareOnly`, `-SkipBuild`, `-DatabasePort`, `-DatabaseRuntimeDirectory` theo script Backend. Nếu clone Backend ở vị trí khác:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1 -BackendPath 'D:\Projects\AlgoVenture_Backend' -PrepareOnly
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1 -BackendPath 'D:\Projects\AlgoVenture_Backend'
 ```
 
 Kiểm tra [API health](http://127.0.0.1:8081/api/health) trả thành công trước khi mở Portal/Unity. Chỉ chạy một Backend ở cổng 8081. Dừng Java bằng Stop trong IDE hoặc Ctrl+C. Để dừng PostgreSQL portable, chạy từ repo này:
@@ -62,7 +58,7 @@ npm run dev
 
 Mở [Portal](http://127.0.0.1:5174). Vite proxy `/api` tới `127.0.0.1:8081`; giữ cùng hostname trong suốt phiên đăng nhập. Cổng 5174 phải trống vì cấu hình dùng `strictPort`.
 
-Với setup Windows mới bằng script, tài khoản ban đầu là `admin@algoventure.edu` và `instructor@algoventure.edu`. Mở `AlgoVenture_Backend/.runtime/dev-secrets.json` trên máy của bạn để xem mật khẩu đã sinh tại khóa `adminPassword` và `instructorPassword`; `databasePassword` là mật khẩu PostgreSQL, không phải mật khẩu Portal. Nếu dùng runtime tùy chỉnh, tìm file trong thư mục runtime đó. Seed không đổi mật khẩu tài khoản đã tồn tại; sau lần khởi tạo đầu có thể đặt `app.seed.enabled=false` trong cấu hình local.
+Với setup Windows tự động khi Run hoặc qua script, tài khoản ban đầu là `admin@algoventure.edu` và `instructor@algoventure.edu`. Mở `AlgoVenture_Backend/.runtime/dev-secrets.json` trên máy của bạn để xem mật khẩu đã sinh tại khóa `adminPassword` và `instructorPassword`; `databasePassword` là mật khẩu PostgreSQL, không phải mật khẩu Portal. Nếu dùng runtime tùy chỉnh, tìm file trong thư mục runtime đó. Seed không đổi mật khẩu tài khoản đã tồn tại; sau lần khởi tạo đầu có thể đặt `app.seed.enabled=false` trong cấu hình local.
 
 Nếu tự cấu hình Backend với database ngoài thay vì dùng script Windows, làm theo cách thiết lập thủ công trong README Backend và tự đặt mật khẩu seed (ít nhất 10 ký tự). Cấu hình ứng dụng gốc tắt seed; chỉ bật để bootstrap. Không có mật khẩu demo dùng chung và không commit file secrets.
 

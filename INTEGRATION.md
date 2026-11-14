@@ -6,11 +6,11 @@ Ba repo hiện hành là `AlgoVenture_AdminUI`, `AlgoVenture_Backend` và `AlgoV
 | --- | --- | --- |
 | Portal Vite | `http://127.0.0.1:5174` | Admin/Instructor; proxy `/api` tới Backend |
 | Backend | `http://127.0.0.1:8081` | REST API dùng chung |
-| PostgreSQL portable | `127.0.0.1:55433/algoventure` mặc định | Chỉ Backend kết nối; có thể đổi trong setup |
+| PostgreSQL portable | `127.0.0.1:55433/algoventure` mặc định | Bootstrap mới tự chọn cổng trống nếu bận; xem cấu hình local |
 | Unity Editor/player | API `http://127.0.0.1:8081` | Client Learner; cấu hình theo README Unity |
 | AI tùy chọn | Theo `AI_SERVICE_URL` | HTTP nội bộ từ Backend tới AI service |
 
-Cấu hình máy được sinh trong `AlgoVenture_Backend/.runtime`, không commit vào Git. Chạy `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1 -PrepareOnly` trong Backend trước lần Run đầu ở IDE. Không chạy hai bản Backend cùng cổng. Với thiết bị ngoài máy phát triển, loopback trỏ vào chính thiết bị; cấu hình địa chỉ Backend phù hợp theo hướng dẫn Unity.
+Cấu hình máy được sinh trong `AlgoVenture_Backend/.runtime`, không commit vào Git. Trên Windows đã cài JDK 21 và PostgreSQL 18, mở repo Backend trong IDE và Run `AlgoVentureApplication`: lần đầu tự tạo cấu hình/database, chạy migration và khởi động API. Các lần sau dùng lại dữ liệu đã tạo. Xem README Backend cho database ngoài và macOS/Linux. Không chạy hai bản Backend cùng cổng API. Với thiết bị ngoài máy phát triển, loopback trỏ vào chính thiết bị; cấu hình địa chỉ Backend phù hợp theo hướng dẫn Unity.
 
 ## Xác thực và tài khoản
 

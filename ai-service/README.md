@@ -34,7 +34,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8090
 ```
 
-Để backend gọi service, mở terminal khác tại thư mục gốc `AlgoVenture_AdminUI` và đặt biến trước khi khởi động backend. Wrapper chuyển tiếp tới repo `AlgoVenture_Backend` cùng cấp; chuẩn bị Backend trước theo [README](../README.md).
+Để backend gọi service, mở terminal khác tại thư mục gốc `AlgoVenture_AdminUI` và đặt biến trước khi khởi động backend. Wrapper chuyển tiếp tới repo `AlgoVenture_Backend` cùng cấp và tự chuẩn bị database local; cài các công cụ theo [README](../README.md).
 
 ```powershell
 $env:AI_SERVICE_URL='http://127.0.0.1:8090'
