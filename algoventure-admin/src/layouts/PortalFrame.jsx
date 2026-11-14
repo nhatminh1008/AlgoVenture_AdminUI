@@ -1,6 +1,6 @@
 import { useText } from "../preferences/preferencesContext";
 import { useEffect, useId, useRef, useState } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useMatch } from "react-router-dom";
 import { ArrowUpRight, ChevronRight, Command, LogOut, Menu, Search, X } from "lucide-react";
 import LanguageToggle from "../preferences/LanguageToggle";
 import BrandMark from "../shared/components/BrandMark";
@@ -19,13 +19,15 @@ export default function PortalFrame({ user, logout, navItems, className = "", ch
   const searchInput = useRef(null);
   const { pathname } = useLocation();
   const current = [...navItems].reverse().find((item) => pathname === item.path || pathname.startsWith(`${item.path}/`)) || navItems[0];
+  const profileMatch = useMatch("/profile");
+  const pageName = profileMatch ? text("Hồ sơ của tôi") : current.name;
   const initials = user.name?.trim().split(/\s+/).map((part) => part[0]).slice(-2).join("") || "AV";
   const isAdmin = user.role === "admin";
   const results = navItems.filter((item) => normalize(item.name).includes(normalize(query.trim())));
 
   function openSearch() { setQuery(""); searchDialog.current?.showModal(); searchInput.current?.focus(); }
   function closeMenu() { setMenuOpen(false); }
-  useEffect(() => { document.title = current.name; }, [current.name]);
+  useEffect(() => { document.title = pageName; }, [pageName]);
   useEffect(() => {
     const keydown = (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); openSearch(); }
@@ -73,7 +75,7 @@ export default function PortalFrame({ user, logout, navItems, className = "", ch
         <div className="portal-sidebar-bottom">
           <div className="portal-account">
             <span className="portal-avatar" aria-hidden="true">{initials}</span>
-            <div><Link to="/profile" title={user.name} onClick={closeMenu}><strong>{user.name}</strong></Link></div>
+            <div><NavLink to="/profile" title={user.name} onClick={closeMenu}><strong>{user.name}</strong></NavLink></div>
             <button className="portal-logout" onClick={logout} aria-label={text("Đăng xuất")} title={text("Đăng xuất")}><LogOut size={18} /></button>
           </div>
         </div>
@@ -82,7 +84,11 @@ export default function PortalFrame({ user, logout, navItems, className = "", ch
         <header className="portal-topbar">
           <div className="portal-topbar-navigation">
             <button ref={menuButton} className="portal-menu-button portal-icon-button" aria-label={text("Mở menu")} aria-expanded={menuOpen} aria-controls={navigationId} onClick={() => setMenuOpen(true)}><Menu size={21} /></button>
-            <div className="portal-breadcrumb"><span>{isAdmin ? text("Quản trị") : text("Giảng dạy")}</span><ChevronRight size={14} /><strong>{current.name}</strong></div>
+            <div className="portal-breadcrumb">
+              {isAdmin ? <Link to={navItems[0].path}>{text("Quản trị")}</Link> : <span>{text("Giảng dạy")}</span>}
+              <ChevronRight size={14} aria-hidden="true" />
+              <strong aria-current="page">{pageName}</strong>
+            </div>
           </div>
           <button className="portal-search-trigger" onClick={openSearch} aria-label={text("Tìm trang")} aria-keyshortcuts="Control+k Meta+k">
             <Search size={17} /><span>{text("Tìm trang…")}</span><kbd>Ctrl K</kbd>

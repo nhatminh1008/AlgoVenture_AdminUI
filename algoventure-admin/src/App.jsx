@@ -7,6 +7,7 @@ import LoginPage from "./auth/LoginPage";
 import { RegisterPage, VerifyEmailPage } from "./auth/RegistrationPages";
 import ForgotPasswordPage from "./auth/ForgotPasswordPage";
 import ProfilePage from "./features/profile/ProfilePage";
+import ProfileLayout from "./layouts/ProfileLayout";
 import { adminRoutes } from "./routes/AdminRoutes";
 
 const InstructorRoutes = lazy(() => import("./routes/InstructorRoutes"));
@@ -28,7 +29,9 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile" element={<ProfileLayout />}>
+              <Route index element={<ProfilePage />} />
+            </Route>
             {adminRoutes}
             <Route element={<RequireRole role="instructor" />}>
               <Route path="/instructor/*" element={<InstructorRoutes />} />
