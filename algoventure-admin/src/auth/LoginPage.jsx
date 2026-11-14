@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, Globe, LockKeyhole, Mail } from "lucide-react";
 import { useAuth } from "./useAuth";
 import { loginDestination } from "./authRoutes";
@@ -57,6 +57,7 @@ export default function LoginPage() {
             <div><label htmlFor="password" className="field-label">{text("Mật khẩu")}</label><div className="login-input-wrap"><LockKeyhole size={18} aria-hidden="true" /><input id="password" type={showPassword ? "text" : "password"} name="password" autoComplete="current-password" className="field" required value={password} placeholder={text("Nhập mật khẩu")} onChange={(e) => setPassword(e.target.value)} /><button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? text("Ẩn mật khẩu") : text("Hiện mật khẩu")} aria-pressed={showPassword} aria-controls="password" className="login-password-toggle">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>
             {(error || sessionNotice) && <p role="alert" className="login-error">{text(error || sessionNotice)}</p>}
             <button type="submit" disabled={isSubmitting} className="login-submit"><span>{isSubmitting ? text("Đang đăng nhập…") : text("Đăng nhập")}</span><ArrowRight size={18} aria-hidden="true" /></button>
+            <Link to="/forgot-password" className="login-link">{text("Quên mật khẩu?", "Forgot password?")}</Link>
           </form>
         </div>
       </section>

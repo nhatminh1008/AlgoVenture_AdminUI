@@ -231,3 +231,51 @@
   .login-form { gap: 14px; margin-top: 22px; }
   .login-input-wrap .field, .login-submit { min-height: 46px; }
 }
+
+.login-description {
+  margin-top: 14px;
+  color: #dce8fc;
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.login-form .login-description { margin-top: 0; }
+.login-field-note {
+  margin-top: 6px;
+  color: #cbdcfa;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.login-required { margin: 0; }
+.login-field-error {
+  margin-top: 6px;
+  color: #ffd3ce;
+  font-size: 13px;
+}
+.login-input-wrap .field[aria-invalid="true"] { border-color: #ffa6a0; }
+.login-success {
+  margin-top: 20px;
+  padding: 12px;
+  border: 1px solid #91ddbd;
+  border-radius: 8px;
+  background: #e8fff3;
+  color: #134c36;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.login-link {
+  width: fit-content;
+  color: #e5efff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.login-link:disabled, .login-submit:disabled { opacity: .65; cursor: default; }
+.login-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+.login-link:focus-visible { outline-color: #b9d1ff; outline-offset: 3px; }

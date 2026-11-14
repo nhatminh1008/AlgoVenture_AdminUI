@@ -70,6 +70,7 @@ export async function api(path, options = {}) {
       error.message || `Yêu cầu thất bại (${response.status}).`,
     );
     failure.status = response.status;
+    failure.fields = error.errors || undefined;
     throw failure;
   }
   if (path === "/auth/login" || path === "/auth/logout") {
