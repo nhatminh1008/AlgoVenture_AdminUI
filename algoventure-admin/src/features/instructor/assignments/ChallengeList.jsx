@@ -3,7 +3,7 @@ import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Plus, BookOpen, ClipboardList, FilePenLine, Send } from "lucide-react";
+import { Plus, BookOpen, ClipboardList, Eye, FilePenLine, Send } from "lucide-react";
 import ClassroomFilter from "../classrooms/ClassroomFilter";
 import { useClassroomScope } from "../classrooms/useClassroomScope";
 import { PageHeader } from "../workspace/PageHeader";
@@ -48,12 +48,18 @@ export default function ChallengeList() {
         <thead><tr><th>{text("Tên bộ thử thách")}</th><th>{text("Lớp nhận bài")}</th><th>{text("Nội dung")}</th><th>{text("Hạn hoàn thành")}</th><th>{text("Trạng thái")}</th><th><span className="sr-only">{text("Thao tác")}</span></th></tr></thead>
         <tbody>{pagination.items.map(item => {
           const canEdit = !item.archivedAt && !archivedClassIds.has(item.classId) && item.status === "Draft";
+          const action = canEdit ? text("Chỉnh sửa") : text("Xem chi tiết");
+          const ActionIcon = canEdit ? FilePenLine : Eye;
           return <tr key={item.id}>
             <td className="font-semibold text-slate-900">{item.title}</td><td>{classNames.get(item.classId) ?? "Lớp không khả dụng"}</td>
             <td className="max-w-64 text-xs leading-5 text-slate-500">{item.lessonIds.map(lessonName).join(", ")}</td>
             <td className="whitespace-nowrap">{item.due || "Chưa đặt"}</td>
             <td><span className={`instructor-badge ${item.archivedAt || item.status === "Closed" ? "instructor-badge-closed" : item.status === "Draft" ? "instructor-badge-draft" : ""}`}>{item.archivedAt ? text("Đã lưu trữ") : text(statusLabels[item.status])}</span></td>
-            <td><Link className="whitespace-nowrap font-semibold text-portal-purple-strong" aria-label={`${canEdit ? text("Chỉnh sửa") : "Xem"}: ${item.title}`} to={`/instructor/challenges?assignmentId=${encodeURIComponent(item.id)}`}>{canEdit ? text("Chỉnh sửa") : text("Xem chi tiết")}</Link></td>
+            <td>
+              <Link className="btn-row-action" aria-label={`${action}: ${item.title}`} to={`/instructor/challenges?assignmentId=${encodeURIComponent(item.id)}`}>
+                <ActionIcon aria-hidden="true" />{action}
+              </Link>
+            </td>
           </tr>;
         })}</tbody>
       </table></div>

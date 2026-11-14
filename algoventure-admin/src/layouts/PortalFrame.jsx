@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useMatch } from "react-router-dom";
 import { ArrowUpRight, ChevronRight, Command, LogOut, Menu, Search, X } from "lucide-react";
 import LanguageToggle from "../preferences/LanguageToggle";
+import ThemeToggle from "../preferences/ThemeToggle";
 import BrandMark from "../shared/components/BrandMark";
 import "./PortalFrame.css";
 
@@ -12,11 +13,16 @@ export default function PortalFrame({ user, logout, navItems, className = "", ch
   const text = useText();
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [signingOut, setSigningOut] = useState(false);
   const navigationId = useId();
+  const logoutTitleId = useId();
+  const logoutDescriptionId = useId();
   const menuButton = useRef(null);
   const sidebar = useRef(null);
   const searchDialog = useRef(null);
   const searchInput = useRef(null);
+  const logoutDialog = useRef(null);
+  const cancelLogout = useRef(null);
   const { pathname } = useLocation();
   const current = [...navItems].reverse().find((item) => pathname === item.path || pathname.startsWith(`${item.path}/`)) || navItems[0];
   const profileMatch = useMatch("/profile");
@@ -27,9 +33,25 @@ export default function PortalFrame({ user, logout, navItems, className = "", ch
 
   function openSearch() { setQuery(""); searchDialog.current?.showModal(); searchInput.current?.focus(); }
   function closeMenu() { setMenuOpen(false); }
+  function confirmLogout() {
+    logoutDialog.current.showModal();
+    cancelLogout.current.focus();
+  }
+  async function signOut(event) {
+    event.preventDefault();
+    if (signingOut) return;
+    logoutDialog.current.close();
+    setSigningOut(true);
+    try {
+      await logout();
+    } finally {
+      setSigningOut(false);
+    }
+  }
   useEffect(() => { document.title = pageName; }, [pageName]);
   useEffect(() => {
     const keydown = (event) => {
+      if (logoutDialog.current?.open) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); openSearch(); }
     };
     window.addEventListener("keydown", keydown);
@@ -76,7 +98,8 @@ export default function PortalFrame({ user, logout, navItems, className = "", ch
           <div className="portal-account">
             <span className="portal-avatar" aria-hidden="true">{initials}</span>
             <div><NavLink to="/profile" title={user.name} onClick={closeMenu}><strong>{user.name}</strong></NavLink></div>
-            <button className="portal-logout" onClick={logout} aria-label={text("Đăng xuất")} title={text("Đăng xuất")}><LogOut size={18} /></button>
+            <button type="button" className="portal-logout" onClick={confirmLogout} disabled={signingOut}
+              aria-haspopup="dialog" aria-label={text("Đăng xuất")} title={text("Đăng xuất")}><LogOut size={18} aria-hidden="true" /></button>
           </div>
         </div>
       </aside>
@@ -93,7 +116,10 @@ export default function PortalFrame({ user, logout, navItems, className = "", ch
           <button className="portal-search-trigger" onClick={openSearch} aria-label={text("Tìm trang")} aria-keyshortcuts="Control+k Meta+k">
             <Search size={17} /><span>{text("Tìm trang…")}</span><kbd>Ctrl K</kbd>
           </button>
-          <div className="portal-topbar-language"><LanguageToggle /></div>
+          <div className="portal-topbar-preferences">
+            <ThemeToggle />
+            <LanguageToggle />
+          </div>
         </header>
         <main id="main-content" className="portal-content" tabIndex={-1}>{children}</main>
       </div>
@@ -102,6 +128,18 @@ export default function PortalFrame({ user, logout, navItems, className = "", ch
         <label className="portal-dialog-search"><Search size={18} /><input ref={searchInput} value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text("Tìm trang bạn cần…")} aria-label={text("Tìm trang")} /></label>
         <div className="portal-search-results">{results.map((item) => <Link key={item.path} to={item.path} onClick={() => { searchDialog.current.close(); setMenuOpen(false); }}>{item.icon}<span>{item.name}</span><ArrowUpRight size={16} /></Link>)}{!results.length && <p role="status">{text("Không tìm thấy trang phù hợp.")}</p>}</div>
         <p className="portal-search-hint">{text("Dùng Tab để chọn · Enter để mở · Esc để đóng")}</p>
+      </dialog>
+      <dialog ref={logoutDialog} className="portal-logout-dialog" role="alertdialog"
+        aria-labelledby={logoutTitleId} aria-describedby={logoutDescriptionId}>
+        <form onSubmit={signOut}>
+          <span className="portal-logout-icon"><LogOut size={21} aria-hidden="true" /></span>
+          <h2 id={logoutTitleId}>{text("Đăng xuất khỏi AlgoVenture?", "Sign out of AlgoVenture?")}</h2>
+          <p id={logoutDescriptionId}>{text("Bạn sẽ cần đăng nhập lại để tiếp tục sử dụng portal.", "You’ll need to sign in again to use the portal.")}</p>
+          <div className="portal-logout-actions">
+            <button ref={cancelLogout} type="button" className="btn-secondary" onClick={() => logoutDialog.current.close()}>{text("Hủy")}</button>
+            <button type="submit" className="btn-primary">{text("Đăng xuất")}</button>
+          </div>
+        </form>
       </dialog>
     </div>
   );

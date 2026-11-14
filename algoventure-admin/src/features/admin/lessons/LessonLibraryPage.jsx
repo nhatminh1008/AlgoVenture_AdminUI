@@ -2,6 +2,7 @@ import { useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { Link } from "react-router-dom";
+import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useApiData } from "../../../shared/hooks/useApiData";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
@@ -47,10 +48,10 @@ export default function LessonLibraryPage() {
                 <td><RecordBadge value={a.status} /></td>
                 <td>
                   <Link
-                    className="font-semibold text-portal-purple-strong"
+                    className="btn-row-action"
                     to={`/admin/levels?lessonId=${a.id}`}
                   >
-                    {text("Cấu hình")}
+                    <SlidersHorizontal aria-hidden="true" />{text("Cấu hình")}
                   </Link>
                 </td>
               </tr>

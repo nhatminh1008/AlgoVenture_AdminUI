@@ -15,6 +15,17 @@ import { WorkspaceStats } from "../../../shared/components/WorkspaceStats";
 import ClassroomFilter from "../classrooms/ClassroomFilter";
 import { useClassroomScope } from "../classrooms/useClassroomScope";
 
+const axisColor = "var(--portal-muted)";
+const tooltipStyle = {
+  backgroundColor: "var(--portal-surface)",
+  color: "var(--portal-ink)",
+  borderColor: "var(--portal-line-strong)",
+  borderRadius: 12,
+  fontSize: 14,
+};
+const tooltipItemStyle = { color: "var(--portal-ink)" };
+const tooltipCursor = { fill: "var(--portal-lavender)" };
+
 export default function ClassroomAnalyticsPage() {
   const text = useText();
   const scope = useClassroomScope();
@@ -67,14 +78,14 @@ export default function ClassroomAnalyticsPage() {
                     tickFormatter={(name) =>
                       name.length > 15 ? `${name.slice(0, 13)}…` : name
                     }
-                    tick={{ fontSize: 13 }}
+                    tick={{ fill: axisColor, fontSize: 13 }}
                     interval={0}
                     width={110}
                     axisLine={false}
                     tickLine={false}
                   />
-                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 13 }} axisLine={false} tickLine={false} />
-                  <Tooltip cursor={{ fill: "var(--portal-lavender)" }} contentStyle={{ borderRadius: 12, borderColor: "var(--portal-line)", fontSize: 14 }} />
+                  <XAxis type="number" allowDecimals={false} tick={{ fill: axisColor, fontSize: 13 }} axisLine={false} tickLine={false} />
+                  <Tooltip cursor={tooltipCursor} contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} />
                   <Bar
                     dataKey="students"
                     name="Sinh viên"
@@ -94,7 +105,19 @@ export default function ClassroomAnalyticsPage() {
         </section>
         <section className="panel p-6">
           <h2 className="instructor-chart-title"><ChartNoAxesColumn size={19} />{text("Phân bố điểm quiz")}</h2>
-          {graded.length ? <div className="mt-5 h-64"><ResponsiveContainer width="100%" height="100%"><BarChart data={distribution} margin={{ left: 0, right: 12, bottom: 15 }}><CartesianGrid stroke="var(--portal-line)" strokeDasharray="3 5" vertical={false} /><XAxis dataKey="name" tick={{ fontSize: 14 }} /><YAxis allowDecimals={false} width={25} /><Tooltip cursor={{ fill: "var(--portal-yellow-soft)" }} contentStyle={{ borderRadius: 12, borderColor: "var(--portal-line)", fontSize: 14 }} /><Bar dataKey="students" name="Sinh viên" fill="var(--portal-purple)" radius={[7, 7, 0, 0]} maxBarSize={55} isAnimationActive={false} /></BarChart></ResponsiveContainer></div> : <div className="instructor-empty"><ChartNoAxesColumn /><p>{text("Chưa có điểm quiz")}</p></div>}
+          {graded.length ? (
+            <div className="mt-5 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={distribution} margin={{ left: 0, right: 12, bottom: 15 }}>
+                  <CartesianGrid stroke="var(--portal-line)" strokeDasharray="3 5" vertical={false} />
+                  <XAxis dataKey="name" stroke={axisColor} tick={{ fill: axisColor, fontSize: 14 }} />
+                  <YAxis allowDecimals={false} width={25} stroke={axisColor} tick={{ fill: axisColor }} />
+                  <Tooltip cursor={tooltipCursor} contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} />
+                  <Bar dataKey="students" name="Sinh viên" fill="var(--portal-purple)" radius={[7, 7, 0, 0]} maxBarSize={55} isAnimationActive={false} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : <div className="instructor-empty"><ChartNoAxesColumn /><p>{text("Chưa có điểm quiz")}</p></div>}
         </section>
       </div>
     </div>

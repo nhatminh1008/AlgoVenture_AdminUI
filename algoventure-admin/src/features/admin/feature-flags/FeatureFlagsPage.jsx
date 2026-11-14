@@ -65,7 +65,7 @@ export default function FeatureFlagsPage() {
                     aria-checked={f.enabled}
                     aria-label={f.title}
                     disabled={!!updatingFeatureId}
-                    className={`relative h-6 w-11 shrink-0 rounded-full ${f.enabled ? "bg-portal-purple" : "bg-slate-300"}`}
+                    className={`relative h-6 w-11 shrink-0 rounded-full ${f.enabled ? "bg-portal-purple" : "bg-portal-control-line"}`}
                     onClick={() => toggle(f)}
                   >
                     <span

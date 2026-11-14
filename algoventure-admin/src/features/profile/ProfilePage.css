@@ -3,7 +3,6 @@ body:has(.profile-page) { min-width: 0; }
 .profile-page {
   max-width: 1160px;
   margin-inline: auto;
-  container-type: inline-size;
   color: var(--portal-ink);
 }
 
@@ -48,8 +47,8 @@ body:has(.profile-page) { min-width: 0; }
   width: clamp(56px, 8vw, 76px);
   aspect-ratio: 1;
   border-radius: 17px;
-  background: var(--portal-yellow-soft);
-  color: var(--color-brand-dark);
+  background: var(--portal-info-bg);
+  color: var(--portal-info-ink);
   font-size: clamp(20px, 3vw, 28px);
   font-weight: 700;
   text-transform: uppercase;
@@ -69,17 +68,6 @@ body:has(.profile-page) { min-width: 0; }
 
 .profile-name { margin-block: 4px 2px; font-size: clamp(21px, 3vw, 28px); font-weight: 700; line-height: 1.25; }
 .profile-email { color: var(--portal-yellow-soft); font-size: 14px; }
-
-.profile-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: start;
-  gap: 20px;
-}
-
-@container (min-width: 760px) {
-  .profile-grid { grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); }
-}
 
 .profile-card { min-width: 0; padding: clamp(16px, 3vw, 24px); }
 
@@ -147,36 +135,6 @@ body:has(.profile-page) { min-width: 0; }
 .profile-card-footer .btn-primary:disabled { opacity: 1; background: var(--portal-lavender); color: var(--portal-muted); box-shadow: none; }
 .profile-saved { display: flex; align-items: center; gap: 7px; color: var(--portal-purple-strong); font-size: 13px; font-weight: 600; }
 .profile-feedback p { margin-block: 12px 0; }
-.profile-preference + .profile-preference { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--portal-line); }
-
-.profile-preference h3 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 9px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.profile-preference h3 svg { color: var(--portal-muted); }
-
-.profile-preference .preference-toggle {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  background: var(--portal-page);
-}
-
-.profile-preference .preference-toggle button {
-  display: flex;
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  overflow-wrap: anywhere;
-}
-
-.profile-preference .preference-toggle button[aria-pressed="false"]:hover { background: var(--portal-lavender); }
-
 @media (max-width: 480px) {
   .profile-card-footer .btn-primary { width: 100%; }
 }

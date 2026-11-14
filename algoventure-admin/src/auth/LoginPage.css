@@ -29,8 +29,8 @@
 }
 .login-language > button:hover { background: #ffffff14; color: #fff; }
 .login-language > button[aria-pressed="true"] {
-  background: #dceaff;
-  color: #193c73;
+  background: light-dark(#dceaff, var(--color-brand));
+  color: light-dark(#193c73, #fff);
 }
 .login-language > button:focus-visible { outline-color: #b9d1ff; outline-offset: 2px; }
 .login-access {
@@ -218,10 +218,10 @@
 .login-submit:focus-visible, .login-password-toggle:focus-visible { outline-color: #b9d1ff; }
 .login-error {
   padding: 12px;
-  border: 1px solid #f3d4d0;
+  border: 1px solid var(--portal-danger-line);
   border-radius: 8px;
-  background: #fff3f1;
-  color: #a83e34;
+  background: var(--portal-danger-bg);
+  color: var(--portal-danger-ink);
   font-size: 13px;
 }
 @media (max-height: 560px) {
@@ -256,10 +256,10 @@
 .login-success {
   margin-top: 20px;
   padding: 12px;
-  border: 1px solid #91ddbd;
+  border: 1px solid light-dark(#91ddbd, var(--portal-line-strong));
   border-radius: 8px;
-  background: #e8fff3;
-  color: #134c36;
+  background: var(--portal-success-bg);
+  color: var(--portal-success-ink);
   font-size: 14px;
   line-height: 1.5;
 }

@@ -1,4 +1,5 @@
 import { useText } from "../../../preferences/preferencesContext";
+import { Pencil } from "lucide-react";
 import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import RecordBadge from "../RecordBadge";
@@ -66,9 +67,11 @@ export default function UserList({ rows, currentUserId, query, role, onQueryChan
                 <td><RecordBadge value={u.status} /></td>
                 <td>
                   <button
-                    className="text-portal-purple-strong"
+                    type="button"
+                    className="btn-row-action"
                     onClick={() => onEdit(u)}
                   >
+                    <Pencil aria-hidden="true" />
                     {u.id === currentUserId ? text("Sửa hồ sơ của tôi") : text("Chỉnh sửa")}
                   </button>
                 </td>

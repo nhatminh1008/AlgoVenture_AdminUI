@@ -4,7 +4,6 @@ import { api } from "../../api/apiClient";
 import { useAuth } from "../../auth/useAuth";
 import { useApiData } from "../../shared/hooks/useApiData";
 import { ApiFeedback } from "../../shared/components/ApiFeedback";
-import Appearance from "../../preferences/Appearance";
 import { useText } from "../../preferences/preferencesContext";
 import "./ProfilePage.css";
 
@@ -61,7 +60,6 @@ function ProfileForm({ user, onSaved }) {
     <div className="profile-page">
       <div className="page-heading profile-heading">
         <h1>{text("Hồ sơ của tôi", "My profile")}</h1>
-        <p>{text("Quản lý thông tin cá nhân và tùy chọn hiển thị.", "Manage your personal information and display preferences.")}</p>
       </div>
 
       <div className="profile-summary">
@@ -73,57 +71,54 @@ function ProfileForm({ user, onSaved }) {
         </div>
       </div>
 
-      <div className="profile-grid">
-        <section className="panel profile-card" aria-labelledby="profile-details-heading">
-          <div className="profile-card-heading">
-            <span className="profile-section-icon"><UserRound size={20} aria-hidden="true" /></span>
-            <div>
-              <h2 id="profile-details-heading">{text("Thông tin cá nhân", "Personal information")}</h2>
-              <p>{text("Cập nhật tên và thông tin liên hệ của bạn.", "Update your name and contact details.")}</p>
+      <section className="panel profile-card" aria-labelledby="profile-details-heading">
+        <div className="profile-card-heading">
+          <span className="profile-section-icon"><UserRound size={20} aria-hidden="true" /></span>
+          <div>
+            <h2 id="profile-details-heading">{text("Thông tin cá nhân", "Personal information")}</h2>
+            <p>{text("Cập nhật tên và thông tin liên hệ của bạn.", "Update your name and contact details.")}</p>
+          </div>
+        </div>
+
+        {form && (
+          <form onSubmit={save} aria-busy={saving}>
+            <fieldset disabled={saving} className="profile-fields">
+              {fields.map(([key, vi, en, type, autoComplete, maxLength, required]) => (
+                <label key={key} className={key === "address" ? "profile-field-wide" : undefined}>
+                  <span className="field-label">{text(vi, en)}</span>
+                  <input className="field" type={type} autoComplete={autoComplete} maxLength={maxLength} required={required}
+                    aria-describedby={key === "email" ? "profile-email-note" : undefined} value={form[key] ?? ""}
+                    onChange={(event) => {
+                      setDraft((current) => ({ ...current, [key]: event.target.value }));
+                      setError("");
+                      setSaved(false);
+                    }} />
+                </label>
+              ))}
+            </fieldset>
+            <p id="profile-email-note" className="profile-note">
+              <Info size={17} aria-hidden="true" />
+              <span>{text("Nếu đổi email, bạn cần đăng nhập lại bằng email mới.", "After changing your email, sign in again with the new address.")}</span>
+            </p>
+            <div className="profile-card-footer">
+              {saved && (
+                <p role="status" className="profile-saved">
+                  <CircleCheck size={17} aria-hidden="true" />
+                  {text("Đã lưu hồ sơ cá nhân.", "Profile saved.")}
+                </p>
+              )}
+              <button type="submit" className="btn-primary" disabled={saving || !changed}>
+                <Save size={16} aria-hidden="true" />
+                {saving ? text("Đang lưu…", "Saving…") : text("Lưu hồ sơ", "Save profile")}
+              </button>
             </div>
-          </div>
+          </form>
+        )}
+        <div className="profile-feedback">
+          <ApiFeedback state={state} actionError={error} />
+        </div>
+      </section>
 
-          {form && (
-            <form onSubmit={save} aria-busy={saving}>
-              <fieldset disabled={saving} className="profile-fields">
-                {fields.map(([key, vi, en, type, autoComplete, maxLength, required]) => (
-                  <label key={key} className={key === "address" ? "profile-field-wide" : undefined}>
-                    <span className="field-label">{text(vi, en)}</span>
-                    <input className="field" type={type} autoComplete={autoComplete} maxLength={maxLength} required={required}
-                      aria-describedby={key === "email" ? "profile-email-note" : undefined} value={form[key] ?? ""}
-                      onChange={(event) => {
-                        setDraft((current) => ({ ...current, [key]: event.target.value }));
-                        setError("");
-                        setSaved(false);
-                      }} />
-                  </label>
-                ))}
-              </fieldset>
-              <p id="profile-email-note" className="profile-note">
-                <Info size={17} aria-hidden="true" />
-                <span>{text("Nếu đổi email, bạn cần đăng nhập lại bằng email mới.", "After changing your email, sign in again with the new address.")}</span>
-              </p>
-              <div className="profile-card-footer">
-                {saved && (
-                  <p role="status" className="profile-saved">
-                    <CircleCheck size={17} aria-hidden="true" />
-                    {text("Đã lưu hồ sơ cá nhân.", "Profile saved.")}
-                  </p>
-                )}
-                <button type="submit" className="btn-primary" disabled={saving || !changed}>
-                  <Save size={16} aria-hidden="true" />
-                  {saving ? text("Đang lưu…", "Saving…") : text("Lưu hồ sơ", "Save profile")}
-                </button>
-              </div>
-            </form>
-          )}
-          <div className="profile-feedback">
-            <ApiFeedback state={state} actionError={error} />
-          </div>
-        </section>
-
-        <Appearance detailed />
-      </div>
     </div>
   );
 }

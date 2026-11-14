@@ -84,7 +84,21 @@ export default function InstructorClassroomsPage() {
                   <td data-label="Mức độ"><span className="class-level" data-level={item.level}>{getLevel(item.level)?.label ?? item.level}</span></td>
                   <td data-label="Sinh viên">{members}</td>
                   <td data-label="Bộ bài">{sets}</td>
-                  <td className="class-actions-cell"><div>{!item.archivedAt && <Link className="class-assign" to={`/instructor/challenges/new?classId=${item.id}`} aria-label={`Giao thử thách cho ${item.name}`}><Send size={14} />{text("Giao bài")}</Link>}<Link className="class-row-icon" to={`/instructor/progress?classId=${item.id}`} aria-label={`Xem tiến độ ${item.name}`} title={text("Xem tiến độ")}><TrendingUp size={17} /></Link><Link className="class-row-icon" to={`/instructor/classes/${item.id}`} aria-label={`Mở lớp ${item.name}`} title={text("Mở lớp")}><ArrowUpRight size={18} /></Link></div></td>
+                  <td className="class-actions-cell">
+                    <div className="table-actions">
+                      {!item.archivedAt && (
+                        <Link className="btn-row-action" to={`/instructor/challenges/new?classId=${item.id}`} aria-label={`${text("Giao bài")}: ${item.name}`}>
+                          <Send aria-hidden="true" />{text("Giao bài")}
+                        </Link>
+                      )}
+                      <Link className="btn-row-action btn-row-action-icon" to={`/instructor/progress?classId=${item.id}`} aria-label={`${text("Xem tiến độ")}: ${item.name}`} title={text("Xem tiến độ")}>
+                        <TrendingUp aria-hidden="true" />
+                      </Link>
+                      <Link className="btn-row-action btn-row-action-icon" to={`/instructor/classes/${item.id}`} aria-label={`${text("Mở lớp")}: ${item.name}`} title={text("Mở lớp")}>
+                        <ArrowUpRight aria-hidden="true" />
+                      </Link>
+                    </div>
+                  </td>
                 </tr>
               );
             })}</tbody>

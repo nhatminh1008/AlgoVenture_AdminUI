@@ -2,6 +2,7 @@ import { useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { useState } from "react";
+import { Archive, Pencil, Users } from "lucide-react";
 import { archiveClassroom, listClassrooms, saveClassroom } from "./adminClassroomService";
 import AdminClassroomForm from "./AdminClassroomForm";
 import ClassroomMembersPanel from "./ClassroomMembersPanel";
@@ -104,14 +105,17 @@ export default function AdminClassroomsPage() {
                   <td>{classroom.name}{classroom.archivedAt && <small className="block text-slate-500">{text("Đã lưu trữ")}</small>}</td>
                   <td>{getTopic(classroom.topicId)?.label ?? classroom.topicId} · {getLevel(classroom.level)?.label ?? classroom.level}</td>
                   <td>{usersById.get(classroom.instructorId)?.name ?? "Giảng viên chưa xác định"}</td>
-                  <td><div className="flex flex-wrap gap-3">
-                    <button type="button" className="text-portal-purple-strong"
-                      onClick={() => setMembersId(classroom.id)}>{text("Thành viên")}</button>
+                  <td><div className="table-actions">
+                    <button type="button" className="btn-row-action" onClick={() => setMembersId(classroom.id)}>
+                      <Users aria-hidden="true" />{text("Thành viên")}
+                    </button>
                     {!classroom.archivedAt && <>
-                      <button type="button" className="text-portal-purple-strong" disabled={isSubmitting || users.loading || !!users.error}
-                        onClick={() => edit(classroom)}>{text("Sửa lớp")}</button>
-                      <button type="button" className="text-red-700" disabled={isSubmitting}
-                        onClick={() => archive(classroom)}>{text("Lưu trữ")}</button>
+                      <button type="button" className="btn-row-action" disabled={isSubmitting || users.loading || !!users.error} onClick={() => edit(classroom)}>
+                        <Pencil aria-hidden="true" />{text("Sửa lớp")}
+                      </button>
+                      <button type="button" className="btn-row-action btn-row-action-danger" disabled={isSubmitting} onClick={() => archive(classroom)}>
+                        <Archive aria-hidden="true" />{text("Lưu trữ")}
+                      </button>
                     </>}
                   </div></td>
                 </tr>
