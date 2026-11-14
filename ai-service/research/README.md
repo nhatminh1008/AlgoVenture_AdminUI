@@ -198,3 +198,23 @@ assertion ép bài phải đổi, vì TC có thể chọn lại cùng bài khi x
 Hiện checkpoint CSEDM đã dùng lại được cho nghiên cứu/inference CSEDM.
 Game vẫn chưa có artifact triển khai đã kiểm chứng. Việc sửa vocab/manifest đơn thuần
 không biến checkpoint này thành model dự đoán đúng cho Bubble.
+# Export nhiều game và theo dõi độ sẵn sàng
+
+`export_game_observations.py --all-contracts --curriculum <curriculum.json>`
+xuất Bubble và non-Bubble `game-state-v1/next_action` theo từng contract, đồng
+thời ghi `lessonCoverage` cả những lesson chưa có dữ liệu. Chỉ first-response
+có nhãn đúng/sai đã chấm mới được đưa vào; telemetry chưa chấm và retry được đếm
+riêng. Không gọi inference hay tự training trong bước export.
+
+`serverVerified=true` nghĩa là backend đã chấm response theo luật, không tự có
+nghĩa initial board do server cấp. Giữ `inputVerified` và `inputProvenance`
+(`server_challenge` hoặc `validated_client_snapshot`) qua export và preparation.
+Readiness báo số quan sát theo nguồn; không tuyên bố training/deployment approved.
+
+Dataset preparation chọn đúng encoding/target từ catalog, báo số quan sát thuộc
+contract khác đã loại, thống kê coverage theo lesson và không fit vocab trên
+validation/test. Candidate generic phải có `lessonId`, `kcId`, question ID đúng
+canonical encoder; không ánh xạ tùy ý về KC hoặc question của Bubble.
+
+Các test generic dùng dữ liệu dựng để kiểm tra pipeline. Chúng không phải model
+graph/array/linked đã huấn luyện và không chứng minh chất lượng dự đoán.

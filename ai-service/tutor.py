@@ -24,12 +24,15 @@ def choose_target_correctness(scores: dict[str, float], target: float = 0.70) ->
 
 
 class Tutor:
-    def __init__(self, manifest_path: str | None = None, *, allow_experimental: bool = False):
+    def __init__(self, manifest_path: str | None = None, *, allow_experimental: bool = False,
+                 allow_test_artifacts: bool = False):
         self.session = None
         self.manifest = None
         self.reason = "model_not_configured"
         self.experimental = False
         self.allow_experimental = allow_experimental
+        self.allow_test_artifacts = allow_test_artifacts
+        self.test_only = False
         if manifest_path:
             try:
                 self._load(Path(manifest_path))
@@ -41,7 +44,9 @@ class Tutor:
         import onnxruntime as ort
 
         manifest = json.loads(path.read_text(encoding="utf-8"))
-        if (manifest["schemaVersion"] != 1 or manifest["architecture"] != "simplekt"
+        test_only = manifest.get("artifactPurpose") == "synthetic_transport_test"
+        expected_architecture = "synthetic-simplekt-contract" if test_only else "simplekt"
+        if (manifest["schemaVersion"] != 1 or manifest["architecture"] != expected_architecture
                 or not isinstance(manifest.get("predictionTarget"), str)
                 or not manifest["predictionTarget"]
                 or not isinstance(manifest.get("encodingVersion"), str)
@@ -49,6 +54,8 @@ class Tutor:
                 or not manifest["modelVersion"]):
             raise ValueError("Unverified or incompatible artifact")
         mode = manifest.get("deploymentMode", "validated")
+        if test_only and (not self.allow_test_artifacts or mode != "experimental"):
+            raise ValueError("Synthetic transport artifacts require a separate test-only opt-in")
         experimental = mode == "experimental"
         if experimental:
             if not self.allow_experimental or manifest["validation"]["status"] != "deferred":
@@ -82,10 +89,12 @@ class Tutor:
             raise ValueError("Missing ONNX probability output")
         self.manifest, self.session = manifest, session
         self.experimental = experimental
+        self.test_only = test_only
         self.reason = "experimental_ready" if experimental else "ready"
 
     def recommend(self, history: list[dict], candidates: list[dict],
-                  *, prediction_target: str = TARGET, encoding_version: str = "bubble-board-v1") -> dict:
+                  *, prediction_target: str = TARGET, encoding_version: str = "bubble-board-v1",
+                  lesson_id: str | None = None) -> dict:
         if not history:
             return unavailable("insufficient_history", "no_observations")
         if self.session is None:
@@ -93,6 +102,9 @@ class Tutor:
         if (prediction_target != self.manifest.get("predictionTarget", TARGET)
                 or encoding_version != self.manifest.get("encodingVersion", "bubble-board-v1")):
             return unavailable("model_not_ready", "incompatible_model_contract")
+        supported = self.manifest.get("lessonIds", ["bubble"] if encoding_version == "bubble-board-v1" else [])
+        if lesson_id is not None and supported and lesson_id not in supported:
+            return unavailable("model_not_ready", "unsupported_lesson")
         if not candidates:
             return unavailable("model_not_ready", "no_eligible_exercises")
         manifest = self.manifest
@@ -133,6 +145,8 @@ class Tutor:
                         predictionTarget=prediction_target, encodingVersion=encoding_version)
             if self.experimental:
                 result.update(historyUsed=len(history), historySkipped=skipped)
+            if self.test_only:
+                result.update(testOnly=True, reasonCode="synthetic_transport_test")
             return result
         except Exception:
             return unavailable("temporarily_unavailable", "inference_failed")

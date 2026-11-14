@@ -63,6 +63,7 @@ class DatasetTests(unittest.TestCase):
                        exercises=[dict(id="graph-bfs-easy-v1", kcId="graph.bfs.next_node.v1",
                                        questionId="game-state-v1:" + "a" * 64)])
         rows = [{**observation("learner-0", j), "kcId": "graph.bfs.next_node.v1",
+                 "serverVerified": True,
                  "questionId": "game-state-v1:" + hashlib.sha256(str(j).encode()).hexdigest()}
                 for j in (1, 2)]
         _, vocab, _, report = prepare(rows, generic)
@@ -83,6 +84,27 @@ class DatasetTests(unittest.TestCase):
         shifted = dict(CATALOG, exercises=[dict(id="skip", kcId="bubble.next_swap.v1", input=[1, 3, 2])])
         canonical = hashlib.sha256(b"1,3,2|1|2|1").hexdigest()
         self.assertEqual(candidate_questions(shifted)[0]["questionId"], "bubble-board-v1:" + canonical)
+
+    def test_mixed_contract_export_is_partitioned_without_dropping_provenance(self):
+        generic = dict(schemaVersion=1, encodingVersion="game-state-v1", predictionTarget="next_action",
+            exercises=[dict(id="graph-one", lessonId="graph-basics", kcId="graph-basics.next_action.v1",
+                            questionId="game-state-v1:" + "a" * 64)])
+        rows = [{**observation("learner-0", j), "lessonId": "graph-basics",
+                 "encodingVersion": "game-state-v1", "predictionTarget": "next_action",
+                 "questionId": "game-state-v1:" + "a" * 64, "kcId": "graph-basics.next_action.v1",
+                 "inputProvenance": "validated_client_snapshot"} for j in (1, 2)]
+        for row in rows:
+            row["serverVerified"] = True
+        rows.append({**observation("bubble-learner", 1), "encodingVersion": "bubble-board-v1",
+                     "predictionTarget": "first_swap_opportunity", "lessonId": "bubble"})
+        _, _, _, report = prepare(rows, generic)
+        self.assertEqual(1, report["excludedOtherContracts"])
+        self.assertEqual({"validated_client_snapshot": 2}, report["inputProvenanceCounts"])
+        self.assertEqual("graph-basics", report["lessonCoverage"][0]["lessonId"])
+        self.assertFalse(report["lessonCoverage"][0]["deploymentReady"])
+        rows[0]["serverVerified"] = False
+        with self.assertRaises(ValueError):
+            prepare(rows, generic)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-// Stable lesson IDs match the learner game's learningTrack.ts.
+// Topic metadata, lesson IDs and order match the backend's curriculum.json.
 export const topics = [
   {
     id: "sorting",
@@ -47,6 +47,19 @@ export const topics = [
       ["bst-search", "Tìm kiếm trên BST"],
       ["bst-insert", "Thêm nút vào BST"],
       ["bst-delete", "Xóa nút khỏi BST"],
+    ],
+  },
+  {
+    id: "matrix",
+    name: "Matrix",
+    label: "Ma trận",
+    description: "Duyệt, chuyển vị và tìm đường trên lưới hai chiều.",
+    lessons: [
+      ["matrix", "Duyệt theo hàng"],
+      ["matrix-transpose", "Chuyển vị ma trận"],
+      ["matrix-spiral", "Duyệt xoắn ốc"],
+      ["matrix-bfs", "BFS trên lưới"],
+      ["matrix-dfs", "DFS trên lưới"],
     ],
   },
   {

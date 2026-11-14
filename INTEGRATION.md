@@ -1,6 +1,12 @@
 # Backend chung cho Admin, Instructor và Learner
 
+<<<<<<< Updated upstream
 Portal và Game dùng chung repo [Backend](../Backend/README.md) bên cạnh Portal, lắng nghe ở cổng **8081**. Web Game chạy **5173**, Portal chạy **5174**. Cả hai Vite proxy `/api` về 8081.
+=======
+> **Bản lưu trước V24.** Nội dung dưới đây ghi lại tích hợp web game ở phiên bản cũ. Backend hiện nằm trong repo [AlgoVenture_Backend](../AlgoVenture_Backend/README.md), dùng JWT cho Game và schema V24 gồm 22 bảng nghiệp vụ. Xem [database hiện hành](../AlgoVenture_Backend/DATABASE.md); các mô tả opaque token, bảng và đường dẫn backend cũ bên dưới chỉ dùng để đối chiếu lịch sử.
+
+Backend duy nhất: `AlgoVenture_AdminUI/backend`, cổng **8081**, PostgreSQL local **55432**. Web game `AlgoVenture_Game` chạy **5173**; Admin/Instructor chạy **5174**. Cả hai Vite proxy `/api` về 8081. Không cần backend game 8080.
+>>>>>>> Stashed changes
 
 ## Tài khoản
 

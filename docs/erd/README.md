@@ -1,5 +1,7 @@
 # AlgoVenture — ERD theo mã nguồn, 05/11/2026
 
+> **Snapshot lịch sử ngày 05/11/2026.** Các file HTML, Mermaid, JSON và inventory trong thư mục này được giữ nguyên theo nguồn lúc trích xuất; không phải schema V24. Schema hiện hành có 22 bảng nghiệp vụ cộng `flyway_schema_history`, được mô tả ở [AlgoVenture_Backend/DATABASE.md](../../../AlgoVenture_Backend/DATABASE.md). Không dựng migration hiện hành từ snapshot này.
+
 23 bảng nghiệp vụ, 28 FK SQL, 132 cột. Đọc/lập chỉ mục 936 file từ portal/backend/AI service và Game.
 
 - `algoventure-erd.html`: sơ đồ theo cụm, danh mục FK, từ điển dữ liệu đầy đủ.

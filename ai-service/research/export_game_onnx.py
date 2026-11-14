@@ -122,6 +122,7 @@ def main():
     manifest = dict(schemaVersion=1, architecture="simplekt", deploymentMode="experimental",
                     modelVersion="game-experimental-" + run["checkpointSha256"][:12],
                     predictionTarget=dataset["predictionTarget"], encodingVersion=dataset["encodingVersion"],
+                    lessonIds=sorted({row["lessonId"] for row in candidates if row.get("lessonId")}),
                     sequenceLength=dataset["sequenceLength"], modelFile=model_path.name,
                     modelSha256=hashlib.sha256(model_path.read_bytes()).hexdigest(),
                     outputName="probabilities", questionVocab=vocab["questionVocab"], kcVocab=vocab["kcVocab"],

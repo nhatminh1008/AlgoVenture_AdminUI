@@ -1,11 +1,10 @@
-import os
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
 from fastapi import FastAPI
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from tutor import Tutor
+from model_registry import ModelRegistry
 
 
 class StrictModel(BaseModel):
@@ -26,6 +25,7 @@ class Candidate(StrictModel):
 
 class Recommend(StrictModel):
     schemaVersion: Literal[1]
+    lessonId: Annotated[str | None, Field(min_length=1, max_length=50, pattern=r"^[a-z][a-z0-9-]*$")] = None
     predictionTarget: Annotated[str, Field(min_length=1, max_length=80, pattern=r"^[a-z][a-z0-9._-]*$")] = "first_swap_opportunity"
     encodingVersion: Annotated[str, Field(min_length=1, max_length=80, pattern=r"^[a-z][a-z0-9._-]*$")] = "bubble-board-v1"
     history: Annotated[list[Observation], Field(max_length=2000)]
@@ -40,8 +40,7 @@ class Recommend(StrictModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.tutor = Tutor(os.environ.get("AI_MODEL_MANIFEST"),
-                            allow_experimental=os.environ.get("AI_ALLOW_EXPERIMENTAL", "").lower() == "true")
+    app.state.tutor = ModelRegistry.from_environment()
     yield
 
 
@@ -52,7 +51,8 @@ app = FastAPI(title="AlgoVenture Adaptive Learning", lifespan=lifespan)
 def health():
     tutor = app.state.tutor
     return {"status": "ok", "modelStatus": tutor.reason,
-            "experimental": tutor.experimental}
+            "experimental": tutor.experimental,
+            "models": tutor.coverage() if isinstance(tutor, ModelRegistry) else []}
 
 
 @app.post("/v1/recommendations")
@@ -60,4 +60,5 @@ def recommend(body: Recommend):
     return app.state.tutor.recommend([row.model_dump() for row in body.history],
                                      [row.model_dump() for row in body.candidates],
                                      prediction_target=body.predictionTarget,
-                                     encoding_version=body.encodingVersion)
+                                     encoding_version=body.encodingVersion,
+                                     lesson_id=body.lessonId)

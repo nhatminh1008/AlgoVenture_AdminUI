@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "models": [
+    {
+      "id": "bubble",
+      "manifestPath": "../.runtime/ai-research/game-artifact/manifest.json",
+      "lessonIds": ["bubble"]
+    }
+  ]
+}

@@ -21,12 +21,21 @@ test("instructor resolves lessons from the backend curriculum, including Matrix"
   const { topics, getTopic, lessonName } = createCurriculum(backend);
   const ids = topics.flatMap((topic) => topic.lessons.map(([id]) => id));
   const legacyIds = ["stack", "queue", "tree-traversal", "bst"];
+<<<<<<< Updated upstream
   assert.equal(new Set(ids).size, ids.length);
   assert.deepEqual(ids.filter((id) => legacyIds.includes(id)), []);
   assert.deepEqual(getTopic("matrix").lessons.map(([id]) => id),
     ["matrix", "matrix-transpose", "matrix-spiral", "matrix-bfs", "matrix-dfs"]);
   assert.equal(lessonName("matrix-bfs"), "BFS trên lưới");
   assert.equal(lessonName("stack"), "stack");
+=======
+  assert.equal(new Set(backendIds).size, backendIds.length);
+  assert.deepEqual([...ids].sort(), [...backendIds].sort());
+  assert.deepEqual(topics, backend, "Topic metadata, lesson labels and order must match the backend");
+  assert.deepEqual(backendIds.filter(id => legacyIds.includes(id)), []);
+  assert.equal(ids.length, 34);
+  assert.ok(!ids.includes("stack") && !ids.includes("queue"));
+>>>>>>> Stashed changes
   for (const id of ['stack-push', 'stack-pop', 'stack-peek', 'queue-enqueue', 'queue-dequeue', 'queue-peek', 'tree-dfs', 'tree-bfs'])
     assert.ok(ids.includes(id), `Missing curriculum lesson: ${id}`);
 });

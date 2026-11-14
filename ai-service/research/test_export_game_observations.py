@@ -1,7 +1,7 @@
 import hashlib
 import unittest
 
-from export_game_observations import question_id, transform
+from export_game_observations import question_id, transform, transform_all
 
 
 class ExportTests(unittest.TestCase):
@@ -35,6 +35,14 @@ class ExportTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             transform([self.row(), self.row()], b"test")
 
+    def test_attempt_counts_use_learner_and_client_attempt_composite_identity(self):
+        first, second = self.row(), self.row()
+        second["userId"] = "another-private-user"
+        observations, report = transform([first, second], b"test")
+        self.assertEqual(2, report["learners"])
+        self.assertEqual(2, report["attempts"])
+        self.assertEqual(2, len(observations))
+
     def test_generic_skill_requires_server_verification_and_preserves_order(self):
         def graph(sequence, arrival):
             row = self.row()
@@ -53,6 +61,28 @@ class ExportTests(unittest.TestCase):
         rows[0]["evaluation"]["serverVerified"] = False
         with self.assertRaises(ValueError):
             transform(rows, b"key", encoding_version="game-state-v1", prediction_target="next_action")
+
+    def test_all_contracts_report_missing_lessons_and_input_trust(self):
+        graph = self.row()
+        graph["attemptId"] = "graph-attempt"
+        graph["lessonId"] = "graph-basics"
+        graph["metadata"] = dict(engineVersion="gameplay-v1", lessonId="graph-basics", source="map")
+        graph["evaluation"] = dict(firstResponse=True, correct=False, serverVerified=True,
+            inputVerified=False, inputProvenance="validated_client_snapshot", lessonId="graph-basics",
+            kcId="graph-basics.next_action.v1", encodingVersion="game-state-v1",
+            predictionTarget="next_action", questionId="game-state-v1:" + "a" * 64)
+        retry = {**graph, "sequence": 2, "evaluation": {**graph["evaluation"], "firstResponse": False}}
+        ungraded = {**graph, "sequence": 3, "evaluation": {**graph["evaluation"], "serverVerified": False}}
+        observations, report = transform_all([self.row(), graph, retry, ungraded], b"key",
+                                             expected_lessons=["bubble", "graph-basics", "matrix"])
+        self.assertEqual(2, len(observations))
+        self.assertEqual(2, len(report["contracts"]))
+        coverage = {row["lessonId"]: row for row in report["lessonCoverage"]}
+        self.assertEqual("no_verified_observations", coverage["matrix"]["reasonCode"])
+        self.assertEqual({"validated_client_snapshot": 1}, coverage["graph-basics"]["inputProvenanceCounts"])
+        self.assertFalse(coverage["graph-basics"]["trainingApproved"])
+        self.assertEqual(1, report["excludedObservations"]["not_server_graded"])
+        self.assertEqual(1, report["excludedObservations"]["not_first_response"])
 
 
 if __name__ == "__main__":

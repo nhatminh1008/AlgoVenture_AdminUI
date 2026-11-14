@@ -33,6 +33,7 @@ def validate_rows(rows, encoding_version):
                 or row.get("activity") not in ("minigame", "supplementary")
                 or row.get("source") not in ("map", "classroom")
                 or row.get("isQa") is not False
+                or (encoding_version != "bubble-board-v1" and row.get("serverVerified") is not True)
                 or (row["activity"] == "supplementary" and not row.get("exerciseId"))):
             raise ValueError("Invalid observation or QA data included")
         attempt = row["learnerId"], row["attemptId"]
@@ -69,7 +70,10 @@ def candidate_questions(catalog):
                 raise ValueError("Exercise has no learner swap opportunity")
             board = dict(items=[dict(value=v) for v in values], pair=pair, end=len(values) - 1, **{"pass": 1})
             qid = question_id(board)
-        result.append(dict(id=exercise["id"], questionId=qid, kcId=kc))
+        lesson = exercise.get("lessonId", "bubble" if encoding == "bubble-board-v1" else None)
+        if lesson is not None and (not isinstance(lesson, str) or not re.fullmatch(r"[a-z][a-z0-9-]{0,49}", lesson)):
+            raise ValueError("Invalid candidate lesson ID")
+        result.append(dict(id=exercise["id"], questionId=qid, kcId=kc, lessonId=lesson))
     if not result or len({r["id"] for r in result}) != len(result):
         raise ValueError("Empty or duplicate catalog")
     return result
@@ -83,6 +87,9 @@ def prepare(rows, catalog, seed=42, sequence_length=200):
     target = catalog.get("predictionTarget", "first_swap_opportunity" if encoding == "bubble-board-v1" else None)
     if not isinstance(target, str) or not IDENTIFIER.fullmatch(target):
         raise ValueError("Missing prediction target")
+    all_rows = rows
+    rows = [r for r in rows if r.get("encodingVersion", encoding) == encoding
+            and r.get("predictionTarget", target) == target]
     validate_rows(rows, encoding)
     grouped = defaultdict(list)
     for row in rows:
@@ -127,12 +134,26 @@ def prepare(rows, catalog, seed=42, sequence_length=200):
                   splitSeed=seed, splitMethod="learner-disjoint stable hash bucket; approximately 60/20/20",
                   splits={split: {**dict(counts[split]), "sequences": len(sequences[split])} for split in SPLITS},
                   candidateCoverage=coverage, datasetPrepared=bool(sequences["train"]),
+                  excludedOtherContracts=len(all_rows) - len(rows),
+                  inputProvenanceCounts=dict(Counter(r.get("inputProvenance", "not_recorded") for r in rows)),
                   evaluationDeferred=True, deploymentReady=False,
                   warnings=[])
+    lesson_ids = {r.get("lessonId") for r in rows + candidates if r.get("lessonId")}
+    report["lessonCoverage"] = []
+    for lesson in sorted(lesson_ids):
+        observations = [r for r in rows if r.get("lessonId") == lesson]
+        eligible = [r for r in coverage if r.get("lessonId") == lesson]
+        report["lessonCoverage"].append(dict(lessonId=lesson, observations=len(observations),
+            learners=len({r["learnerId"] for r in observations}), candidates=len(eligible),
+            candidatesInTrainVocab=sum(r["inTrainVocab"] for r in eligible),
+            inputProvenanceCounts=dict(Counter(r.get("inputProvenance", "not_recorded") for r in observations)),
+            deploymentReady=False, reasonCode="quality_evaluation_required" if observations else "no_verified_observations"))
     if not all(counts[split]["learners"] for split in SPLITS):
         report["warnings"].append("At least one learner split is empty; evaluation is unavailable.")
     if any(not c["inTrainVocab"] for c in coverage):
         report["warnings"].append("Some practice candidates are missing from training vocabulary.")
+    if any(r.get("inputProvenance") == "validated_client_snapshot" for r in rows):
+        report["warnings"].append("Some inputs were client supplied and server graded; they were not server-issued challenges.")
     report["warnings"].append("Prepared data does not certify participant identity, calibration or model quality.")
     return sequences, vocab, assignment, report
 
