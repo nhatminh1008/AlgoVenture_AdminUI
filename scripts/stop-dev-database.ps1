@@ -1,13 +1,23 @@
+param(
+    [string]$BackendPath,
+    [string]$DatabaseRuntimeDirectory
+)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$databaseDir = Join-Path $projectRoot '.runtime\postgres'
-$postgresBin = if ($env:POSTGRES_BIN) { $env:POSTGRES_BIN } else { 'C:\Program Files\PostgreSQL\18\bin' }
-if (-not $env:POSTGRES_BIN -and -not (Test-Path (Join-Path $postgresBin 'pg_ctl.exe'))) {
-    $portable = Get-ChildItem -LiteralPath (Join-Path $env:LOCALAPPDATA 'AlgoVenture\tools') -Directory -ErrorAction SilentlyContinue |
-        Where-Object { Test-Path (Join-Path $_.FullName 'bin\pg_ctl.exe') } |
-        Sort-Object Name -Descending | Select-Object -First 1
-    if ($portable) { $postgresBin = Join-Path $portable.FullName 'bin' }
+$backendRoot = if ($BackendPath) {
+    $BackendPath
+} else {
+    Join-Path (Split-Path -Parent $projectRoot) 'AlgoVenture_Backend'
 }
-if (-not (Test-Path (Join-Path $postgresBin 'pg_ctl.exe'))) { throw 'Set POSTGRES_BIN to the PostgreSQL bin directory.' }
-& (Join-Path $postgresBin 'pg_ctl.exe') -D $databaseDir -m fast -w stop
-if ($LASTEXITCODE -ne 0) { throw 'Failed to stop the development database.' }
+$backendScript = Join-Path $backendRoot 'scripts\stop-dev-database.ps1'
+if (-not (Test-Path -LiteralPath (Join-Path $backendRoot 'pom.xml') -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $backendScript -PathType Leaf)) {
+    throw "Backend repository not found at '$backendRoot'. Clone AlgoVenture_Backend next to AlgoVenture_AdminUI, or pass -BackendPath."
+}
+$backendScript = (Resolve-Path -LiteralPath $backendScript).Path
+$forward = @{}
+foreach ($key in $PSBoundParameters.Keys) {
+    if ($key -ne 'BackendPath') { $forward[$key] = $PSBoundParameters[$key] }
+}
+# Stop the same portable cluster managed by the Backend setup script.
+& $backendScript @forward

@@ -1,7 +1,7 @@
 # Dịch vụ AI luyện tập
 
 simpleKT + Target Correctness (mục tiêu 0.70). Spring Boot gọi dịch vụ nội bộ;
-Game tiếp tục xác thực qua Bearer session của backend.
+Unity/Learner tiếp tục xác thực qua JWT Bearer của backend.
 
 ## Trạng thái triển khai
 
@@ -34,12 +34,14 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8090
 ```
 
-Để backend gọi service, đặt biến trong terminal khởi động backend:
+Để backend gọi service, mở terminal khác tại thư mục gốc `AlgoVenture_AdminUI` và đặt biến trước khi khởi động backend. Wrapper chuyển tiếp tới repo `AlgoVenture_Backend` cùng cấp; chuẩn bị Backend trước theo [README](../README.md).
 
 ```powershell
 $env:AI_SERVICE_URL='http://127.0.0.1:8090'
-.\scripts\start-backend.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1
 ```
+
+Nếu chạy Backend bằng nút Run trong IDE, đặt cùng biến `AI_SERVICE_URL` trong cấu hình Run của IDE.
 
 Backend vẫn chạy được nếu bỏ biến này hoặc service tắt. Không xuất cổng AI ra
 Internet; endpoint này dành cho backend tin cậy và không xử lý tài khoản/token.
@@ -56,8 +58,10 @@ coverage đã khai báo. Hai model không được tranh cùng contract/lesson.
 `AI_MODEL_MANIFEST` vẫn dùng được cho một model, với Bubble là mặc định cũ;
 khi có registry thì registry được ưu tiên.
 
+Từ thư mục gốc `AlgoVenture_AdminUI`:
+
 ```powershell
-.\scripts\start-ai.ps1 -Registry .\ai-service\model-registry.example.json -Experimental
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-ai.ps1 -Registry .\ai-service\model-registry.example.json -Experimental
 ```
 
 Request thêm `lessonId` tùy chọn. Contract/lesson chưa có model trả
@@ -95,14 +99,14 @@ Từ thư mục gốc AdminUI, chạy hai terminal:
 
 ```powershell
 # Terminal 1: AI http://127.0.0.1:8000
-.\scripts\start-ai.ps1 -Experimental
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-ai.ps1 -Experimental
 # Terminal 2: backend http://127.0.0.1:8081
-.\scripts\start-backend.ps1 -SkipBuild -ExperimentalAi
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1 -SkipBuild -ExperimentalAi
 ```
 
-Sau khi sửa Java, chạy `.\mvnw.cmd package` bằng JDK 21 trong repo [Backend](../../Backend/README.md) bên cạnh Portal để build lại JAR.
+Sau khi sửa Java, chạy `.\mvnw.cmd package` bằng JDK 21 trong repo [AlgoVenture_Backend](../../AlgoVenture_Backend/README.md) cùng cấp với AdminUI để build lại JAR, với PostgreSQL test riêng theo hướng dẫn của Backend.
 Trên Windows, dừng backend cũ trước bước package để tránh jar bị khóa.
-Game vẫn tại http://127.0.0.1:5173; vào **Bài luyện bổ trợ → Xem đề xuất cho tôi**.
+Mở Unity theo [README Unity](../../AlgoVenture_Unity/README.md), kết nối Backend ở `http://127.0.0.1:8081` và dùng luồng luyện bổ trợ của client.
 Tài khoản chưa có history phù hợp cần luyện một bài trong thư viện trước.
 
 Artifact dev nằm tại `.runtime/ai-research/game-artifact/manifest.json`, không
@@ -182,15 +186,10 @@ metadata đã nhận vẫn bất biến. Bài bổ trợ lưu log nhưng UI khô
 
 ## Kiểm tra
 
-<<<<<<< Updated upstream
-Chạy `.\mvnw.cmd test` trong repo [Backend](../../Backend/README.md) với PostgreSQL test riêng theo hướng dẫn của repo.
-=======
-Backend: `mvnw.cmd test` trong repo `AlgoVenture_Backend`, với PostgreSQL test riêng
-được cấu hình qua test profile; không trỏ test suite vào database đang sử dụng.
->>>>>>> Stashed changes
-Game: unit tests recorder/queue và `tests/practice.spec.ts`, `tests/shared-backend.spec.ts`.
-E2E practice dùng API/model response giả lập để kiểm tra UI; không chứng minh
-chất lượng model thật. Test backend dùng gateway mock để kiểm tra contract,
+Backend: chạy `.\mvnw.cmd test` trong repo [AlgoVenture_Backend](../../AlgoVenture_Backend/README.md), với PostgreSQL test riêng theo hướng dẫn của repo; không trỏ test suite vào database đang sử dụng.
+Unity: chạy các bộ EditMode/PlayMode theo [README Unity](../../AlgoVenture_Unity/README.md).
+Kiểm thử bằng API/model response giả lập không chứng minh chất lượng model thật.
+Test backend dùng gateway mock để kiểm tra contract,
 idempotency, quyền truy cập và provenance. Test service kiểm tra policy, encoding,
 shape và trạng thái chưa sẵn sàng. Các test này không xác nhận độ chính xác dự đoán
 trên người học mới hoặc chất lượng model đa game.

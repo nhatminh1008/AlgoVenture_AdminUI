@@ -1,93 +1,107 @@
 # AlgoVenture Portal
 
-<<<<<<< Updated upstream
-Portal React cho Admin và Instructor nằm trong `algoventure-admin`. Portal và Game dùng chung Spring Boot API trong repo Backend bên cạnh, với PostgreSQL và bảng tài khoản `app_users`. Xem [hướng dẫn Backend](../Backend/README.md) và [luồng tích hợp Portal và Game](INTEGRATION.md).
+Frontend React cho Admin và Instructor nằm trong `algoventure-admin`. Portal và Unity dùng chung REST API trong repo [AlgoVenture_Backend](../AlgoVenture_Backend/README.md). AI service tùy chọn nằm trong `ai-service`.
+
+## Chuẩn bị máy mới
+
+Clone ba repo cùng cấp và giữ tên thư mục mặc định:
+
+```text
+AlgoVenture/
+├── AlgoVenture_AdminUI/
+├── AlgoVenture_Backend/
+└── AlgoVenture_Unity/
+```
+
+- **Node.js 22.12 trở lên** và npm cho Portal. Dùng `npm ci` để cài đúng `package-lock.json`; bản Vite hiện tại cũng hỗ trợ Node 20.19.x trở lên trong nhánh 20.
+- **JDK 21 đầy đủ** và **PostgreSQL 18** cho Backend. Script tự tìm công cụ qua `PATH` và các thư mục cài đặt phổ biến. Nếu không tìm được hoặc dùng vị trí tùy chỉnh, đặt `JAVA_HOME` tới JDK 21 và `POSTGRES_BIN` tới thư mục chứa `initdb.exe`, `pg_ctl.exe`, `psql.exe`, `createdb.exe`.
+- Unity Hub và phiên bản Editor trong `AlgoVenture_Unity/ProjectSettings/ProjectVersion.txt`; xem [hướng dẫn Unity](../AlgoVenture_Unity/README.md).
 
 ## Chạy trên Windows
 
-1. Mở repo `Backend` bằng IntelliJ và chạy `AlgoVentureApplication` theo [hướng dẫn Backend](../Backend/README.md). Kiểm tra `GET /api/health` tại `127.0.0.1:8081`.
-2. Từ thư mục gốc của repo Portal, mở terminal riêng:
+### 1. Chuẩn bị và chạy Backend
+
+Trong thư mục `AlgoVenture_Backend`, chạy một lần trên máy mới:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1 -PrepareOnly
+```
+
+Script của Backend chuẩn bị PostgreSQL phát triển riêng, mặc định `127.0.0.1:55433/algoventure`, sinh mật khẩu riêng và ghi cấu hình local được bỏ qua bởi Git vào `AlgoVenture_Backend/.runtime/application-local.properties`. `-PrepareOnly` chưa chạy Backend; cấu hình Windows mới bật seed để tạo tài khoản Portal ở lần Backend khởi động đầu tiên. Sau đó mở repo Backend trong IDE, chọn JDK 21 và Run `AlgoVentureApplication`. Backend hướng dẫn chi tiết cách dùng database ngoài và xử lý cổng đã được dùng trong [README của Backend](../AlgoVenture_Backend/README.md).
+
+Có thể chạy Backend bằng terminal thay cho IDE:
+
+```powershell
+# Chạy từ AlgoVenture_AdminUI; chuyển tiếp tới script của repo Backend.
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1
+```
+
+Hai script `start-backend.ps1` và `stop-dev-database.ps1` trong repo này chỉ chuyển tiếp tới repo Backend cùng cấp; chúng không tạo database hoặc mật khẩu riêng của Portal. Hỗ trợ `-PrepareOnly`, `-SkipBuild`, `-DatabasePort`, `-DatabaseRuntimeDirectory` theo script Backend. Nếu clone Backend ở vị trí khác:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1 -BackendPath 'D:\Projects\AlgoVenture_Backend' -PrepareOnly
+```
+
+Kiểm tra [API health](http://127.0.0.1:8081/api/health) trả thành công trước khi mở Portal/Unity. Chỉ chạy một Backend ở cổng 8081. Dừng Java bằng Stop trong IDE hoặc Ctrl+C. Để dừng PostgreSQL portable, chạy từ repo này:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\stop-dev-database.ps1
+```
+
+Nếu đã dùng runtime riêng, truyền cùng `-DatabaseRuntimeDirectory` khi dừng.
+
+### 2. Cài và chạy Portal
+
+Mở terminal khác tại `AlgoVenture_AdminUI`:
 
 ```powershell
 Set-Location .\algoventure-admin
 npm ci
-npm run dev -- --host 127.0.0.1
+npm run dev
 ```
 
-Mở địa chỉ Vite hiển thị, mặc định `http://127.0.0.1:5174`. Vite proxy `/api` tới `127.0.0.1:8081`. Dùng cùng một hostname trong suốt phiên đăng nhập.
+Mở [Portal](http://127.0.0.1:5174). Vite proxy `/api` tới `127.0.0.1:8081`; giữ cùng hostname trong suốt phiên đăng nhập. Cổng 5174 phải trống vì cấu hình dùng `strictPort`.
 
-### Chạy bằng script Portal
+Với setup Windows mới bằng script, tài khoản ban đầu là `admin@algoventure.edu` và `instructor@algoventure.edu`. Mở `AlgoVenture_Backend/.runtime/dev-secrets.json` trên máy của bạn để xem mật khẩu đã sinh tại khóa `adminPassword` và `instructorPassword`; `databasePassword` là mật khẩu PostgreSQL, không phải mật khẩu Portal. Nếu dùng runtime tùy chỉnh, tìm file trong thư mục runtime đó. Seed không đổi mật khẩu tài khoản đã tồn tại; sau lần khởi tạo đầu có thể đặt `app.seed.enabled=false` trong cấu hình local.
 
-Từ thư mục gốc Portal, chạy `.scriptsstart-backend.ps1`. Script build và chạy Backend bên cạnh với PostgreSQL phát triển của Portal tại cổng `55432`. Nếu JAR đã được build, có thể dùng `.scriptsstart-backend.ps1 -SkipBuild`. Dừng tiến trình Java bằng Ctrl+C và dừng PostgreSQL của script bằng `.scriptsstop-dev-database.ps1`.
+Nếu tự cấu hình Backend với database ngoài thay vì dùng script Windows, làm theo cách thiết lập thủ công trong README Backend và tự đặt mật khẩu seed (ít nhất 10 ký tự). Cấu hình ứng dụng gốc tắt seed; chỉ bật để bootstrap. Không có mật khẩu demo dùng chung và không commit file secrets.
 
-## Chức năng đã nối API
+### 3. Kết nối Unity và AI tùy chọn
 
-- Portal đăng nhập, khôi phục phiên và đăng xuất bằng cookie HttpOnly và CSRF.
-- Admin quản lý tài khoản, phân công giảng viên, quản lý lớp và thành viên, cấu hình bài học, feature flags, cài đặt và xem số liệu hệ thống.
-- Instructor quản lý lớp được phân công, soạn bộ thử thách và quiz, theo dõi kết quả và xuất CSV/JSON. Backend tiếp tục cung cấp API tài liệu cho dữ liệu cũ.
-- Learner đăng ký trong Game, nhập mã lớp, xem bài giao, làm quiz và mở minigame. Điểm quiz và tiến độ bài giao được đồng bộ qua Backend. Làm thử quiz trong Portal dành cho giảng viên và không ghi điểm học viên.
+Mở repo Unity bằng đúng Editor và làm theo [README Unity](../AlgoVenture_Unity/README.md), dùng API local `http://127.0.0.1:8081`. [INTEGRATION.md](INTEGRATION.md) mô tả cookie/CSRF của Portal, JWT của Unity và luồng lớp học dùng chung.
 
-Xem [danh mục API và cách kiểm tra](API_REPORT.md).
-=======
-Frontend React cho Admin và Instructor nằm trong `algoventure-admin`. Backend Spring Boot được tách thành repo cùng cấp [AlgoVenture_Backend](../AlgoVenture_Backend/README.md); AI service tùy chọn nằm trong `ai-service`.
+AI không bắt buộc để chạy Portal và các API cơ bản. Nếu dùng, xem [ai-service/README.md](ai-service/README.md), chạy service và đặt `AI_SERVICE_URL` trong môi trường khởi động Backend. Clone mới không có sẵn trọng số model đã đánh giá.
 
-## Kiến trúc và database hiện hành
+## Dữ liệu và chức năng
 
-Admin, Instructor, Unity và Learner dùng cùng REST API. Frontend không kết nối trực tiếp PostgreSQL. Backend quản lý dữ liệu và transaction bằng Spring Data JPA/Hibernate, nâng schema qua Flyway.
+Backend quản lý transaction bằng Spring Data JPA/Hibernate và schema bằng Flyway. Schema V28 có **26 bảng nghiệp vụ**, cộng `flyway_schema_history`; [DATABASE.md của Backend](../AlgoVenture_Backend/DATABASE.md) là nguồn mô tả hiện hành. Frontend không đọc PostgreSQL trực tiếp. Báo cáo có ngày cũ trong [docs/erd](docs/erd/README.md) là tài liệu lịch sử.
 
-Schema V24 có **22 bảng nghiệp vụ**, cộng `flyway_schema_history`. [DATABASE.md của backend](../AlgoVenture_Backend/DATABASE.md) là tài liệu hiện hành về bảng và ánh xạ hợp nhất: profile game vào `app_users`, đề Bubble vào `game_challenges`, biên nhận/lịch sử vào `accepted_attempts`, kết quả vào `completion_records`. `assignment_lessons` là nguồn duy nhất cho danh sách/cấu hình bài giao; JSON API `lessonIds`/`lessonConfigs` giữ nguyên.
+- Portal đăng nhập bằng cookie phiên HttpOnly và CSRF; lấy lại CSRF sau đăng nhập.
+- Admin quản lý tài khoản, lớp, thành viên, cấu hình bài học, feature flags, cài đặt và số liệu hệ thống.
+- Instructor quản lý lớp, bộ thử thách và quiz, theo dõi kết quả và xuất CSV/JSON. Giao diện hiện không tải lên hoặc đính kèm tài liệu; API và liên kết dữ liệu cũ vẫn được giữ.
+- Curriculum có 34 bài, gồm 5 bài Matrix, được đối chiếu với catalog Backend. Điểm quiz và tiến độ bài giao lấy từ API.
+- Unity/Learner dùng JWT riêng, cùng nguồn tài khoản, profile, completion và log Backend. Dữ liệu khách không tự trở thành kết quả được server công nhận.
 
-Log của 34 bài nằm trong `learning_attempts` và `learning_interactions`; kết quả yêu cầu AI ở `adaptive_recommendations`. Có log không đồng nghĩa đã có model được huấn luyện/kiểm định. Báo cáo trong [docs/erd](docs/erd/README.md) và [INTEGRATION.md](INTEGRATION.md) là tài liệu lịch sử, có tên bảng và hợp đồng xác thực cũ.
-
-## Chạy local
-
-1. Mở repo `AlgoVenture_Backend` và chạy theo [hướng dẫn backend](../AlgoVenture_Backend/README.md). API mặc định ở `127.0.0.1:8081`; database portable của backend dùng cấu hình riêng trong `.runtime/application-local.properties`.
-2. Mở terminal trong repo này:
-
-```powershell
-cd algoventure-admin
-npm install
-npm run dev -- --host 127.0.0.1
-```
-
-Mở URL Vite hiển thị. Proxy `/api` trỏ tới `127.0.0.1:8081`; dùng cùng hostname trong suốt phiên đăng nhập. Không chạy bản backend cũ đồng thời. Các script khởi động cũ trong repo AdminUI không phải hướng dẫn cấu hình database hiện hành.
-
-Tài khoản do backend quản lý. Seed tài khoản mặc định tắt; khi cần bootstrap, cấu hình mật khẩu seed trong môi trường backend rồi tắt lại sau khi khởi tạo. Không dùng mật khẩu demo trong tài liệu cũ làm thông tin đăng nhập mặc định.
-
-## Luồng chính
-
-- Portal đăng nhập bằng cookie phiên HttpOnly và CSRF. Frontend lấy lại CSRF sau đăng nhập; backend kiểm tra vai trò, trạng thái và phiên tài khoản.
-- Admin quản lý tài khoản, lớp, cấu hình bài học, feature flags và cài đặt nền tảng.
-- Instructor quản lý lớp thuộc quyền mình, giao bài thực hành, công bố quiz và quản lý tài liệu đính kèm.
-- Danh mục có 34 bài, gồm 5 bài Matrix; ID, tên, chủ đề và thứ tự được kiểm tra đối chiếu với `curriculum.json` của backend. Các bài gộp đã ngừng dùng chỉ còn trong dữ liệu lịch sử.
-- Điểm quiz, tiến độ bài giao và số liệu phân tích lấy qua API. Xuất CSV/JSON từ portal phục vụ báo cáo, không thay cho backup PostgreSQL.
-- Game/Learner dùng JWT riêng; profile, completion và log có cùng nguồn dữ liệu backend. Không nhập tự động dữ liệu khách/local thành kết quả đã được server công nhận.
->>>>>>> Stashed changes
+Log nằm trong `learning_attempts` và `learning_interactions`; phản hồi AI ở `adaptive_recommendations`. Có log không đồng nghĩa model đã được huấn luyện hoặc đánh giá chất lượng. Xuất CSV/JSON phục vụ báo cáo, không thay cho backup PostgreSQL.
 
 ## Kiểm tra
 
-Chạy các lệnh sau từ thư mục gốc Portal:
+Từ `AlgoVenture_AdminUI/algoventure-admin`:
 
 ```powershell
-<<<<<<< Updated upstream
-Push-Location ..\Backend
-try { .\mvnw.cmd test } finally { Pop-Location }
-
-Set-Location .\algoventure-admin
 npm ci
-=======
-cd algoventure-admin
 npm test
->>>>>>> Stashed changes
 npm run lint
-npm test
 npm run build
 ```
 
-<<<<<<< Updated upstream
-Test Portal tự đọc danh mục bài học từ repo Backend bên cạnh. Nếu clone Backend ở vị trí khác, đặt `BACKEND_CURRICULUM_PATH` thành đường dẫn tới `src/main/resources/curriculum.json` trước khi chạy `npm test`.
-=======
-Test curriculum đọc catalog backend từ repo cùng cấp; có thể chỉ định `BACKEND_CURRICULUM_PATH` nếu checkout ở vị trí khác. Test backend chạy trong repo backend bằng Maven và PostgreSQL test riêng, không dùng database đang sử dụng.
+Test curriculum ưu tiên repo `AlgoVenture_Backend` cùng cấp. Nếu checkout ở vị trí khác, đặt đường dẫn trước khi chạy:
 
-Swagger/OpenAPI của backend mô tả hợp đồng HTTP hiện hành. Production cần HTTPS và proxy `/api` phù hợp với origin của frontend; Vite dev proxy không nằm trong bundle production.
->>>>>>> Stashed changes
+```powershell
+$env:BACKEND_CURRICULUM_PATH = 'D:\Projects\AlgoVenture_Backend\src\main\resources\curriculum.json'
+npm test
+```
+
+Test Backend chạy trong repo Backend với PostgreSQL test riêng theo hướng dẫn của repo. Kiểm tra frontend ở trên không tự chứng minh cả luồng Unity–Backend–Portal đã chạy thành công.
+
+[Swagger](http://127.0.0.1:8081/swagger-ui/index.html) và [OpenAPI](http://127.0.0.1:8081/v3/api-docs) mô tả hợp đồng HTTP hiện hành. Production cần HTTPS, reverse proxy `/api` cùng origin với Portal và SPA fallback; Vite dev proxy không nằm trong bundle production.

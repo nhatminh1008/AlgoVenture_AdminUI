@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { createCurriculum } from "../src/shared/curriculum/curriculumCatalog.js";
+import { createCurriculum, topics as portalTopics } from "../src/shared/curriculum/curriculumCatalog.js";
 import {
   csvCell,
   exportStudentRows,
@@ -11,8 +11,8 @@ test("instructor resolves lessons from the backend curriculum, including Matrix"
   const backendCatalog = process.env.BACKEND_CURRICULUM_PATH
     ? resolve(process.env.BACKEND_CURRICULUM_PATH)
     : [
-        "../../../Backend/src/main/resources/curriculum.json",
         "../../../AlgoVenture_Backend/src/main/resources/curriculum.json",
+        "../../../Backend/src/main/resources/curriculum.json",
         "../../../../Backend_AlgoVenture/AlgoVenture_Backend/src/main/resources/curriculum.json",
         "../../backend/src/main/resources/curriculum.json",
       ].map((path) => new URL(path, import.meta.url)).find((path) => existsSync(path));
@@ -21,21 +21,14 @@ test("instructor resolves lessons from the backend curriculum, including Matrix"
   const { topics, getTopic, lessonName } = createCurriculum(backend);
   const ids = topics.flatMap((topic) => topic.lessons.map(([id]) => id));
   const legacyIds = ["stack", "queue", "tree-traversal", "bst"];
-<<<<<<< Updated upstream
+  assert.deepEqual(portalTopics, backend, "Portal topic metadata, lesson labels and order must match the backend");
   assert.equal(new Set(ids).size, ids.length);
+  assert.equal(ids.length, 34);
   assert.deepEqual(ids.filter((id) => legacyIds.includes(id)), []);
   assert.deepEqual(getTopic("matrix").lessons.map(([id]) => id),
     ["matrix", "matrix-transpose", "matrix-spiral", "matrix-bfs", "matrix-dfs"]);
   assert.equal(lessonName("matrix-bfs"), "BFS trên lưới");
   assert.equal(lessonName("stack"), "stack");
-=======
-  assert.equal(new Set(backendIds).size, backendIds.length);
-  assert.deepEqual([...ids].sort(), [...backendIds].sort());
-  assert.deepEqual(topics, backend, "Topic metadata, lesson labels and order must match the backend");
-  assert.deepEqual(backendIds.filter(id => legacyIds.includes(id)), []);
-  assert.equal(ids.length, 34);
-  assert.ok(!ids.includes("stack") && !ids.includes("queue"));
->>>>>>> Stashed changes
   for (const id of ['stack-push', 'stack-pop', 'stack-peek', 'queue-enqueue', 'queue-dequeue', 'queue-peek', 'tree-dfs', 'tree-bfs'])
     assert.ok(ids.includes(id), `Missing curriculum lesson: ${id}`);
 });

@@ -1,115 +1,63 @@
-# Backend chung cho Admin, Instructor và Learner
+# Tích hợp Portal, Backend và Unity
 
-<<<<<<< Updated upstream
-Portal và Game dùng chung repo [Backend](../Backend/README.md) bên cạnh Portal, lắng nghe ở cổng **8081**. Web Game chạy **5173**, Portal chạy **5174**. Cả hai Vite proxy `/api` về 8081.
-=======
-> **Bản lưu trước V24.** Nội dung dưới đây ghi lại tích hợp web game ở phiên bản cũ. Backend hiện nằm trong repo [AlgoVenture_Backend](../AlgoVenture_Backend/README.md), dùng JWT cho Game và schema V24 gồm 22 bảng nghiệp vụ. Xem [database hiện hành](../AlgoVenture_Backend/DATABASE.md); các mô tả opaque token, bảng và đường dẫn backend cũ bên dưới chỉ dùng để đối chiếu lịch sử.
+Ba repo hiện hành là `AlgoVenture_AdminUI`, `AlgoVenture_Backend` và `AlgoVenture_Unity`, đặt cùng cấp. Dùng [README Portal](README.md), [README Backend](../AlgoVenture_Backend/README.md) và [README Unity](../AlgoVenture_Unity/README.md) để chuẩn bị máy mới. Backend sở hữu database và cấu hình local; script trong AdminUI chỉ chuyển tiếp tới Backend.
 
-Backend duy nhất: `AlgoVenture_AdminUI/backend`, cổng **8081**, PostgreSQL local **55432**. Web game `AlgoVenture_Game` chạy **5173**; Admin/Instructor chạy **5174**. Cả hai Vite proxy `/api` về 8081. Không cần backend game 8080.
->>>>>>> Stashed changes
-
-## Tài khoản
-
-Tất cả tài khoản nằm trong `app_users`. Learner tự đăng ký chỉ được tạo role learner và trạng thái Active. Admin thấy tài khoản mới ngay trong quản lý người dùng. Portal giữ `/api/auth/*`, cookie HttpOnly và CSRF.
-
-Game và Classroom xác thực bằng JWT Bearer do Backend cấp với thời hạn 8 giờ. Khi đăng xuất, Game xóa token ở phía client. Các lệnh gọi xác thực bằng Bearer không gửi cookie Portal.
-
-Tài khoản/mật khẩu trong backend 8080 trước đây không tự được chuyển sang backend chung. Các bảng/liên kết V2/V3 cũ được giữ nguyên, nhưng xác thực mới không gọi identity 8080.
-
-## API game
-
-| Method | Path | Nội dung |
+| Thành phần | Địa chỉ local | Vai trò |
 | --- | --- | --- |
-| POST | `/api/game/auth/register` | `{email,password,fullName}` → 201, tài khoản và token |
-| POST | `/api/game/auth/login` | `{email,password}` → tài khoản và token |
-| POST | `/api/game/auth/logout` | Trả 204. Game xóa token cục bộ. |
-| GET | `/api/game/me/state` | `{profile,completed,linkedLevels}` từ database |
-| PUT | `/api/game/me/profile` | `{name,avatar,avatarImage?}`; không nhận tiến trình từ client |
-| POST | `/api/game/me/completions` | `{clientAttemptId,lessonId,stage}`; chống trùng, kiểm tra bài công bố, tiên quyết và chặng |
-| GET | `/api/game/curriculum` | Danh mục, trạng thái, cấu hình bài và feature flags |
-| GET | `/api/game/features` | Danh sách cờ `{id, enabled}` cho Game, kể cả trước khi đăng nhập |
-| GET | `/api/game/leaderboard?period=weekly` | weekly hoặc all-time; 100 điểm/bài hoàn thành lần đầu |
+| Portal Vite | `http://127.0.0.1:5174` | Admin/Instructor; proxy `/api` tới Backend |
+| Backend | `http://127.0.0.1:8081` | REST API dùng chung |
+| PostgreSQL portable | `127.0.0.1:55433/algoventure` mặc định | Chỉ Backend kết nối; có thể đổi trong setup |
+| Unity Editor/player | API `http://127.0.0.1:8081` | Client Learner; cấu hình theo README Unity |
+| AI tùy chọn | Theo `AI_SERVICE_URL` | HTTP nội bộ từ Backend tới AI service |
 
-Register: tên tối đa 100 ký tự, email 254, mật khẩu 6–72 ký tự và không quá 72 byte UTF-8. Tên hiển thị game tối đa 24 ký tự. Avatar JPG/PNG/WebP dạng data URL, tối đa 500.000 ký tự sau khi frontend thu nhỏ.
+Cấu hình máy được sinh trong `AlgoVenture_Backend/.runtime`, không commit vào Git. Chạy `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1 -PrepareOnly` trong Backend trước lần Run đầu ở IDE. Không chạy hai bản Backend cùng cổng. Với thiết bị ngoài máy phát triển, loopback trỏ vào chính thiết bị; cấu hình địa chỉ Backend phù hợp theo hướng dẫn Unity.
 
-Phản hồi xác thực có `userId` kiểu chuỗi, `role` là `LEARNER`, `tokenType` là `Bearer`, `expiresIn` tính bằng mili giây và `expiresAt` là Unix epoch tính bằng mili giây. Game giữ token trong sessionStorage theo tab. Tải lại/đăng nhập lấy dữ liệu chuẩn từ server.
+## Xác thực và tài khoản
 
-Migration V4 thêm learner_profiles, learner_sessions, practice_events. Tiến trình dùng lesson_completions và assignment_completions có sẵn từ V2. Không đổi checksum migration cũ.
+Tất cả tài khoản nằm trong `app_users`. Portal dùng cookie phiên HttpOnly và CSRF:
 
-Đối với Bubble Sort mức Khó, client gọi `POST /api/game/me/bubble-challenges` để nhận `{clientAttemptId,input}` gắn với tài khoản. Đề gồm 8 số khác nhau và yêu cầu ít nhất 8 lần đổi chỗ. Client gửi nhật ký qua `PUT /api/game/me/learning-attempts/{clientAttemptId}` trước khi yêu cầu ghi hoàn thành cùng mã lượt. Backend kiểm tra chủ sở hữu, khớp mảng đã cấp và phát lại thao tác. Sau khi nhận đề, lượt đang mở tiếp tục chơi được khi mất mạng và đồng bộ khi kết nối lại. Lượt bổ trợ không tính hoàn thành bài chính. Script tự giải đề được cấp vẫn có thể gửi lời giải hợp lệ.
+1. `GET /api/auth/csrf` lấy `headerName` và `token`, giữ cookie trả về.
+2. `POST /api/auth/login` với `{email,password}`, cookie và header CSRF.
+3. Lấy lại CSRF sau đăng nhập; gửi cookie và CSRF mới cho các thao tác ghi.
+4. `GET /api/auth/me` kiểm tra phiên; `POST /api/auth/logout` đăng xuất.
 
-Các bài còn lại gửi sự kiện hoàn thành do engine trình duyệt xác nhận. Backend kiểm tra danh mục, bài tiên quyết và chặng, đồng thời chống ghi trùng. Quiz Classroom chấm hoàn toàn ở server.
+Unity/Learner dùng `POST /api/game/auth/login`, sau đó gửi `Authorization: Bearer <token>` cho `/api/game/**` và `/api/learner/**`. Token được quản lý riêng với cookie Portal. Backend kiểm tra vai trò, trạng thái tài khoản và `auth_version`; token/phiên cũ bị thu hồi theo quy tắc thay đổi tài khoản.
 
-Chơi khách vẫn lưu cục bộ. Dữ liệu khách/local cũ không tự nhập thành kết quả server. Kết quả tài khoản lỗi mạng được xếp hàng theo userId, giữ clientAttemptId khi thử lại và hiển thị thông báo chưa đồng bộ. Sandbox không ghi điểm/hoàn thành.
+Đăng ký email và đặt lại mật khẩu cần cấu hình SMTP/OTP theo README Backend. API đăng ký cũ `/api/game/auth/register` có thể bị khóa khi bật xác thực email; không giả định endpoint này luôn mở. Setup Windows mới bật seed và sinh mật khẩu Portal tại `AlgoVenture_Backend/.runtime/dev-secrets.json`, khóa `adminPassword`/`instructorPassword`; `databasePassword` chỉ dành cho PostgreSQL. Cách thiết lập thủ công dùng mật khẩu do người chạy chọn. Seed không đổi tài khoản đã tồn tại và có thể tắt sau bootstrap.
 
-## Công tắc Game
+## Luồng lớp học dùng chung
 
-Game đọc cờ khi mở, khi quay lại tab, khi có mạng trở lại và mỗi 15 giây khi tab hiển thị.
+1. Admin tạo/phân công lớp hoặc Instructor tạo lớp của mình qua Portal.
+2. Instructor tạo bộ thử thách, chọn bài từ curriculum Backend, đặt hạn và chuyển sang `Active`; quiz dùng trạng thái `Published`.
+3. Learner đăng nhập Unity và gọi `POST /api/learner/classes/join` với `{code}` là mã lớp 8 ký tự.
+4. `GET /api/learner/classes/{id}/assignments` trả các bài đã công bố trong lớp; `GET /api/learner/assignments/{id}` lấy nội dung.
+5. Quiz gửi `{clientAttemptId,answers:[{questionId,selectedIndex}]}` tới `POST /api/learner/assignments/{id}/attempts`; Backend chấm điểm.
+6. Minigame dùng đề, nhật ký và API completion phù hợp bài học; gửi `assignmentId` khi làm bài giao. Instructor đọc lại `/api/instructor/state` để xem kết quả và tiến độ, `/api/instructor/classes/{id}/practice` để xem evidence của lớp.
 
-- **Practice Mode** mở bài luyện bổ trợ. **Adaptive Difficulty** mở đề xuất cá nhân trong thư viện bài luyện. API tương ứng trả 404 khi tính năng bị tắt.
-- **Sandbox** mở khu thực hành tùy chỉnh. **Leaderboard** mở bảng xếp hạng.
-- **XP** hiển thị 100 XP cho mỗi bài đã hoàn thành trong hồ sơ. **Badges** hiển thị mục Thành tựu. Hai công tắc dùng tiến trình hiện có.
-- **Offline Mode** cho phép tài khoản đã mở Game bắt đầu các lượt hỗ trợ chơi ngoại tuyến. Khi tắt, người chơi cần kết nối để bắt đầu lượt mới. Các lượt đã bắt đầu và dữ liệu chờ gửi được giữ lại.
-- **Bilingual Support** mở lựa chọn tiếng Việt và tiếng Anh. Khi tắt, Game dùng tiếng Việt và giữ lựa chọn trước đó để khôi phục khi bật lại.
+API chỉ cho phép truy cập lớp/bài trong phạm vi được cấp quyền. Gửi lại cùng mã lượt không được nhân đôi kết quả. Việc lưu log không tự công nhận hoàn thành; dữ liệu khách/local không tự nhập thành kết quả server.
 
-## API Classroom
+## Bài học, completion và AI
 
-Game đã có màn hình Classroom dùng các API dưới đây để nhập mã lớp, xem bài giao, nộp/làm lại quiz và mở minigame được giao. Test `tests/portal-integration.spec.ts` trong repo Game kiểm tra luồng Classroom thật, điểm quiz và tiến độ minigame hiển thị trong Instructor; bật `LIVE_INTEGRATION_TEST=1` để chạy cùng backend 8081 và portal 5174.
+Curriculum có 34 bài, gồm 5 bài Matrix. Portal kiểm tra catalog bằng `npm test`, Instructor tải catalog từ `/api/instructor/curriculum`. Các ID gộp `stack`, `queue`, `tree-traversal`, `bst` đã ngừng dùng làm bài hiện hành.
 
-Tất cả yêu cầu Bearer token Learner của backend chung:
+`GET /api/game/me/state` trả hồ sơ và tiến độ chuẩn từ server. Bài học có thể phụ thuộc trạng thái công bố, tiên quyết, feature flags và cờ bảo trì. Các API cấp đề nằm trong [OpenAPI Backend](http://127.0.0.1:8081/v3/api-docs).
 
-| Method | Path | Nội dung |
-| --- | --- | --- |
-| GET | `/api/learner/classes` | Lớp đã tham gia |
-| POST | `/api/learner/classes/join` | `{code}` mã 8 ký tự → 201 |
-| DELETE | `/api/learner/classes/{id}` | Rời lớp → 204, giữ lịch sử |
-| GET | `/api/learner/classes/{id}/assignments` | Quiz Published và thử thách Active |
-| GET | `/api/learner/assignments/{id}` | Nội dung bài trong lớp đã tham gia |
-| POST | `/api/learner/assignments/{id}/attempts` | `{clientAttemptId,answers:[{questionId,selectedIndex}]}` → 201 |
-| GET | `/api/learner/assignments/{id}/attempts` | Lịch sử quiz của chính Learner |
+Bubble dùng `PUT /api/game/me/learning-attempts/{attemptId}`; log các bài còn lại dùng cùng đường dẫn với `?format=gameplay-v1`. Backend phát lại thao tác và giữ nguồn gốc trạng thái đầu; `clientOutcome` không thay thế đánh giá server. Completion dùng `POST /api/game/me/completions`, có `clientAttemptId`, `lessonId`, `stage` và các trường theo hợp đồng bài học, gồm `assignmentId`/`actions` khi cần.
 
-Đáp án/giải thích chỉ trả sau khi đã nộp quiz. Server chấm theo trọng số. Hạn nộp kết thúc sau ngày due theo Asia/Ho_Chi_Minh. Gửi lại cùng clientAttemptId không tạo thêm lượt. Không truy cập bài/lớp ngoài phạm vi thành viên.
-
-Bộ thử thách mở bài tương ứng trong game. Hoàn thành trong thời hạn sẽ ghi tiến độ cho bài giao Active của lớp đã đăng ký; vẫn áp dụng luật mở khóa bài học.
-
-Bài giao cũ có mã `stack` hoặc `queue` được mở thành ba thao tác hiện hành tương ứng. Backend chỉ ghi hoàn thành mã bài giao cũ sau khi đủ cả ba thao tác; không tạo thêm điểm hoặc hoàn thành bài chính cho mã cũ. Kết quả bài giao cũ đã có được giữ nguyên. Mỗi thao tác trên bản đồ cần vượt mức Khó để gửi hoàn thành; mức Dễ/Vừa chỉ lưu tiến trình độ khó cục bộ.
-
-Instructor state trả điểm trung bình các điểm cao nhất của từng quiz đã nộp, số quiz đã nộp, bài thực hành hoàn thành/được giao và phần trăm. Tiến độ, phân tích và CSV/JSON dùng số liệu này. Chưa có mô hình Knowledge Tracing.
-
-## Chạy
-
-1. Chạy Backend theo [hướng dẫn Backend](../Backend/README.md). Từ thư mục gốc Portal, có thể dùng `.\scripts\start-backend.ps1` để chạy Backend với PostgreSQL phát triển ở cổng 55432.
-2. Terminal khác, thư mục algoventure-admin: `npm run dev`.
-3. Terminal khác, thư mục AlgoVenture_Game: `npm run dev`.
-
-Swagger: http://127.0.0.1:8081/swagger-ui/index.html. API game: đăng ký/đăng nhập rồi nhập token vào Authorize → game. API portal: lấy CSRF rồi đăng nhập bằng cookie.
-
-Chạy `.\mvnw.cmd test` trong repo Backend. Trong `algoventure-admin`, chạy `npm ci`, `npm test`, `npm run lint` và `npm run build`. Game: `npm run build`; kiểm thử hợp đồng/UI bằng API giả lập: `npx playwright test tests/auth.spec.ts tests/guest.spec.ts tests/shared-backend.spec.ts`. Test live validation trong auth.spec.ts cần `LIVE_AUTH_TEST=1` và backend 8081 đang chạy. Xem thêm `../AlgoVenture_Game/INTEGRATION.md`.
-
-Production cần HTTPS, proxy /api cùng origin, SPA fallback và biến môi trường database. Dev proxy không có trong bundle production.
-
-Kiểm thử tích hợp thật có trong repo Game: bật backend 8081 và portal 5174, đặt `LIVE_INTEGRATION_TEST=1`, chạy `npx playwright test tests/live-integration.spec.ts`. Test tạo dữ liệu có tiền tố QA trong database phát triển. Game được Playwright chạy tại 5173 nếu chưa bật. Máy dùng Edge có thể đặt `PLAYWRIGHT_CHANNEL=msedge`.
-
-## Cấu hình module theo bài giao
-
-Bộ thử thách nhận `lessonConfigs` theo lesson ID. Hiện hỗ trợ `bubble`, `selection`, `insertion`, `merge`, `quick`:
+Bộ thử thách hỗ trợ `lessonConfigs` cho `bubble`, `selection`, `insertion`, `merge`, `quick`:
 
 ```json
 {"lessonConfigs":{"bubble":{"timeLimitSeconds":90,"difficulty":"easy","input":[8,3,-1,3,2]}}}
 ```
 
-`timeLimitSeconds`: 30–3600 giây (mặc định 300). `difficulty`: easy/medium/hard. `input`: 2–8 số nguyên -99…99; bỏ trống để tạo đề. Chỉ cấu hình bài đã chọn; không đổi cấu hình sau khi công bố. Mỗi module mới cần khai báo các trường phù hợp với engine trước khi cho giảng viên chỉnh.
+`timeLimitSeconds`: 30–3600; `difficulty`: easy/medium/hard; `input`: 2–8 số nguyên từ -99 đến 99. Chỉ cấu hình bài đã chọn; nội dung công bố được giữ cố định. Bài tùy chỉnh dùng phạm vi assignment riêng.
 
-Game đọc cấu hình trong API Classroom, áp dụng đồng hồ và chuỗi của bài giao. `POST /api/game/me/bubble-challenges?assignmentId=...` cấp đề Bubble đúng cấu hình, kiểm tra thành viên và hạn nộp. Nhật ký vẫn được server phát lại và kiểm tra thời gian. Completion gửi thêm `assignmentId`; bài tùy chỉnh ghi kết quả riêng cho bài giao, không mở khóa tiến trình tự do hay tính cho bài giao khác. Những bài chưa tùy chỉnh giữ luồng hoàn thành cũ.
+Schema hiện hành là V28, gồm 26 bảng nghiệp vụ; xem [DATABASE.md](../AlgoVenture_Backend/DATABASE.md). Các tài liệu cũ về backend nhúng trong AdminUI, PostgreSQL cổng 55432, bảng profile/completion trước hợp nhất hoặc Web Game cũ không phải hướng dẫn chạy ba repo hiện tại.
 
-Migration V8 bổ sung cấu hình bài giao và liên kết đề Bubble. Cần chạy backend mới cùng game mới để sử dụng cấu hình.
+AI là dịch vụ tùy chọn. Khi chưa có model phù hợp, hệ thống trả trạng thái chưa sẵn sàng; log hoặc fixture kiểm thử không chứng minh chất lượng mô hình. Xem [AI README](ai-service/README.md) cho môi trường Python, manifest và giới hạn hiện tại.
 
-## Danh mục hiện hành và bài gộp đã ngừng dùng
+## Kiểm tra tích hợp
 
-Backend có thêm 5 bài Matrix và Instructor tải danh mục từ Backend. Game trên nhánh main hiện có 29 bài chơi; các bài Matrix chưa có màn chơi. `stack` và `queue` chỉ còn là tên nhóm hoặc dữ liệu lịch sử; không còn là bài được giao hoặc được mở. Stack dùng Push/Pop/Peek; Queue dùng Enqueue/Dequeue/Peek.
+Chạy frontend `npm ci`, `npm test`, `npm run lint`, `npm run build`; chạy Backend và Unity tests theo README riêng, dùng database test tách biệt. Kiểm tra thật trên môi trường test cần theo hết luồng tạo lớp → giao bài → learner tham gia/làm bài → Instructor đọc kết quả, kèm thay đổi cấu hình Admin → Unity đồng bộ. Test frontend giả lập HTTP hoặc build thành công chưa đủ xác nhận luồng này.
 
-Migration V9 chuyển mọi bộ bài cũ từ `stack` sang ba thao tác Stack, `queue` sang ba thao tác Queue, loại ID trùng và cập nhật bài tiên quyết. Các dòng kết quả cũ được giữ nguyên để bảo toàn lịch sử; chúng không tự hoàn thành các thao tác mới. Catalog, API Admin, Instructor và game không cung cấp hai bài đã ngừng dùng; server từ chối giao, mở lại hoặc ghi hoàn thành chúng.
-
-Migration V10 đồng bộ nhánh Cây với Game: `tree-basics` → `tree-dfs` → `tree-bfs` → `bst-search` → `bst-insert` → `bst-delete`. Bài `tree-traversal` cũ tách thành DFS/BFS; `bst` nền tảng đã ngừng dùng và được bỏ khỏi bài tiên quyết/bài giao. Bộ chỉ chứa `bst` được đóng vì không còn bài chơi. Bộ hỗn hợp giữ các bài còn lại. Portal dùng cùng danh mục mới.
-
-V10 giữ các dòng hoàn thành cũ và thời điểm gốc. Người đã hoàn thành `tree-traversal` được hiển thị hoàn thành cả DFS và BFS, đúng phạm vi bài cũ; không tạo thêm điểm xếp hạng khi chuyển đổi hoặc chơi lại hai bài được kế thừa. Kết quả bài giao `tree-traversal` được chuyển sang hai ID mới và giữ bản ghi gốc. Cấu hình/trạng thái công bố bài cũ được kế thừa nếu chưa có cấu hình riêng cho bài mới; bài có cấu hình riêng được giữ nguyên. Các migration V1–V9 không bị sửa checksum.
+[Swagger](http://127.0.0.1:8081/swagger-ui/index.html) hỗ trợ thử API sau khi Backend chạy. Production cần HTTPS, reverse proxy `/api` cùng origin với Portal và SPA fallback. Dev proxy không có trong bundle production.
