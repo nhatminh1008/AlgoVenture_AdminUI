@@ -80,14 +80,14 @@ export default function PortalFrame({ user, logout, navItems, className = "", ch
       </aside>
       <div className="portal-workarea" inert={menuOpen || undefined}>
         <header className="portal-topbar">
-          <button ref={menuButton} className="portal-menu-button portal-icon-button" aria-label={text("Mở menu")} aria-expanded={menuOpen} aria-controls={navigationId} onClick={() => setMenuOpen(true)}><Menu size={21} /></button>
-          <div className="portal-breadcrumb"><span>{isAdmin ? text("Quản trị") : text("Giảng dạy")}</span><ChevronRight size={14} /><strong>{current.name}</strong></div>
-          <div className="portal-topbar-actions">
-            <LanguageToggle />
-            <button className="portal-search-trigger" onClick={openSearch} aria-label={text("Tìm trang")} aria-keyshortcuts="Control+k Meta+k">
-              <Search size={17} /><span>{text("Tìm trang…")}</span><kbd>Ctrl K</kbd>
-            </button>
+          <div className="portal-topbar-navigation">
+            <button ref={menuButton} className="portal-menu-button portal-icon-button" aria-label={text("Mở menu")} aria-expanded={menuOpen} aria-controls={navigationId} onClick={() => setMenuOpen(true)}><Menu size={21} /></button>
+            <div className="portal-breadcrumb"><span>{isAdmin ? text("Quản trị") : text("Giảng dạy")}</span><ChevronRight size={14} /><strong>{current.name}</strong></div>
           </div>
+          <button className="portal-search-trigger" onClick={openSearch} aria-label={text("Tìm trang")} aria-keyshortcuts="Control+k Meta+k">
+            <Search size={17} /><span>{text("Tìm trang…")}</span><kbd>Ctrl K</kbd>
+          </button>
+          <div className="portal-topbar-language"><LanguageToggle /></div>
         </header>
         <main id="main-content" className="portal-content" tabIndex={-1}>{children}</main>
       </div>

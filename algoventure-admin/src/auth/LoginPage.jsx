@@ -1,19 +1,23 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Globe, LockKeyhole, Mail } from "lucide-react";
 import { useAuth } from "./useAuth";
 import { loginDestination } from "./authRoutes";
 import "./LoginPage.css";
 import BrandMark from "../shared/components/BrandMark";
 import LoginArtwork from "./LoginArtwork";
-import LanguageToggle from "../preferences/LanguageToggle";
-import { useText } from "../preferences/preferencesContext";
+import { usePreferences, useText } from "../preferences/preferencesContext";
 
 const portalTitle = "AlgoVenture's Web Portal";
+const loginLanguages = [
+  { value: "vi", label: "Tiếng Việt" },
+  { value: "en", label: "English" },
+];
 
 export default function LoginPage() {
   const { user, login, sessionNotice, clearSessionNotice } = useAuth();
   const location = useLocation();
+  const { language, setLanguage } = usePreferences();
   const text = useText();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,10 +40,17 @@ export default function LoginPage() {
   }
   return (
     <main className="login-page">
+      <div className="login-language" role="group" aria-label={text("Ngôn ngữ", "Language")}>
+        <Globe size={17} aria-hidden="true" />
+        {loginLanguages.map(({ value, label }) => (
+          <button key={value} type="button" lang={value} aria-pressed={language === value}
+            onClick={() => setLanguage(value)}>{label}</button>
+        ))}
+      </div>
       <section className="login-access" aria-labelledby="login-title">
         <LoginArtwork />
         <div className="login-form-panel">
-          <div className="flex items-center justify-between gap-3"><BrandMark className="login-logo" /><LanguageToggle /></div>
+          <BrandMark className="login-logo" />
           <h1 id="login-title">{portalTitle}</h1>
           <form onSubmit={submit} className="login-form" aria-labelledby="login-title" aria-busy={isSubmitting}>
             <label><span className="field-label">{text("Địa chỉ email")}</span><div className="login-input-wrap"><Mail size={18} aria-hidden="true" /><input type="email" name="email" autoComplete="username" className="field" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ban@algoventure.edu" /></div></label>

@@ -1,9 +1,38 @@
 .login-page {
   min-height: 100dvh;
   display: grid;
+  grid-template-rows: auto 1fr;
   background: radial-gradient(ellipse at 50% 15%, #214983 0%, #142e57 56%, #102444 100%);
   color: #f5f8ff;
 }
+.login-language {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: clamp(16px, 3vw, 28px) clamp(16px, 4vw, 36px) 0;
+  padding: 3px 3px 3px 12px;
+  border: 1px solid #a8c8ff50;
+  border-radius: 999px;
+  background: #10244480;
+  color: #c5d8f6;
+}
+.login-language > svg { margin-inline-end: 4px; }
+.login-language > button {
+  min-height: 36px;
+  padding-inline: 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.login-language > button:hover { background: #ffffff14; color: #fff; }
+.login-language > button[aria-pressed="true"] {
+  background: #dceaff;
+  color: #193c73;
+}
+.login-language > button:focus-visible { outline-color: #b9d1ff; outline-offset: 2px; }
 .login-access {
   position: relative;
   display: grid;
