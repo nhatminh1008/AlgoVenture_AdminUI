@@ -1,3 +1,6 @@
+import Pagination from "../../../shared/components/Pagination";
+import { usePagination } from "../../../shared/hooks/usePagination";
+import { useText } from "../../../preferences/preferencesContext";
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, ClipboardList, Trash2 } from "lucide-react";
@@ -5,6 +8,7 @@ import { useClassrooms } from "../workspace/ClassroomContext";
 import { canEditQuiz, getQuizStatusLabel } from "./quizStatus";
 
 export default function ClassQuizzes({ classId, archivedAt }) {
+  const text = useText();
   const { quizzes, removeQuiz } = useClassrooms();
   const [error, setError] = useState("");
   const pendingRemovals = useRef(new Set());
@@ -22,16 +26,17 @@ export default function ClassQuizzes({ classId, archivedAt }) {
       pendingRemovals.current.delete(quiz.id);
     }
   }
+  const pagination = usePagination(rows, classId);
   return (
     <div>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="font-bold text-slate-900">Bộ câu hỏi trắc nghiệm</h2>
+          <h2 className="font-bold text-slate-900">{text("Bộ câu hỏi trắc nghiệm")}</h2>
         </div>
         {!archivedAt && (
           <Link className="btn-primary" to={`/instructor/classes/${classId}/quizzes/new`}>
             <Plus size={17} />
-            Tạo bộ câu hỏi
+            {text("Tạo bộ câu hỏi")}
           </Link>
         )}
       </div>
@@ -44,7 +49,7 @@ export default function ClassQuizzes({ classId, archivedAt }) {
         </p>
       )}
       <div className="grid gap-4 md:grid-cols-2">
-        {rows.map((quiz) => (
+        {pagination.items.map((quiz) => (
           <article key={quiz.id} className="panel flex flex-col p-6">
             <div className="flex items-center justify-between gap-3">
               <span className="rounded-xl bg-indigo-50 p-2.5 text-indigo-600">
@@ -61,18 +66,18 @@ export default function ClassQuizzes({ classId, archivedAt }) {
             </h3>
             {quiz.description && <p className="line-clamp-2 text-sm leading-6 text-slate-500">{quiz.description}</p>}
             <div className="mt-auto flex flex-wrap gap-3 pt-5 text-xs text-slate-500">
-              <span>{quiz.questions.length} câu hỏi</span>
+              <span>{quiz.questions.length} {text(" câu hỏi")}</span>
               <span>
                 {quiz.questions.reduce(
                   (sum, question) => sum + question.points,
                   0,
                 )}{" "}
-                điểm
+                {text("điểm")}
               </span>
             </div>
             {quiz.due && (
               <p className="mt-2 text-xs text-slate-400">
-                Hạn hoàn thành: {quiz.due}
+                {text("Hạn hoàn thành: ")} {quiz.due}
               </p>
             )}
             <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
@@ -80,7 +85,7 @@ export default function ClassQuizzes({ classId, archivedAt }) {
                 className="btn-secondary"
                 to={`/instructor/classes/${classId}/quizzes/${quiz.id}`}
               >
-                Xem và làm thử
+                {text("Xem và làm thử")}
               </Link>
               {canEditQuiz(quiz, archivedAt) && (
                 <>
@@ -88,7 +93,7 @@ export default function ClassQuizzes({ classId, archivedAt }) {
                     className="btn-secondary"
                     to={`/instructor/classes/${classId}/quizzes/${quiz.id}/edit`}
                   >
-                    Chỉnh sửa
+                    {text("Chỉnh sửa")}
                   </Link>
                   <button
                     className="btn-secondary ml-auto text-red-600"
@@ -103,16 +108,17 @@ export default function ClassQuizzes({ classId, archivedAt }) {
           </article>
         ))}
       </div>
+      <Pagination pagination={pagination} />
       {!rows.length && (
         <div className="panel p-12 text-center">
           <ClipboardList size={36} className="mx-auto mb-4 text-slate-300" />
           <h3 className="font-semibold text-slate-800">
-            {archivedAt ? "Lớp chưa có bộ câu hỏi" : "Soạn bộ câu hỏi đầu tiên"}
+            {archivedAt ? text("Lớp chưa có bộ câu hỏi") : text("Soạn bộ câu hỏi đầu tiên")}
           </h3>
           {!archivedAt && (
             <Link className="btn-primary mt-5" to={`/instructor/classes/${classId}/quizzes/new`}>
               <Plus size={17} />
-              Tạo bộ câu hỏi
+              {text("Tạo bộ câu hỏi")}
             </Link>
           )}
         </div>

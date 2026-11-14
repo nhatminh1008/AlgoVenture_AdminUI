@@ -1,9 +1,11 @@
+import { useText } from "../../../preferences/preferencesContext";
 import { Link } from "react-router-dom";
 import { Layers, ClipboardList, Users } from "lucide-react";
 
 const icons = { assignments: Layers, quizzes: ClipboardList, students: Users };
 
 export default function ClassNavigation({ classId, active }) {
+  const text = useText();
   const base = `/instructor/classes/${classId}`;
   const items = [
     ["assignments", "Bộ thử thách", `${base}?tab=assignments`],
@@ -11,7 +13,7 @@ export default function ClassNavigation({ classId, active }) {
     ["students", "Sinh viên", `${base}?tab=students`],
   ];
   return (
-    <nav aria-label="Điều hướng lớp học" className="instructor-tabs">
+    <nav aria-label={text("Điều hướng lớp học")} className="instructor-tabs">
       {items.map(([id, label, to]) => {
         const Icon = icons[id];
         return (

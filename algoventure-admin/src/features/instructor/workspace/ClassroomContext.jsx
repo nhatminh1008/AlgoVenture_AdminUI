@@ -1,3 +1,4 @@
+import { useText } from "../../../preferences/preferencesContext";
 import {
   createContext,
   useContext,
@@ -17,6 +18,7 @@ import {
 
 const ClassroomContext = createContext(null);
 export function ClassroomProvider({ children }) {
+  const text = useText();
   const { user } = useAuth();
   const { data, setData, error: stateLoadError, refresh } = useApiData(getInstructorState, null);
   const topics = data?.topics;
@@ -54,11 +56,11 @@ export function ClassroomProvider({ children }) {
           <p role="alert">
             {stateLoadError}{" "}
             <button className="btn-secondary" onClick={refresh}>
-              Thử lại
+              {text("Thử lại")}
             </button>
           </p>
         ) : (
-          <p role="status">Đang tải dữ liệu lớp học…</p>
+          <p role="status">{text("Đang tải dữ liệu lớp học…")}</p>
         )}
       </div>
     );

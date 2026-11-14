@@ -1,5 +1,5 @@
 export const roleLabels = { admin: "Quản trị viên", instructor: "Giảng viên", learner: "Học viên" };
-export const statusLabels = { Active: "Hoạt động", Published: "Đã công bố", Pending: "Chờ duyệt", Draft: "Bản nháp", Suspended: "Tạm khóa", Inactive: "Không hoạt động", Deactive: "Đã vô hiệu hóa", Closed: "Đã đóng" };
+export const statusLabels = { Active: "Hoạt động", Publish: "Đã công bố", Unpublished: "Chưa công bố", Draft: "Bản nháp", Suspended: "Tạm khóa", Inactive: "Không hoạt động", Deactive: "Đã vô hiệu hóa", Closed: "Đã đóng" };
 export const actionLabel = (action) => ({
   "assignment.save": "Lưu bộ thử thách",
   "classroom.save": "Lưu lớp học",

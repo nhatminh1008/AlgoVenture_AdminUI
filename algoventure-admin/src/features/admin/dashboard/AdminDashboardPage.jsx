@@ -1,5 +1,6 @@
+import { useText } from "../../../preferences/preferencesContext";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, BookOpen, ClipboardList, FileText, GraduationCap, Library, Settings2, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { ArrowUpRight, BookOpen, ClipboardList, GraduationCap, Library, Settings2, ShieldCheck, UserPlus, Users } from "lucide-react";
 import { useApiData } from "../../../shared/hooks/useApiData";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import { AdminPageHeader } from "../AdminPageHeader";
@@ -8,34 +9,35 @@ import { actionLabel } from "../recordLabels.js";
 import { getAdminAnalytics } from "../analytics/adminAnalyticsService";
 
 export default function AdminDashboardPage() {
+  const text = useText();
   const state = useApiData(getAdminAnalytics, null);
   const counts = state.data?.counts;
   return (
     <div className="mx-auto max-w-6xl">
-      <AdminPageHeader title="Tổng quan hệ thống">
-        <Link className="btn-primary" to="/admin/users"><UserPlus size={16} />Quản lý tài khoản</Link>
+      <AdminPageHeader title={text("Tổng quan hệ thống")}>
+        <Link className="btn-primary" to="/admin/users"><UserPlus size={16} />{text("Quản lý tài khoản")}</Link>
       </AdminPageHeader>
       <div className="mt-5"><ApiFeedback state={state} /></div>
       {counts && <>
         <WorkspaceStats items={[
-          { label: "Tổng tài khoản", value: counts.users, icon: <Users />, tone: "mint", to: "/admin/users" },
-          { label: "Lớp học", value: counts.classrooms, icon: <GraduationCap />, tone: "peach", to: "/admin/classes" },
-          { label: "Lượt đăng ký lớp", value: counts.enrollments, icon: <UserPlus />, tone: "lilac", to: "/admin/classes" },
+          { label: text("Tổng tài khoản"), value: counts.users, icon: <Users />, tone: "mint", to: "/admin/users" },
+          { label: text("Lớp học"), value: counts.classrooms, icon: <GraduationCap />, tone: "peach", to: "/admin/classes" },
+          { label: text("Lượt đăng ký lớp"), value: counts.enrollments, icon: <UserPlus />, tone: "lilac", to: "/admin/classes" },
         ]} />
         <div className="dashboard-columns">
-          <section className="panel dashboard-section"><div className="dashboard-section-heading"><h2>Nội dung học tập</h2><Link to="/admin/content">Xem thư viện<ArrowUpRight size={14} /></Link></div><div className="resource-grid">
-            {[["Bài học thuật toán", counts.algorithms, <BookOpen />], ["Bộ thử thách", counts.assignments, <ClipboardList />], ["Bộ trắc nghiệm", counts.quizzes, <Library />], ["Tài liệu", counts.materials, <FileText />]].map(([label, value, icon]) => <div className="resource-tile" key={label}><div>{icon}<strong>{value.toLocaleString("vi-VN")}</strong></div><span>{label}</span></div>)}
+          <section className="panel dashboard-section"><div className="dashboard-section-heading"><h2>{text("Nội dung học tập")}</h2><Link to="/admin/content">{text("Xem thư viện")}<ArrowUpRight size={14} /></Link></div><div className="resource-grid">
+            {[["Bài học thuật toán", counts.algorithms, <BookOpen />], ["Bộ thử thách", counts.assignments, <ClipboardList />], ["Bộ trắc nghiệm", counts.quizzes, <Library />]].map(([label, value, icon]) => <div className="resource-tile" key={label}><div>{icon}<strong>{value.toLocaleString("vi-VN")}</strong></div><span>{text(label)}</span></div>)}
           </div></section>
-          <section className="panel dashboard-section"><div className="dashboard-section-heading"><h2>Truy cập nhanh</h2></div><div className="quick-actions">
+          <section className="panel dashboard-section"><div className="dashboard-section-heading"><h2>{text("Truy cập nhanh")}</h2></div><div className="quick-actions">
             {[
-              { to: "/admin/users", icon: <ShieldCheck />, title: "Tài khoản & phân quyền", note: "Quản lý vai trò và quyền truy cập", tone: "mint" },
-              { to: "/admin/classes", icon: <GraduationCap />, title: "Quản lý lớp học", note: "Phân công giảng viên, quản lý thành viên", tone: "peach" },
-              { to: "/admin/levels", icon: <Settings2 />, title: "Cấu hình bài học", note: "Thiết lập độ khó và mục tiêu học tập", tone: "lilac" },
+              { to: "/admin/users", icon: <ShieldCheck />, title: text("Tài khoản & phân quyền"), note: text("Quản lý vai trò và quyền truy cập"), tone: "mint" },
+              { to: "/admin/classes", icon: <GraduationCap />, title: text("Quản lý lớp học"), note: text("Phân công giảng viên, quản lý thành viên"), tone: "peach" },
+              { to: "/admin/levels", icon: <Settings2 />, title: text("Cấu hình bài học"), note: text("Thiết lập độ khó và mục tiêu học tập"), tone: "lilac" },
             ].map((item) => <Link className="quick-action" to={item.to} key={item.to}><span className={`tone-${item.tone}`}>{item.icon}</span><div><strong>{item.title}</strong><small>{item.note}</small></div><ArrowUpRight /></Link>)}
           </div></section>
         </div>
-        <section className="panel dashboard-activity"><div className="dashboard-section-heading"><h2>Hoạt động gần đây</h2><Link to="/admin/analytics">Xem tất cả<ArrowUpRight size={14} /></Link></div>
-          {state.data.logs.length ? <div className="activity-list">{state.data.logs.slice(0, 4).map((row, i) => <div className="activity-row" key={i}><span className="activity-dot" /><div><strong>{actionLabel(row.action)}</strong><small>{row.actor}</small></div><time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString("vi-VN")}</time></div>)}</div> : <p className="dashboard-empty">Chưa có hoạt động.</p>}
+        <section className="panel dashboard-activity"><div className="dashboard-section-heading"><h2>{text("Hoạt động gần đây")}</h2><Link to="/admin/analytics">{text("Xem tất cả")}<ArrowUpRight size={14} /></Link></div>
+          {state.data.logs.length ? <div className="activity-list">{state.data.logs.slice(0, 4).map((row, i) => <div className="activity-row" key={i}><span className="activity-dot" /><div><strong>{text(actionLabel(row.action))}</strong><small>{row.actor}</small></div><time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString("vi-VN")}</time></div>)}</div> : <p className="dashboard-empty">{text("Chưa có hoạt động.")}</p>}
         </section>
       </>}
     </div>

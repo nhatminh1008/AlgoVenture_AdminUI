@@ -1,3 +1,6 @@
+import { useText } from "../../../preferences/preferencesContext";
+import Pagination from "../../../shared/components/Pagination";
+import { usePagination } from "../../../shared/hooks/usePagination";
 import {
   Link,
   useLocation,
@@ -19,23 +22,26 @@ const assignmentStatus = {
   Closed: "Đã đóng",
 };
 export default function ClassroomDetailPage() {
+  const text = useText();
   const { classId } = useParams();
   const { classes, students, assignments, getTopic, lessonName } = useClassrooms();
   const [params] = useSearchParams();
   const location = useLocation();
   const classroom = classes.find((item) => item.id === classId);
+  const members = students.filter((item) => item.classId === classId);
+  const sets = assignments.filter((item) => item.classId === classId);
+  const membersPage = usePagination(members, classId);
+  const setsPage = usePagination(sets, classId);
   if (!classroom)
     return (
       <div className="panel p-8">
-        <h1 className="text-xl font-bold">Không tìm thấy lớp học</h1>
+        <h1 className="text-xl font-bold">{text("Không tìm thấy lớp học")}</h1>
         <Link to="/instructor/classes" className="btn-secondary mt-5">
-          Về lớp của tôi
+          {text("Về lớp của tôi")}
         </Link>
       </div>
     );
   const topic = getTopic(classroom.topicId);
-  const members = students.filter((item) => item.classId === classId);
-  const sets = assignments.filter((item) => item.classId === classId);
   const tab = [
     "assignments",
     "quizzes",
@@ -51,10 +57,10 @@ export default function ClassroomDetailPage() {
         {!classroom.archivedAt && (
           <Link to={`/instructor/classes/${classId}/edit`} className="btn-secondary">
             <Pencil size={16} />
-            Sửa thông tin
+            {text("Sửa thông tin")}
           </Link>
         )}
-        <button className="btn-secondary" disabled={!members.length} onClick={() => downloadFile(exportStudentRows(members, classes), "class-results.csv")}><Download size={16} />Xuất CSV</button>
+        <button className="btn-secondary" disabled={!members.length} onClick={() => downloadFile(exportStudentRows(members, classes), "class-results.csv")}><Download size={16} />{text("Xuất CSV")}</button>
       </PageHeader>
       {location.state?.message && (
         <p
@@ -65,11 +71,11 @@ export default function ClassroomDetailPage() {
         </p>
       )}
       <div className="instructor-detail-summary">
-        <div className="instructor-detail-tags"><span>{topic?.label ?? classroom.topicId}</span><span>{getLevel(classroom.level).label}</span><span><Users size={15} />{members.length} sinh viên</span></div>
+        <div className="instructor-detail-tags"><span>{topic?.label ?? classroom.topicId}</span><span>{getLevel(classroom.level).label}</span><span><Users size={15} />{members.length} {text(" sinh viên")}</span></div>
         {classroom.archivedAt ? (
-          <span className="instructor-badge instructor-badge-closed">Đã lưu trữ</span>
+          <span className="instructor-badge instructor-badge-closed">{text("Đã lưu trữ")}</span>
         ) : (
-          <div className="instructor-invite"><span>Mã tham gia</span><strong>{classroom.inviteCode}</strong></div>
+          <div className="instructor-invite"><span>{text("Mã tham gia")}</span><strong>{classroom.inviteCode}</strong></div>
         )}
       </div>
       {classroom.description && <p className="mb-5 whitespace-pre-wrap text-sm text-slate-600">{classroom.description}</p>}
@@ -78,8 +84,9 @@ export default function ClassroomDetailPage() {
         {tab === "quizzes" && <ClassQuizzes key={classId} classId={classId} archivedAt={classroom.archivedAt} />}
         {tab === "assignments" && (
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">Bộ thử thách ({sets.length})</h2>{!classroom.archivedAt && <Link className="btn-primary" to={`/instructor/challenges/new?classId=${classId}`}><Plus size={17} />Giao thử thách</Link>}</div>
-            {sets.map((set) => (
+            <Pagination pagination={setsPage} />
+            <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">{text("Bộ thử thách (")}{sets.length})</h2>{!classroom.archivedAt && <Link className="btn-primary" to={`/instructor/challenges/new?classId=${classId}`}><Plus size={17} />{text("Giao thử thách")}</Link>}</div>
+            {setsPage.items.map((set) => (
               <article className="panel p-5 sm:p-6" key={set.id}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -87,13 +94,13 @@ export default function ClassroomDetailPage() {
                       {set.title}
                     </h2>
                     <p className="mt-2 text-xs text-slate-500">
-                      {set.lessonIds.length} bài · Hạn: {set.due || "Chưa đặt"}
+                      {set.lessonIds.length} {text(" bài · Hạn: ")} {set.due || "Chưa đặt"}
                     </p>
                   </div>
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-medium ${!set.archivedAt && set.status === "Active" ? "bg-portal-lavender text-portal-purple-strong" : "bg-slate-100 text-slate-600"}`}
                   >
-                    {set.archivedAt ? "Đã lưu trữ" : assignmentStatus[set.status]}
+                    {set.archivedAt ? text("Đã lưu trữ") : assignmentStatus[set.status]}
                   </span>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -111,18 +118,18 @@ export default function ClassroomDetailPage() {
                   className="mt-4 inline-flex text-sm font-semibold text-portal-purple-strong"
                 >
                   {!classroom.archivedAt && !set.archivedAt && set.status === "Draft"
-                    ? "Chỉnh sửa bộ bài →"
-                    : "Xem bộ bài →"}
+                    ? text("Chỉnh sửa bộ bài →")
+                    : text("Xem bộ bài →")}
                 </Link>
               </article>
             ))}
             {!sets.length && (
               <div className="panel p-10 text-center">
                 <Layers size={32} className="mx-auto mb-3 text-slate-300" />
-                <h2 className="font-semibold">Lớp chưa có bộ thử thách</h2>
+                <h2 className="font-semibold">{text("Lớp chưa có bộ thử thách")}</h2>
                 {!classroom.archivedAt && (
                   <Link className="btn-primary mt-5" to={`/instructor/challenges/new?classId=${classId}`}>
-                    Tạo bộ thử thách
+                    {text("Tạo bộ thử thách")}
                   </Link>
                 )}
               </div>
@@ -137,13 +144,13 @@ export default function ClassroomDetailPage() {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Sinh viên</th>
-                        <th>Email</th>
-                        <th>Điểm quiz / 100</th>
+                        <th>{text("Sinh viên")}</th>
+                        <th>{text("Email")}</th>
+                        <th>{text("Điểm quiz / 100")}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {members.map((member) => (
+                      {membersPage.items.map((member) => (
                         <tr key={member.id}>
                           <td><StudentIdentity name={member.name} /></td>
                           <td>{member.email}</td>
@@ -152,18 +159,19 @@ export default function ClassroomDetailPage() {
                       ))}
                     </tbody>
                   </table>
+                  <Pagination pagination={membersPage} />
                 </div>
                 <Link
                   className="m-5 inline-flex text-sm font-semibold text-portal-purple-strong"
                   to={`/instructor/progress?classId=${classId}`}
                 >
-                  Xem dữ liệu học tập →
+                  {text("Xem dữ liệu học tập →")}
                 </Link>
               </>
             ) : (
               <div className="p-10 text-center">
                 <Users size={32} className="mx-auto mb-3 text-slate-300" />
-                <h2 className="font-semibold">Chưa có sinh viên tham gia</h2>
+                <h2 className="font-semibold">{text("Chưa có sinh viên tham gia")}</h2>
               </div>
             )}
           </div>

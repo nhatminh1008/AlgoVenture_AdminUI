@@ -1,11 +1,16 @@
+import Pagination from "../../../shared/components/Pagination";
+import { usePagination } from "../../../shared/hooks/usePagination";
+import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { updateLesson } from "./lessonService";
 
 export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
+  const text = useText();
   const [form, setForm] = useState(() => structuredClone(lesson));
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const prerequisites = usePagination(lessons.filter((item) => item.id !== lesson.id), lesson.id);
   function config(key, value) {
     setForm((previous) => ({
       ...previous,
@@ -20,7 +25,7 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
     try {
       const rows = await updateLesson(lesson.id, form);
       onSaved(rows);
-      setMessage("Đã lưu cấu hình.");
+      setMessage(text("Đã lưu cấu hình."));
       setError("");
     } catch (f) {
       setError(f.message);
@@ -41,9 +46,10 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
           {message}
         </p>
       )}
+      <p className="text-sm">{text("Publish mở bài trong Unity theo điều kiện tiên quyết. Unpublished khóa bài, giữ tiến độ đã ghi nhận.", "Publish makes the lesson available subject to prerequisites. Unpublished locks it and keeps recorded progress.")}</p>
       <div className="grid gap-5 sm:grid-cols-2">
         <label>
-          <span className="field-label">Tên hiển thị</span>
+          <span className="field-label">{text("Tên hiển thị")}</span>
           <input
             className="field"
             required
@@ -53,31 +59,31 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
           />
         </label>
         <label>
-          <span className="field-label">Độ khó</span>
+          <span className="field-label">{text("Độ khó")}</span>
           <select
             className="field"
             value={form.difficulty}
             onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
           >
             {["Easy", "Medium", "Hard"].map((v) => (
-              <option key={v}>{v}</option>
+              <option key={v} value={v}>{text({ Easy: "Dễ", Medium: "Vừa", Hard: "Khó" }[v], v)}</option>
             ))}
           </select>
         </label>
         <label>
-          <span className="field-label">Trạng thái</span>
+          <span className="field-label">{text("Trạng thái")}</span>
           <select
             className="field"
             value={form.status}
             onChange={(e) => setForm({ ...form, status: e.target.value })}
           >
-            {["Draft", "Published"].map((v) => (
-              <option key={v}>{v}</option>
+            {["Unpublished", "Publish"].map((v) => (
+              <option key={v} value={v}>{text(v === "Publish" ? text("Đã công bố") : text("Chưa công bố"), v)}</option>
             ))}
           </select>
         </label>
         <label>
-          <span className="field-label">Giới hạn thời gian (giây)</span>
+          <span className="field-label">{text("Giới hạn thời gian (giây)")}</span>
           <input
             className="field"
             type="number"
@@ -90,7 +96,7 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
         </label>
       </div>
       <fieldset>
-        <legend className="field-label">Ngưỡng điểm sao (tăng dần)</legend>
+        <legend className="field-label">{text("Ngưỡng điểm sao (tăng dần)")}</legend>
         <div className="grid gap-3 sm:grid-cols-3">
           {form.config.starThresholds.map((value, i) => (
             <label key={i}>
@@ -120,14 +126,12 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
           checked={form.config.hintsAllowed}
           onChange={(e) => config("hintsAllowed", e.target.checked)}
         />
-        Cho phép gợi ý
+        {text("Cho phép gợi ý")}
       </label>
       <fieldset>
-        <legend className="field-label">Bài tiên quyết</legend>
+        <legend className="field-label">{text("Bài tiên quyết")}</legend>
         <div className="grid max-h-56 gap-2 overflow-auto sm:grid-cols-2">
-          {lessons
-            .filter((a) => a.id !== lesson.id)
-            .map((a) => (
+          {prerequisites.items.map((a) => (
               <label className="flex items-center gap-2 text-sm" key={a.id}>
                 <input
                   type="checkbox"
@@ -145,10 +149,11 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
               </label>
             ))}
         </div>
+        <Pagination pagination={prerequisites} />
       </fieldset>
       <div className="flex gap-3">
         <button className="btn-primary" disabled={isSaving}>
-          {isSaving ? "Đang lưu…" : "Lưu cấu hình"}
+          {isSaving ? text("Đang lưu…") : text("Lưu cấu hình")}
         </button>
         <button
           type="button"
@@ -160,7 +165,7 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
             setMessage("");
           }}
         >
-          Hoàn tác
+          {text("Hoàn tác")}
         </button>
       </div>
     </form>

@@ -1,8 +1,11 @@
+import { useText } from "../../../preferences/preferencesContext";
 import { roleLabels, statusLabels } from "../recordLabels.js";
 
-export default function UserForm({ form, isOwnProfile, isSaving, showDeactivatedStatus, onSubmit, onFieldChange, onCancel }) {
-  const title = isOwnProfile ? "Hồ sơ của tôi" : form.id ? "Sửa tài khoản" : "Tạo tài khoản";
-  const saveLabel = isOwnProfile ? "Lưu hồ sơ" : "Lưu tài khoản";
+export default function UserForm({ form, isOwnProfile, isSaving, onSubmit, onFieldChange, onCancel }) {
+  const text = useText();
+  const title = isOwnProfile ? text("Hồ sơ của tôi") : form.id ? text("Sửa tài khoản") : text("Tạo tài khoản");
+  const creating = !form.id;
+  const saveLabel = isOwnProfile ? text("Lưu hồ sơ") : text("Lưu tài khoản");
   const joined = form.joined && new Date(form.joined).toLocaleDateString("vi-VN");
   return (
     <form onSubmit={onSubmit} className="panel mb-6 space-y-4 p-6">
@@ -11,12 +14,12 @@ export default function UserForm({ form, isOwnProfile, isSaving, showDeactivated
       </h2>
       {isOwnProfile && (
         <p className="text-sm text-slate-600">
-          Vai trò và trạng thái của tài khoản do một quản trị viên khác cập nhật.
+          {text("Vai trò và trạng thái của tài khoản do một quản trị viên khác cập nhật.")}
         </p>
       )}
       <div className="grid gap-4 sm:grid-cols-2">
         <label>
-          <span className="field-label">Họ tên</span>
+          <span className="field-label">{text("Họ tên")}{creating && <span aria-hidden="true"> *</span>}</span>
           <input
             className="field"
             required
@@ -26,7 +29,7 @@ export default function UserForm({ form, isOwnProfile, isSaving, showDeactivated
           />
         </label>
         <label>
-          <span className="field-label">Email</span>
+          <span className="field-label">{text("Email")}{creating && <span aria-hidden="true"> *</span>}</span>
           <input
             className="field"
             required
@@ -39,13 +42,13 @@ export default function UserForm({ form, isOwnProfile, isSaving, showDeactivated
           />
           {isOwnProfile && (
             <span id="profile-email-hint" className="mt-1 block text-sm text-slate-600">
-              Nếu đổi email, bạn cần đăng nhập lại bằng email mới.
+              {text("Nếu đổi email, bạn cần đăng nhập lại bằng email mới.")}
             </span>
           )}
         </label>
         {!form.id && (
           <label>
-            <span className="field-label">Mật khẩu (10–72 ký tự)</span>
+            <span className="field-label">{text("Mật khẩu (10–72 ký tự)")}{creating && <span aria-hidden="true"> *</span>}</span>
             <input
               className="field"
               required
@@ -58,8 +61,42 @@ export default function UserForm({ form, isOwnProfile, isSaving, showDeactivated
             />
           </label>
         )}
+        {!isOwnProfile && (
+          <>
+            <label>
+              <span className="field-label">{text("Vai trò")}{creating && <span aria-hidden="true"> *</span>}</span>
+              <select
+                className="field"
+                required
+                value={form.role}
+                onChange={(e) => onFieldChange("role", e.target.value)}
+              >
+                {["admin", "instructor", "learner"].map((v) => (
+                  <option key={v} value={v}>{text(roleLabels[v])}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className="field-label">{text("Trạng thái")}{creating && <span aria-hidden="true"> *</span>}</span>
+              <select
+                className="field"
+                required
+                value={form.status}
+                onChange={(e) => onFieldChange("status", e.target.value)}
+              >
+                {["Active", "Suspended"].map((v) => (
+                  <option key={v} value={v}>{text(statusLabels[v])}</option>
+                ))}
+                {!creating && <option value="Deactive">{text(statusLabels.Deactive)}</option>}
+              </select>
+            </label>
+          </>
+        )}
+      </div>
+      <fieldset className="grid gap-4 sm:grid-cols-2">
+        <legend className="mb-2 text-sm font-semibold text-slate-700">{text("Thông tin bổ sung (không bắt buộc)")}</legend>
         <label>
-          <span className="field-label">Ngày sinh</span>
+          <span className="field-label">{text("Ngày sinh")}</span>
           <input
             className="field"
             type="date"
@@ -69,7 +106,7 @@ export default function UserForm({ form, isOwnProfile, isSaving, showDeactivated
           />
         </label>
         <label>
-          <span className="field-label">Số điện thoại</span>
+          <span className="field-label">{text("Số điện thoại")}</span>
           <input
             className="field"
             type="tel"
@@ -80,7 +117,7 @@ export default function UserForm({ form, isOwnProfile, isSaving, showDeactivated
           />
         </label>
         <label className="sm:col-span-2">
-          <span className="field-label">Địa chỉ</span>
+          <span className="field-label">{text("Địa chỉ")}</span>
           <input
             className="field"
             autoComplete="street-address"
@@ -89,44 +126,15 @@ export default function UserForm({ form, isOwnProfile, isSaving, showDeactivated
             onChange={(e) => onFieldChange("address", e.target.value)}
           />
         </label>
-        {joined && (
-          <p className="text-sm text-slate-600">
-            Ngày tham gia <time dateTime={form.joined}>{joined}</time>
-          </p>
-        )}
-        {!isOwnProfile && (
-          <>
-            <label>
-              <span className="field-label">Vai trò</span>
-              <select
-                className="field"
-                value={form.role}
-                onChange={(e) => onFieldChange("role", e.target.value)}
-              >
-                {["admin", "instructor", "learner"].map((v) => (
-                  <option key={v} value={v}>{roleLabels[v]}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span className="field-label">Trạng thái</span>
-              <select
-                className="field"
-                value={form.status}
-                onChange={(e) => onFieldChange("status", e.target.value)}
-              >
-                {["Active", "Pending", "Suspended"].map((v) => (
-                  <option key={v} value={v}>{statusLabels[v]}</option>
-                ))}
-                {showDeactivatedStatus && <option value="Deactive">{statusLabels.Deactive}</option>}
-              </select>
-            </label>
-          </>
-        )}
-      </div>
+      </fieldset>
+      {joined && (
+        <p className="text-sm text-slate-600">
+          {text("Ngày tham gia ")} <time dateTime={form.joined}>{joined}</time>
+        </p>
+      )}
       <div className="flex gap-3">
         <button className="btn-primary" disabled={isSaving}>
-          {isSaving ? "Đang lưu…" : saveLabel}
+          {isSaving ? text("Đang lưu…") : saveLabel}
         </button>
         <button
           type="button"
@@ -134,7 +142,7 @@ export default function UserForm({ form, isOwnProfile, isSaving, showDeactivated
           disabled={isSaving}
           onClick={onCancel}
         >
-          Hủy
+          {text("Hủy")}
         </button>
       </div>
     </form>

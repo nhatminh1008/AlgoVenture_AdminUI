@@ -1,3 +1,4 @@
+import { useText } from "../preferences/preferencesContext";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { roleHome } from "./authRoutes";
 import { useAuth } from "./useAuth";
@@ -11,15 +12,15 @@ export function RequireRole({ role }) {
   return <Outlet />;
 }
 function LearnerNotice() {
+  const text = useText();
   const { logout } = useAuth();
   return (
     <div className="p-8">
       <p>
-        Tài khoản Learner sử dụng ứng dụng học tập. Web này dành cho Admin và
-        Instructor.
+        {text("Tài khoản Learner sử dụng ứng dụng học tập. Web này dành cho Admin và Instructor.")}
       </p>
       <button className="btn-secondary mt-4" onClick={logout}>
-        Đăng xuất
+        {text("Đăng xuất")}
       </button>
     </div>
   );

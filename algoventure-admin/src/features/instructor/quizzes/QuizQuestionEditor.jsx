@@ -1,3 +1,4 @@
+import { useText } from "../../../preferences/preferencesContext";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 
 export default function QuizQuestionEditor({
@@ -9,6 +10,7 @@ export default function QuizQuestionEditor({
   onMove,
   onRemove,
 }) {
+  const text = useText();
   return (
     <section
       id={`question-${question.id}`}
@@ -16,7 +18,7 @@ export default function QuizQuestionEditor({
       aria-label={`Soạn câu ${index + 1}`}
     >
       <div className="mb-5 flex items-center justify-between gap-3">
-        <h2 className="quiz-question-title"><span>{String(index + 1).padStart(2, "0")}</span>Câu hỏi {index + 1}</h2>
+        <h2 className="quiz-question-title"><span>{String(index + 1).padStart(2, "0")}</span>{text("Câu hỏi ")} {index + 1}</h2>
         <div className="flex gap-1">
           <button
             className="rounded-lg p-2 hover:bg-slate-50"
@@ -52,7 +54,7 @@ export default function QuizQuestionEditor({
         </div>
       </div>
       <label className="mb-5 block">
-        <span className="field-label">Nội dung câu hỏi *</span>
+        <span className="field-label">{text("Nội dung câu hỏi *")}</span>
         <textarea
           className="field"
           disabled={isSaving}
@@ -64,12 +66,12 @@ export default function QuizQuestionEditor({
               prompt: event.target.value,
             })
           }
-          placeholder="Nhập câu hỏi về thuật toán hoặc cấu trúc dữ liệu..."
+          placeholder={text("Nhập câu hỏi về thuật toán hoặc cấu trúc dữ liệu...")}
         />
       </label>
       <fieldset disabled={isSaving}>
         <legend className="field-label">
-          Lựa chọn và đáp án đúng
+          {text("Lựa chọn và đáp án đúng")}
         </legend>
         <div className="space-y-2">
           {question.options.map((option, optionIndex) => (
@@ -141,12 +143,12 @@ export default function QuizQuestionEditor({
           }
         >
           <Plus size={14} />
-          Thêm lựa chọn
+          {text("Thêm lựa chọn")}
         </button>
       </fieldset>
       <div className="mt-5 grid gap-4 sm:grid-cols-[minmax(0,1fr)_100px]">
         <label>
-          <span className="field-label">Giải thích đáp án</span>
+          <span className="field-label">{text("Giải thích đáp án")}</span>
           <textarea
             className="field"
             disabled={isSaving}
@@ -158,11 +160,11 @@ export default function QuizQuestionEditor({
                 explanation: event.target.value,
               })
             }
-            placeholder="Vì sao đáp án này đúng?"
+            placeholder={text("Vì sao đáp án này đúng?")}
           />
         </label>
         <label>
-          <span className="field-label">Điểm</span>
+          <span className="field-label">{text("Điểm")}</span>
           <input
             type="number"
             className="field"

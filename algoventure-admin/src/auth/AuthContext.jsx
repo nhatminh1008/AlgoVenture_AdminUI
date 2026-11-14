@@ -1,19 +1,23 @@
+import { useText } from "../preferences/preferencesContext";
 import { useEffect, useRef, useState } from "react";
 import { getCurrentUser, login as loginRequest, logout as logoutRequest } from "./authService";
 import BrandMark from "../shared/components/BrandMark";
 import { AuthSessionContext } from "./AuthSessionContext";
 
 export function AuthProvider({ children }) {
+  const text = useText();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sessionNotice, setSessionNotice] = useState("");
   const pendingLogout = useRef(null);
   useEffect(() => {
     let cancelled = false;
     let sessionExpired = false;
-    const expired = () => {
+    const expired = (event) => {
       sessionExpired = true;
       setUser(null);
+      if (event.detail) setSessionNotice(event.detail);
     };
     window.addEventListener("auth-expired", expired);
     getCurrentUser()
@@ -33,10 +37,36 @@ export function AuthProvider({ children }) {
       window.removeEventListener("auth-expired", expired);
     };
   }, []);
+  const userId = user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    let checking = false;
+    async function checkSession() {
+      if (document.hidden || checking || pendingLogout.current) return;
+      checking = true;
+      try {
+        await getCurrentUser();
+      } catch {
+        // apiClient handles expired sessions. Retry transient failures on the next check.
+      } finally {
+        checking = false;
+      }
+    }
+    const timer = window.setInterval(checkSession, 15000);
+    window.addEventListener("focus", checkSession);
+    document.addEventListener("visibilitychange", checkSession);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", checkSession);
+      document.removeEventListener("visibilitychange", checkSession);
+    };
+  }, [userId]);
+
   async function login(email, password) {
     await pendingLogout.current;
     const account = await loginRequest(email, password);
     setError("");
+    setSessionNotice("");
     setUser(account);
     return account;
   }
@@ -55,7 +85,7 @@ export function AuthProvider({ children }) {
     if (profile.email !== user.email) {
       await logout();
       setUser((current) => current?.id === profile.id ? null : current);
-      setError("Đã cập nhật email. Vui lòng đăng nhập lại bằng email mới.");
+      setSessionNotice("Đã cập nhật email. Vui lòng đăng nhập lại bằng email mới.");
       return false;
     }
     setUser((current) => current?.id === profile.id ? profile : current);
@@ -63,15 +93,16 @@ export function AuthProvider({ children }) {
   }
   if (loading)
     return (
-      <div className="app-loading"><BrandMark /><p role="status"><span className="loading-dot" />Đang kiểm tra đăng nhập…</p></div>
+      <div className="app-loading"><BrandMark /><p role="status"><span className="loading-dot" />{text("Đang kiểm tra đăng nhập…")}</p></div>
     );
   return (
-    <AuthSessionContext.Provider value={{ user, login, logout, updateSessionProfile }}>
+    <AuthSessionContext.Provider value={{ user, login, logout, updateSessionProfile, sessionNotice,
+      clearSessionNotice: () => setSessionNotice("") }}>
       {error && (
         <p role="alert" className="bg-red-50 p-4 text-red-700">
           {error}{" "}
           <button onClick={() => setError("")} className="underline">
-            Đóng
+            {text("Đóng")}
           </button>
         </p>
       )}

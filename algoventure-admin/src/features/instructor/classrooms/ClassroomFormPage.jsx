@@ -1,3 +1,4 @@
+import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Check, BookOpen } from "lucide-react";
@@ -6,6 +7,7 @@ import { useClassrooms } from "../workspace/ClassroomContext";
 import { levels, getLevel } from "../../../shared/curriculum/curriculumCatalog";
 
 export default function ClassroomFormPage() {
+  const text = useText();
   const { classId } = useParams();
   const { classes, assignments, quizzes, saveClass, topics, getTopic } = useClassrooms();
   const existing = classes.find((item) => item.id === classId);
@@ -19,18 +21,18 @@ export default function ClassroomFormPage() {
   if (classId && !existing)
     return (
       <div className="panel p-8">
-        <h1 className="text-xl font-bold">Không tìm thấy lớp học</h1>
+        <h1 className="text-xl font-bold">{text("Không tìm thấy lớp học")}</h1>
         <Link className="btn-secondary mt-4" to="/instructor/classes">
-          Về lớp của tôi
+          {text("Về lớp của tôi")}
         </Link>
       </div>
     );
   if (existing?.archivedAt)
     return (
       <div className="panel p-8">
-        <h1 className="text-xl font-bold">Lớp học đã lưu trữ</h1>
+        <h1 className="text-xl font-bold">{text("Lớp học đã lưu trữ")}</h1>
         <Link className="btn-secondary mt-4" to={`/instructor/classes/${classId}`}>
-          Xem lớp học
+          {text("Xem lớp học")}
         </Link>
       </div>
     );
@@ -53,8 +55,8 @@ export default function ClassroomFormPage() {
       navigate(`/instructor/classes/${item.id}`, {
         state: {
           message: classId
-            ? "Đã cập nhật thông tin lớp."
-            : "Đã tạo lớp học.",
+            ? text("Đã cập nhật thông tin lớp.")
+            : text("Đã tạo lớp học."),
         },
       });
     } catch (failure) {
@@ -70,21 +72,21 @@ export default function ClassroomFormPage() {
         to={existing ? `/instructor/classes/${classId}` : "/instructor/classes"}
       >
         <ArrowLeft size={16} />
-        Quay lại
+        {text("Quay lại")}
       </Link>
       <PageHeader
-        title={classId ? "Chỉnh sửa lớp học" : "Tạo lớp học mới"}
+        title={classId ? text("Chỉnh sửa lớp học") : text("Tạo lớp học mới")}
       />
       <div className="class-form-layout">
         <form onSubmit={submit} className="panel space-y-6 p-6 sm:p-8">
           <div>
             <h2 className="text-lg font-bold text-slate-900">
-              Thông tin lớp học
+              {text("Thông tin lớp học")}
             </h2>
           </div>
           <div>
             <label className="field-label" htmlFor="class-name">
-              Tên lớp <span className="text-red-500">*</span>
+              {text("Tên lớp ")} <span className="text-red-500">*</span>
             </label>
             <input
               id="class-name"
@@ -94,12 +96,12 @@ export default function ClassroomFormPage() {
               maxLength={100}
               value={values.name}
               onChange={(e) => field("name", e.target.value)}
-              placeholder="VD: Sorting cơ bản — SE19"
+              placeholder={text("VD: Sorting cơ bản — SE19")}
             />
           </div>
           <div>
             <label className="field-label" htmlFor="class-topic">
-              Chủ đề <span className="text-red-500">*</span>
+              {text("Chủ đề ")} <span className="text-red-500">*</span>
             </label>
             <select
               id="class-topic"
@@ -110,7 +112,7 @@ export default function ClassroomFormPage() {
               onChange={(e) => field("topicId", e.target.value)}
             >
               <option value="" disabled>
-                Chọn chủ đề học tập
+                {text("Chọn chủ đề học tập")}
               </option>
               {topics.map((item) => (
                 <option key={item.id} value={item.id}>
@@ -120,13 +122,13 @@ export default function ClassroomFormPage() {
             </select>
             {topicLocked && (
               <p className="mt-2 text-xs text-slate-500">
-                Không thể đổi chủ đề khi lớp đã có bộ bài.
+                {text("Không thể đổi chủ đề khi lớp đã có bộ bài.")}
               </p>
             )}
           </div>
           <fieldset>
             <legend className="field-label">
-              Mức độ lớp học <span className="text-red-500">*</span>
+              {text("Mức độ lớp học ")} <span className="text-red-500">*</span>
             </legend>
             <div className="grid gap-3 sm:grid-cols-2">
               {levels.map((item) => (
@@ -153,7 +155,7 @@ export default function ClassroomFormPage() {
           </fieldset>
           <div>
             <label className="field-label" htmlFor="class-description">
-              Mô tả và mục tiêu học tập
+              {text("Mô tả và mục tiêu học tập")}
             </label>
             <textarea
               id="class-description"
@@ -162,7 +164,7 @@ export default function ClassroomFormPage() {
               maxLength={500}
               value={values.description}
               onChange={(e) => field("description", e.target.value)}
-              placeholder="Sinh viên sẽ luyện tập những kiến thức và kỹ năng nào?"
+              placeholder={text("Sinh viên sẽ luyện tập những kiến thức và kỹ năng nào?")}
             />
             <p className="mt-1 text-right text-xs text-slate-400">
               {values.description.length}/500
@@ -185,11 +187,11 @@ export default function ClassroomFormPage() {
                   : "/instructor/classes"
               }
             >
-              Hủy
+              {text("Hủy")}
             </Link>
             <button className="btn-primary" type="submit" disabled={isSubmitting}>
               <Check size={17} />
-              {classId ? "Lưu thay đổi" : "Tạo lớp học"}
+              {classId ? text("Lưu thay đổi") : text("Tạo lớp học")}
             </button>
           </div>
         </form>
@@ -198,7 +200,7 @@ export default function ClassroomFormPage() {
             <BookOpen size={24} />
           </span>
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Nội dung của lớp
+            {text("Nội dung của lớp")}
           </p>
           <h2 className="mt-2 text-lg font-bold text-slate-900">
             {topic?.label ?? "Chọn chủ đề để xem bài học"}
@@ -209,7 +211,7 @@ export default function ClassroomFormPage() {
           {topic && (
             <>
               <p className="mb-3 mt-6 text-xs font-semibold text-slate-500">
-                {topic.lessons.length} bài học
+                {topic.lessons.length} {text(" bài học")}
               </p>
               <ul className="space-y-2">
                 {topic.lessons.map(([id, name]) => (

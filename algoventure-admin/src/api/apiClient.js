@@ -1,5 +1,6 @@
 let csrfRequest;
 let sessionVersion = 0;
+let expiredSessionVersion;
 
 function resetSession() {
   sessionVersion++;
@@ -52,14 +53,18 @@ export async function api(path, options = {}) {
   }
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    if (version === sessionVersion) {
-      if (response.status === 401 && path !== "/auth/login") {
+    if (response.status === 401 && path !== "/auth/login") {
+      const notice = ["ACCOUNT_DEACTIVATED", "ACCOUNT_SUSPENDED"].includes(error.code) ? error.message : "";
+      if (version === sessionVersion) {
         resetSession();
-        window.dispatchEvent(new Event("auth-expired"));
+        expiredSessionVersion ??= version;
+        window.dispatchEvent(new CustomEvent("auth-expired", { detail: notice }));
+      } else if (notice && version === expiredSessionVersion) {
+        window.dispatchEvent(new CustomEvent("auth-expired", { detail: notice }));
       }
-      if (response.status === 403 && csrfRequest === tokenRequest) {
-        csrfRequest = undefined;
-      }
+    }
+    if (version === sessionVersion && response.status === 403 && csrfRequest === tokenRequest) {
+      csrfRequest = undefined;
     }
     const failure = new Error(
       error.message || `Yêu cầu thất bại (${response.status}).`,
@@ -67,7 +72,10 @@ export async function api(path, options = {}) {
     failure.status = response.status;
     throw failure;
   }
-  if (path === "/auth/login" || path === "/auth/logout") resetSession();
+  if (path === "/auth/login" || path === "/auth/logout") {
+    expiredSessionVersion = undefined;
+    resetSession();
+  }
   if (response.status === 204) return null;
   if (options.download) return response.blob();
   return response.json();

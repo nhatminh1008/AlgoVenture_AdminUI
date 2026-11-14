@@ -1,3 +1,6 @@
+import { useText } from "../../../preferences/preferencesContext";
+import Pagination from "../../../shared/components/Pagination";
+import { usePagination } from "../../../shared/hooks/usePagination";
 import ClassNavigation from "../classrooms/ClassNavigation";
 import PracticeEvidence from "./PracticeEvidence";
 import { useState } from "react";
@@ -13,6 +16,7 @@ import { exportStudentRows, downloadFile } from "./studentResultsExport";
 import { useClassrooms } from "../workspace/ClassroomContext";
 
 export default function StudentProgressPage() {
+  const text = useText();
   const { getTopic } = useClassrooms();
   const scope = useClassroomScope();
   const [query, setQuery] = useState("");
@@ -23,10 +27,11 @@ export default function StudentProgressPage() {
   );
   const graded = rows.filter((row) => row.score != null);
   const assigned = rows.filter((row) => row.assignedLessons > 0);
+  const pagination = usePagination(rows, scope.selected + query);
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
-        title="Tiến độ học tập"
+        title={text("Tiến độ học tập")}
       >
         <button
           disabled={!rows.length}
@@ -39,21 +44,21 @@ export default function StudentProgressPage() {
           }
         >
           <Download size={16} />
-          Xuất CSV
+          {text("Xuất CSV")}
         </button>
       </PageHeader>
       {scope.classroom && <ClassNavigation classId={scope.classroom.id} active="progress" />}
       <WorkspaceStats items={[
-        { label: "Sinh viên", value: rows.length, icon: <Users /> },
+        { label: text("Sinh viên"), value: rows.length, icon: <Users /> },
         {
-          label: "Điểm quiz trung bình / 100",
+          label: text("Điểm quiz trung bình / 100"),
           value: graded.length
             ? Math.round(graded.reduce((sum, row) => sum + row.score, 0) / graded.length)
             : "—",
           icon: <ChartNoAxesColumn />,
         },
         {
-          label: "Tiến độ trung bình",
+          label: text("Tiến độ trung bình"),
           value: assigned.length
             ? `${Math.round(assigned.reduce((sum, row) => sum + row.progressPercent, 0) / assigned.length)}%`
             : "—",
@@ -63,14 +68,14 @@ export default function StudentProgressPage() {
       <div className="panel overflow-hidden">
         <div className="flex flex-wrap gap-3 border-b border-slate-100 p-5">
           <label className="relative min-w-48 flex-1">
-            <span className="sr-only">Tìm sinh viên</span>
+            <span className="sr-only">{text("Tìm sinh viên")}</span>
             <Search
               size={17}
               className="absolute left-3 top-3.5 text-slate-400"
             />
             <input
               className="field pl-10"
-              placeholder="Tìm tên hoặc email..."
+              placeholder={text("Tìm tên hoặc email...")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -81,15 +86,15 @@ export default function StudentProgressPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Sinh viên</th>
-                <th>Lớp học</th>
-                <th>Chủ đề</th>
-                <th title="Trung bình điểm cao nhất của từng quiz đã nộp">Điểm quiz / 100</th>
-                <th>Tiến độ bài thực hành</th>
+                <th>{text("Sinh viên")}</th>
+                <th>{text("Lớp học")}</th>
+                <th>{text("Chủ đề")}</th>
+                <th title={text("Trung bình điểm cao nhất của từng quiz đã nộp")}>{text("Điểm quiz / 100")}</th>
+                <th>{text("Tiến độ bài thực hành")}</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => {
+              {pagination.items.map((row) => {
                 const classroom = scope.classes.find(
                   (item) => item.id === row.classId,
                 );
@@ -116,18 +121,19 @@ export default function StudentProgressPage() {
                 <tr>
                   <td colSpan={5} className="p-10 text-center text-slate-500">
                     {scope.invalid
-                      ? "Không tìm thấy lớp bạn phụ trách."
+                      ? text("Không tìm thấy lớp bạn phụ trách.")
                       : scope.rows.length
-                        ? "Không tìm thấy sinh viên phù hợp."
-                        : "Lớp chưa có sinh viên và kết quả học tập."}
+                        ? text("Không tìm thấy sinh viên phù hợp.")
+                        : text("Lớp chưa có sinh viên và kết quả học tập.")}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+          <Pagination pagination={pagination} />
         </div>
         <p className="border-t border-slate-100 p-4 text-xs text-slate-500">
-          {rows.length} sinh viên
+          {rows.length} {text(" sinh viên")}
         </p>
       </div>
       {scope.classroom && <PracticeEvidence key={scope.classroom.id} classId={scope.classroom.id} />}

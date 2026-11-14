@@ -63,3 +63,12 @@ input, select, textarea { accent-color: var(--portal-purple); }
 .record-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; white-space: nowrap; background: #f1f5f9; color: #64748b; }
 .record-badge-active { background: #ecfdf3; color: #217a49; }.record-badge-active::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #3c9b60; }
 .record-badge-pending { background: #fff7e5; color: #9a6a1a; }.record-badge-inactive { background: #fff1f2; color: #be4052; }.record-badge-role { background: #eff5ff; color: #3b67b1; }
+
+.preference-toggle { display: inline-flex; gap: 3px; align-items: center; padding: 3px; border: 1px solid var(--portal-line); border-radius: 9px; background: var(--portal-surface); color: var(--portal-ink); }
+.preference-toggle button { padding: 5px 9px; font-size: .8rem; border-radius: 6px; font-weight: 700; cursor: pointer; }
+.preference-toggle button[aria-pressed="true"] { background: #2563eb; color: white; }
+html[data-theme="dark"] { color-scheme: dark; color: #e5edf8; background: #101827; --portal-ink: #e5edf8; --portal-page: #101827; --portal-surface: #18243a; --portal-line: #334460; --portal-muted: #b7c5da; --portal-purple-strong: #96bbff; --color-portal-purple-strong: #96bbff; --portal-lavender: #263857; }
+html[data-theme="dark"] :is(.panel, .field, .btn-secondary, .portal-topbar, .portal-search-dialog, .login-page, .login-form-panel, .data-table th) { background: var(--portal-surface); color: var(--portal-ink); border-color: var(--portal-line); }
+html[data-theme="dark"] :is(.data-table tbody tr:hover, .bg-white, .bg-slate-50) { background: #263857; color: var(--portal-ink); }
+html[data-theme="dark"] :is(.text-slate-500, .text-slate-600, .text-slate-700, .field-label) { color: var(--portal-muted); }
+html[data-theme="dark"] :is(.text-slate-800, .text-slate-900) { color: var(--portal-ink); }

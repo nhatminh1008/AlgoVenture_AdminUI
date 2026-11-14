@@ -1,9 +1,11 @@
+import { useText } from "../../preferences/preferencesContext";
 export function ApiFeedback({ state, message, actionError }) {
+  const text = useText();
   return (
     <>
       {state.loading && (
         <p role="status" className="mb-4 text-sm text-slate-500">
-          Đang tải dữ liệu…
+          {text("Đang tải dữ liệu…")}
         </p>
       )}
       {state.error && (
@@ -11,9 +13,9 @@ export function ApiFeedback({ state, message, actionError }) {
           role="alert"
           className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700"
         >
-          {state.error}{" "}
+          {text(state.error)}{" "}
           <button onClick={state.refresh} className="underline">
-            Thử lại
+            {text("Thử lại")}
           </button>
         </p>
       )}
@@ -22,7 +24,7 @@ export function ApiFeedback({ state, message, actionError }) {
           role="alert"
           className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700"
         >
-          {actionError}
+          {text(actionError)}
         </p>
       )}
       {message && (
@@ -30,7 +32,7 @@ export function ApiFeedback({ state, message, actionError }) {
           role="status"
           className="mb-4 rounded-xl bg-portal-lavender p-4 text-sm text-portal-ink"
         >
-          {message}
+          {text(message)}
         </p>
       )}
     </>

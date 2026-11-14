@@ -1,3 +1,4 @@
+import { useText } from "../preferences/preferencesContext";
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import InstructorLayout from "../layouts/InstructorLayout";
@@ -14,6 +15,7 @@ import { ClassroomProvider } from "../features/instructor/workspace/ClassroomCon
 const ClassroomAnalyticsPage = lazy(() => import("../features/instructor/reports/ClassroomAnalyticsPage"));
 
 function InstructorRoutes() {
+  const text = useText();
   return (
     <ClassroomProvider>
       <Routes>
@@ -42,7 +44,7 @@ function InstructorRoutes() {
             path="analytics"
             element={
               <Suspense
-                fallback={<p role="status">Đang tải phân tích lớp học…</p>}
+                fallback={<p role="status">{text("Đang tải phân tích lớp học…")}</p>}
               >
                 <ClassroomAnalyticsPage />
               </Suspense>

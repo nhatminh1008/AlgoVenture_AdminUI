@@ -1,3 +1,4 @@
+import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { listUsers, saveMyProfile, saveUser } from "./userService";
@@ -16,6 +17,7 @@ const INITIAL_USER_FORM = {
   status: "Active",
 };
 export default function UserManagementPage() {
+  const text = useText();
   const { user, updateSessionProfile } = useAuth();
   const state = useApiData(listUsers, []);
   const [query, setQuery] = useState("");
@@ -45,7 +47,7 @@ export default function UserManagementPage() {
       }
       setForm((current) => (current === form ? null : current));
       await state.refresh();
-      setMessage(isOwnProfile ? "Đã lưu hồ sơ cá nhân." : "Đã lưu tài khoản.");
+      setMessage(isOwnProfile ? text("Đã lưu hồ sơ cá nhân.") : text("Đã lưu tài khoản."));
     } catch (failure) {
       setActionError(failure.message);
     } finally {
@@ -57,7 +59,7 @@ export default function UserManagementPage() {
   return (
     <div className="mx-auto max-w-6xl">
       <AdminPageHeader title="User Management">
-        <Link className="btn-secondary" to="/admin/analytics#admin-activity">Nhật ký hoạt động</Link>
+        <Link className="btn-secondary" to="/admin/analytics#admin-activity">{text("Nhật ký hoạt động")}</Link>
         <button
           className="btn-primary"
           onClick={() => {
@@ -65,7 +67,7 @@ export default function UserManagementPage() {
             setMessage("");
           }}
         >
-          + Thêm tài khoản
+          {text("+ Thêm tài khoản")}
         </button>
       </AdminPageHeader>
       <ApiFeedback state={state} message={message} actionError={actionError} />
@@ -74,10 +76,6 @@ export default function UserManagementPage() {
           form={form}
           isOwnProfile={isOwnProfile}
           isSaving={isSaving}
-          showDeactivatedStatus={
-            form.status === "Deactive" ||
-            state.data.some((user) => user.id === form.id && user.status === "Deactive")
-          }
           onSubmit={save}
           onFieldChange={field}
           onCancel={() => setForm(null)}

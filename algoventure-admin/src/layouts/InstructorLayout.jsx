@@ -1,3 +1,4 @@
+import { useText } from "../preferences/preferencesContext";
 import { useAuth } from "../auth/useAuth";
 import { Outlet } from "react-router-dom";
 import {
@@ -12,32 +13,33 @@ import PortalFrame from "./PortalFrame";
 import "./InstructorLayout.css";
 
 const InstructorLayout = () => {
+  const text = useText();
   const { user, logout } = useAuth();
   const { stateLoadError } = useClassrooms();
   const navItems = [
     {
       path: "/instructor/classes",
-      name: "Lớp của tôi", group: "Giảng dạy",
+      name: text("Lớp của tôi"), group: text("Giảng dạy"),
       icon: <GraduationCap size={20} />,
     },
     {
       path: "/instructor/challenges",
-      name: "Bộ thử thách", group: "Giảng dạy",
+      name: text("Bộ thử thách"), group: text("Giảng dạy"),
       icon: <ClipboardList size={20} />,
     },
     {
       path: "/instructor/progress",
-      name: "Tiến độ học tập", group: "Theo dõi & báo cáo",
+      name: text("Tiến độ học tập"), group: text("Theo dõi & báo cáo"),
       icon: <TrendingUp size={20} />,
     },
     {
       path: "/instructor/analytics",
-      name: "Phân tích lớp học", group: "Theo dõi & báo cáo",
+      name: text("Phân tích lớp học"), group: text("Theo dõi & báo cáo"),
       icon: <BarChart2 size={20} />,
     },
     {
       path: "/instructor/export",
-      name: "Xuất kết quả", group: "Theo dõi & báo cáo",
+      name: text("Xuất kết quả"), group: text("Theo dõi & báo cáo"),
       icon: <Download size={20} />,
     },
   ];

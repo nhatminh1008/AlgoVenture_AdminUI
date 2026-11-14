@@ -1,3 +1,4 @@
+import { useText } from "../../../preferences/preferencesContext";
 import { useSearchParams } from "react-router-dom";
 import { listLessons } from "./lessonService";
 import { useApiData } from "../../../shared/hooks/useApiData";
@@ -6,6 +7,7 @@ import { AdminPageHeader } from "../AdminPageHeader";
 import LessonConfigurationForm from "./LessonConfigurationForm";
 
 export default function LessonConfigurationPage() {
+  const text = useText();
   const state = useApiData(listLessons, []);
   const [params, setParams] = useSearchParams();
   const selected =
@@ -15,7 +17,7 @@ export default function LessonConfigurationPage() {
       <AdminPageHeader title="Level Configuration" />
       <ApiFeedback state={state} />
       <label className="mb-6 block">
-        <span className="field-label">Chọn bài học</span>
+        <span className="field-label">{text("Chọn bài học")}</span>
         <select
           className="field"
           value={selected?.id || ""}

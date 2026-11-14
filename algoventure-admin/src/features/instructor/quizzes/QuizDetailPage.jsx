@@ -1,3 +1,4 @@
+import { useText } from "../../../preferences/preferencesContext";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
@@ -6,6 +7,7 @@ import QuizPreview from "./QuizPreview";
 import { canEditQuiz, getQuizStatusLabel } from "./quizStatus";
 
 export default function QuizDetailPage() {
+  const text = useText();
   const { classId, quizId } = useParams();
   const { classes, quizzes } = useClassrooms();
   const classroom = classes.find((item) => item.id === classId);
@@ -16,16 +18,17 @@ export default function QuizDetailPage() {
     return (
       <div className="panel p-8">
         <h1 className="text-xl font-bold">
-          Không tìm thấy bộ câu hỏi trong lớp này
+          {text("Không tìm thấy bộ câu hỏi trong lớp này")}
         </h1>
         <Link className="btn-secondary mt-4" to="/instructor/classes">
-          Về lớp của tôi
+          {text("Về lớp của tôi")}
         </Link>
       </div>
     );
   return <QuizDetailContent key={quiz.id} classroom={classroom} quiz={quiz} />;
 }
 function QuizDetailContent({ classroom, quiz }) {
+  const text = useText();
   const location = useLocation();
   return (
     <div className="mx-auto max-w-4xl">
@@ -34,7 +37,7 @@ function QuizDetailContent({ classroom, quiz }) {
         className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500"
       >
         <ArrowLeft size={16} />
-        Trắc nghiệm của lớp
+        {text("Trắc nghiệm của lớp")}
       </Link>
       <PageHeader
         title={quiz.title}
@@ -45,7 +48,7 @@ function QuizDetailContent({ classroom, quiz }) {
             to={`/instructor/classes/${classroom.id}/quizzes/${quiz.id}/edit`}
           >
             <Pencil size={16} />
-            Chỉnh sửa bản nháp
+            {text("Chỉnh sửa bản nháp")}
           </Link>
         )}
       </PageHeader>
@@ -62,13 +65,13 @@ function QuizDetailContent({ classroom, quiz }) {
           <span className="font-semibold text-portal-purple-strong">
             {getQuizStatusLabel(quiz)}
           </span>
-          {classroom.archivedAt && <span>Lớp đã lưu trữ</span>}
-          <span>{quiz.questions.length} câu hỏi</span>
+          {classroom.archivedAt && <span>{text("Lớp đã lưu trữ")}</span>}
+          <span>{quiz.questions.length} {text(" câu hỏi")}</span>
           <span>
             {quiz.questions.reduce((sum, question) => sum + question.points, 0)}{" "}
-            điểm
+            {text("điểm")}
           </span>
-          {quiz.due && <span>Hạn: {quiz.due}</span>}
+          {quiz.due && <span>{text("Hạn: ")} {quiz.due}</span>}
         </div>
         {quiz.description && (
           <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-600">

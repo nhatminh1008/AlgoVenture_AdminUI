@@ -1,3 +1,4 @@
+import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { BookOpen, Check } from "lucide-react";
@@ -6,6 +7,7 @@ import { getLevel } from "../../../shared/curriculum/curriculumCatalog";
 import { useClassrooms } from "../workspace/ClassroomContext";
 
 export default function ChallengeEditor({ classes, saveAssignment, initialClassId, existing }) {
+  const text = useText();
   const { getTopic, lessonName } = useClassrooms();
   const navigate = useNavigate();
   const [form, setForm] = useState(
@@ -35,7 +37,7 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
     if (readOnly || isSubmitting) return;
     const status = event.nativeEvent.submitter?.value === "Active" ? "Active" : "Draft";
     if (status === "Active" && !form.due) {
-      setError("Chọn hạn hoàn thành trước khi giao cho lớp.");
+      setError(text("Chọn hạn hoàn thành trước khi giao cho lớp."));
       return;
     }
     setIsSubmitting(true);
@@ -51,8 +53,8 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
       const item = await saveAssignment({ ...form, lessonConfigs, status }, existing?.id);
       const message =
         item.status === "Active"
-          ? "Đã giao bộ thử thách."
-          : "Đã lưu bản nháp.";
+          ? text("Đã giao bộ thử thách.")
+          : text("Đã lưu bản nháp.");
       setError("");
       navigate("/instructor/challenges", { state: { message } });
     } catch (failure) {
@@ -66,24 +68,24 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
       <PageHeader
         title={
           readOnly && existing
-            ? "Chi tiết bộ thử thách"
+            ? text("Chi tiết bộ thử thách")
             : existing
-              ? "Chỉnh sửa bản nháp"
-              : "Tạo bộ thử thách"
+              ? text("Chỉnh sửa bản nháp")
+              : text("Tạo bộ thử thách")
         }
       >
-        <Link to="/instructor/challenges" className="btn-secondary">Về bộ thử thách</Link>
+        <Link to="/instructor/challenges" className="btn-secondary">{text("Về bộ thử thách")}</Link>
       </PageHeader>
       {!classes.length && (
         <p className="panel mb-6 p-6 text-sm">
-          Bạn cần{" "}
+          {text("Bạn cần")}{" "}
           <Link
             to="/instructor/classes/new"
             className="font-semibold text-portal-purple-strong"
           >
-            tạo lớp học
+            {text("tạo lớp học")}
           </Link>{" "}
-          trước khi giao bài.
+          {text("trước khi giao bài.")}
         </p>
       )}
       {classId && !classroom && classes.length > 0 && (
@@ -91,15 +93,14 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
           role="alert"
           className="mb-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-800"
         >
-          Lớp không tồn tại trong danh sách bạn phụ trách. Hãy chọn một lớp
-          khác.
+          {text("Lớp không tồn tại trong danh sách bạn phụ trách. Hãy chọn một lớp khác.")}
         </p>
       )}
       <form onSubmit={save} className="challenge-editor-layout">
         <section className="panel space-y-5 p-6">
-          <h2 className="font-bold text-slate-900">Thông tin bộ bài</h2>
+          <h2 className="font-bold text-slate-900">{text("Thông tin bộ bài")}</h2>
           <label className="block">
-            <span className="field-label">Lớp nhận bài</span>
+            <span className="field-label">{text("Lớp nhận bài")}</span>
             <select
               className="field"
               value={classId}
@@ -111,14 +112,14 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
               }}
             >
               <option value="" disabled>
-                Chọn lớp
+                {text("Chọn lớp")}
               </option>
               {!classroom && classId && (
-                <option value={classId}>Lớp không khả dụng</option>
+                <option value={classId}>{text("Lớp không khả dụng")}</option>
               )}
               {classes.map((item) => (
                 <option key={item.id} value={item.id} disabled={Boolean(item.archivedAt)}>
-                  {item.name}{item.archivedAt ? " (Đã lưu trữ)" : ""}
+                  {item.name}{item.archivedAt ? text(" (Đã lưu trữ)") : ""}
                 </option>
               ))}
             </select>
@@ -130,18 +131,18 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
           )}
           <fieldset disabled={readOnly || isSubmitting} className="space-y-5">
             <label className="block">
-              <span className="field-label">Tên bộ thử thách *</span>
+              <span className="field-label">{text("Tên bộ thử thách *")}</span>
               <input
                 className="field"
                 required
                 maxLength={100}
                 value={form.title}
                 onChange={(e) => update("title", e.target.value)}
-                placeholder="VD: Luyện tập Sorting — Tuần 1"
+                placeholder={text("VD: Luyện tập Sorting — Tuần 1")}
               />
             </label>
             <label className="block">
-              <span className="field-label">Hướng dẫn cho sinh viên</span>
+              <span className="field-label">{text("Hướng dẫn cho sinh viên")}</span>
               <textarea
                 rows={3}
                 className="field"
@@ -152,7 +153,7 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
             </label>
             <div className="grid gap-4 sm:grid-cols-2">
               <label>
-                <span className="field-label">Hạn hoàn thành</span>
+                <span className="field-label">{text("Hạn hoàn thành")}</span>
                 <input
                   type="date"
                   className="field"
@@ -164,10 +165,10 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
           </fieldset>
           {readOnly && (
             <p className="text-xs leading-5 text-slate-500">
-              {existing?.archivedAt ? "Bộ thử thách đã lưu trữ."
-                : classroom?.archivedAt ? "Lớp học đã lưu trữ."
-                  : existing?.status === "Closed" ? "Bộ thử thách đã đóng."
-                    : "Bộ bài đã công bố. Không thể chỉnh sửa nội dung."}
+              {existing?.archivedAt ? text("Bộ thử thách đã lưu trữ.")
+                : classroom?.archivedAt ? text("Lớp học đã lưu trữ.")
+                  : existing?.status === "Closed" ? text("Bộ thử thách đã đóng.")
+                    : text("Bộ bài đã công bố. Không thể chỉnh sửa nội dung.")}
             </p>
           )}
           {error && (
@@ -180,20 +181,20 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
           )}
           {!readOnly && (
             <div className="flex flex-wrap gap-3">
-              <button type="submit" name="status" value="Draft" className="btn-secondary" disabled={!classroom || isSubmitting}>Lưu bản nháp</button>
-              <button type="submit" name="status" value="Active" className="btn-primary" disabled={!classroom || isSubmitting}><Check size={17} />{isSubmitting ? "Đang lưu…" : "Giao cho lớp"}</button>
+              <button type="submit" name="status" value="Draft" className="btn-secondary" disabled={!classroom || isSubmitting}>{text("Lưu bản nháp")}</button>
+              <button type="submit" name="status" value="Active" className="btn-primary" disabled={!classroom || isSubmitting}><Check size={17} />{isSubmitting ? text("Đang lưu…") : text("Giao cho lớp")}</button>
             </div>
           )}
         </section>
         <section className="panel p-6">
           <h2 className="instructor-section-title instructor-lesson-heading">
             <BookOpen size={19} />
-            Chọn bài học{" "}
+            {text("Chọn bài học")}{" "}
             <span className="ml-auto text-xs font-normal text-slate-500">
-              {form.lessonIds.length} đã chọn
+              {form.lessonIds.length} {text(" đã chọn")}
             </span>
           </h2>
-          {!readOnly && topic && <button disabled={isSubmitting} type="button" className="mb-3 text-sm font-semibold text-portal-purple-strong" onClick={() => update("lessonIds", form.lessonIds.length === topic.lessons.length ? [] : topic.lessons.map(([id]) => id))}>{form.lessonIds.length === topic.lessons.length ? "Bỏ chọn tất cả" : "Chọn tất cả bài"}</button>}
+          {!readOnly && topic && <button disabled={isSubmitting} type="button" className="mb-3 text-sm font-semibold text-portal-purple-strong" onClick={() => update("lessonIds", form.lessonIds.length === topic.lessons.length ? [] : topic.lessons.map(([id]) => id))}>{form.lessonIds.length === topic.lessons.length ? text("Bỏ chọn tất cả") : text("Chọn tất cả bài")}</button>}
           <fieldset disabled={readOnly || isSubmitting} className="space-y-2">
             {topic?.lessons.map(([id, name]) => (
               <label
@@ -221,28 +222,28 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
             const config = form.lessonConfigs?.[id];
             const configure = (field, value) => update("lessonConfigs", { ...form.lessonConfigs, [id]: { ...config, [field]: value } });
             return <fieldset key={id} disabled={readOnly || isSubmitting} className="mt-4 space-y-3 rounded-xl border border-slate-200 p-4">
-              <legend className="px-2 text-sm font-bold">Cấu hình {lessonName(id)}</legend>
+              <legend className="px-2 text-sm font-bold">{text("Cấu hình ")} {lessonName(id)}</legend>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(config)} onChange={event => {
                 const next = { ...form.lessonConfigs };
                 if (event.target.checked) next[id] = { timeLimitSeconds: 300, difficulty: "easy" };
                 else delete next[id];
                 update("lessonConfigs", next);
-              }} />Tùy chỉnh cho bài giao này</label>
+              }} />{text("Tùy chỉnh cho bài giao này")}</label>
               {config && <>
-                <label className="block"><span className="field-label">Thời gian làm bài (giây)</span><input className="field" type="number" min="30" max="3600" required value={config.timeLimitSeconds} onChange={e => configure("timeLimitSeconds", Number(e.target.value))} /></label>
-                <label className="block"><span className="field-label">Độ khó</span><select className="field" value={config.difficulty} onChange={e => configure("difficulty", e.target.value)}><option value="easy">Dễ</option><option value="medium">Vừa</option><option value="hard">Khó</option></select></label>
-                <label className="block"><span className="field-label">Chuỗi số ban đầu</span><input className="field" value={Array.isArray(config.input) ? config.input.join(", ") : config.input ?? ""} placeholder="VD: 8, 3, 6, 2, 5" onChange={e => {
+                <label className="block"><span className="field-label">{text("Thời gian làm bài (giây)")}</span><input className="field" type="number" min="30" max="3600" required value={config.timeLimitSeconds} onChange={e => configure("timeLimitSeconds", Number(e.target.value))} /></label>
+                <label className="block"><span className="field-label">{text("Độ khó")}</span><select className="field" value={config.difficulty} onChange={e => configure("difficulty", e.target.value)}><option value="easy">{text("Dễ")}</option><option value="medium">{text("Vừa")}</option><option value="hard">{text("Khó")}</option></select></label>
+                <label className="block"><span className="field-label">{text("Chuỗi số ban đầu")}</span><input className="field" value={Array.isArray(config.input) ? config.input.join(", ") : config.input ?? ""} placeholder="VD: 8, 3, 6, 2, 5" onChange={e => {
                   const next = { ...config };
                   if (e.target.value.trim()) next.input = e.target.value;
                   else delete next.input;
                   update("lessonConfigs", { ...form.lessonConfigs, [id]: next });
-                }} /><span className="mt-1 block text-xs text-slate-500">2–8 số nguyên từ -99 đến 99. Để trống để tạo đề theo độ khó. Cấu hình được giữ cố định sau khi giao.</span></label>
+                }} /><span className="mt-1 block text-xs text-slate-500">{text("2–8 số nguyên từ -99 đến 99. Để trống để tạo đề theo độ khó. Cấu hình được giữ cố định sau khi giao.")}</span></label>
               </>}
             </fieldset>;
           })}
           {!topic && (
             <p className="py-6 text-center text-sm text-slate-400">
-              Chọn lớp để xem bài học.
+              {text("Chọn lớp để xem bài học.")}
             </p>
           )}
         </section>

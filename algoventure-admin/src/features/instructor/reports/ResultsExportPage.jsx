@@ -1,3 +1,4 @@
+import { useText } from "../../../preferences/preferencesContext";
 import ClassNavigation from "../classrooms/ClassNavigation";
 import { useState } from "react";
 import { Download, FileDown, FileSpreadsheet, Braces } from "lucide-react";
@@ -7,6 +8,7 @@ import { useClassroomScope } from "../classrooms/useClassroomScope";
 import { downloadFile, exportStudentRows } from "./studentResultsExport";
 
 export default function ResultsExportPage() {
+  const text = useText();
   const scope = useClassroomScope();
   const [format, setFormat] = useState("CSV");
   const [message, setMessage] = useState("");
@@ -35,23 +37,23 @@ export default function ResultsExportPage() {
         "class-results.json",
         "application/json",
       );
-    setMessage("Đã tải báo cáo.");
+    setMessage(text("Đã tải báo cáo."));
   }
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader title="Xuất kết quả" />
+      <PageHeader title={text("Xuất kết quả")} />
       {scope.classroom && <ClassNavigation classId={scope.classroom.id} active="export" />}
       <div className="instructor-export">
       <section className="panel space-y-6 p-6 sm:p-8">
         <div>
-          <h2 className="font-bold text-slate-900">Phạm vi báo cáo</h2>
+          <h2 className="font-bold text-slate-900">{text("Phạm vi báo cáo")}</h2>
         </div>
         <div>
-          <p className="field-label">Lớp học</p>
+          <p className="field-label">{text("Lớp học")}</p>
           <ClassroomFilter scope={scope} />
         </div>
         <fieldset>
-          <legend className="field-label">Định dạng tệp</legend>
+          <legend className="field-label">{text("Định dạng tệp")}</legend>
           <div className="flex gap-4">
             {["CSV", "JSON"].map((value) => (
               <label
@@ -73,14 +75,14 @@ export default function ResultsExportPage() {
             ))}
           </div>
         </fieldset>
-        {(!scope.rows.length || scope.invalid) && <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">{scope.invalid ? "Lớp không khả dụng." : "Chưa có dữ liệu để xuất."}</p>}
+        {(!scope.rows.length || scope.invalid) && <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">{scope.invalid ? text("Lớp không khả dụng.") : text("Chưa có dữ liệu để xuất.")}</p>}
         <button
           className="btn-primary w-full"
           disabled={!scope.rows.length}
           onClick={handleExport}
         >
           <Download size={17} />
-          Tải báo cáo {format}
+          {text("Tải báo cáo ")} {format}
         </button>
         {message && (
           <p role="status" className="text-sm text-portal-purple-strong">
@@ -91,7 +93,7 @@ export default function ResultsExportPage() {
       <aside className="instructor-export-preview">
         <FileDown size={36} strokeWidth={1.5} />
         <h2>class-results.{format.toLowerCase()}</h2>
-        <dl><div><dt>Sinh viên</dt><dd>{scope.rows.length}</dd></div><div><dt>Lớp học</dt><dd>{scope.invalid ? 0 : scope.classroom ? 1 : scope.classes.length}</dd></div></dl>
+        <dl><div><dt>{text("Sinh viên")}</dt><dd>{scope.rows.length}</dd></div><div><dt>{text("Lớp học")}</dt><dd>{scope.invalid ? 0 : scope.classroom ? 1 : scope.classes.length}</dd></div></dl>
         <div className="instructor-export-columns">{["Họ tên", "Email", "Lớp học", "Điểm quiz", "Tiến độ"].map((label) => <span key={label}>{label}</span>)}</div>
       </aside>
       </div>

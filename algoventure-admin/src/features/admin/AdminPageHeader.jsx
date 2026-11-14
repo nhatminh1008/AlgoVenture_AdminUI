@@ -1,3 +1,4 @@
+import { useText } from "../../preferences/preferencesContext";
 const pageCopy = {
   "User Management": ["Quản lý tài khoản", "Tạo tài khoản, phân quyền và cập nhật trạng thái."],
   "Classroom Management": ["Quản lý lớp học", "Theo dõi các lớp học, phân công giảng viên và quản lý thành viên."],
@@ -9,10 +10,11 @@ const pageCopy = {
 };
 
 export function AdminPageHeader({ title, description, children }) {
+  const text = useText();
   const [label, subtitle] = pageCopy[title] || [title, description];
   return (
     <header className="admin-page-header">
-      <div className="page-heading"><h1>{label}</h1>{(description || subtitle) && <p>{description || subtitle}</p>}</div>
+      <div className="page-heading"><h1>{text(label)}</h1>{(description || subtitle) && <p>{text(description || subtitle)}</p>}</div>
       {children && <div className="page-header-actions">{children}</div>}
     </header>
   );
