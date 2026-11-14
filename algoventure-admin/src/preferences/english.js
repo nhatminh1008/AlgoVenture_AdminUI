@@ -1,4 +1,10 @@
 export const english = {
+  "Tài khoản của bạn không có quyền truy cập trang này.": "Your account does not have access to this portal.",
+  "Vui lòng nhập họ tên.": "Enter your full name.",
+  "Dịch vụ xác thực email chưa sẵn sàng. Vui lòng thử lại sau.": "Email verification is unavailable. Try again later.",
+  "Mã hoặc liên kết xác thực không hợp lệ.": "The verification code or link is invalid.",
+  "Mã hoặc liên kết xác thực đã hết hạn. Vui lòng gửi lại mã.": "The verification code or link has expired. Request a new code.",
+  "Bạn đã vượt quá số lần thử. Vui lòng gửi lại mã.": "Too many attempts. Request a new code.",
   "Mật khẩu phải có ít nhất 6 ký tự.": "Password must contain at least 6 characters.",
   "Mật khẩu phải có ít nhất một chữ hoa và một ký tự đặc biệt.": "Password must contain an uppercase letter and a special character.",
   "Mật khẩu tối đa 72 byte UTF-8.": "Password must be at most 72 UTF-8 bytes.",

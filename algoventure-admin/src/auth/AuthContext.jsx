@@ -4,6 +4,9 @@ import { getCurrentUser, login as loginRequest, logout as logoutRequest } from "
 import BrandMark from "../shared/components/BrandMark";
 import { AuthSessionContext } from "./AuthSessionContext";
 
+const portalAccessDenied = "Tài khoản của bạn không có quyền truy cập trang này.";
+const hasPortalAccess = (account) => ["admin", "instructor"].includes(account?.role);
+
 export function AuthProvider({ children }) {
   const text = useText();
   const [user, setUser] = useState(null);
@@ -22,7 +25,12 @@ export function AuthProvider({ children }) {
     window.addEventListener("auth-expired", expired);
     getCurrentUser()
       .then((account) => {
-        if (!cancelled && !sessionExpired) setUser(account);
+        if (cancelled || sessionExpired) return;
+        if (!hasPortalAccess(account)) {
+          setSessionNotice(portalAccessDenied);
+          return;
+        }
+        setUser(account);
       })
       .catch((failure) => {
         if (!cancelled && !sessionExpired && failure.status !== 401) {
@@ -65,6 +73,10 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     await pendingLogout.current;
     const account = await loginRequest(email, password);
+    if (!hasPortalAccess(account)) {
+      await logoutRequest().catch(() => {});
+      throw new Error(portalAccessDenied);
+    }
     setError("");
     setSessionNotice("");
     setUser(account);

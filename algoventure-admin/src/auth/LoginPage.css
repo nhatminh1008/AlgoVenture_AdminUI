@@ -263,6 +263,14 @@
   font-size: 14px;
   line-height: 1.5;
 }
+.login-notice { margin-top: 20px; }
+.login-auth-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 14px;
+}
 .login-link {
   width: fit-content;
   color: #e5efff;

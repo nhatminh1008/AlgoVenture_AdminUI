@@ -1,3 +1,7 @@
+export function passwordErrors(password, confirmation) {
+  return validatePassword(password, confirmation, "password", 10);
+}
+
 export function resetPasswordErrors(password, confirmation) {
   return validatePassword(password, confirmation, "newPassword", 6, true);
 }
@@ -13,6 +17,15 @@ function validatePassword(password, confirmation, name, minimum, requireComplexi
   }
   if (password !== confirmation) fields.confirmation = "Mật khẩu xác nhận không khớp.";
   return Object.keys(fields).length ? { fields } : null;
+}
+
+export function registrationProof(hash) {
+  const params = new URLSearchParams(hash.slice(1));
+  const registrationId = params.get("registrationId");
+  const token = params.get("token");
+  if (!/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(registrationId ?? "")) return null;
+  if (!/^[\w-]{43}$/.test(token ?? "")) return null;
+  return { registrationId, token };
 }
 
 export function maskEmail(email) {

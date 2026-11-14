@@ -53,7 +53,7 @@ export function NewPasswordFields({ passwordName = "password", hint, errors, pas
     <>
       <PasswordField isNew markRequired label={text("Mật khẩu mới", "New password")} name={passwordName}
         value={password} onChange={(event) => setPassword(event.target.value)} error={errors?.[passwordName]}
-        hint={hint} />
+        hint={hint ?? text("Ít nhất 10 ký tự, tối đa 72 byte UTF-8.", "At least 10 characters and at most 72 UTF-8 bytes.")} />
       <PasswordField isNew markRequired label={text("Xác nhận mật khẩu", "Confirm password")} name="confirmation"
         value={confirmation} onChange={(event) => setConfirmation(event.target.value)} error={errors?.confirmation} />
     </>

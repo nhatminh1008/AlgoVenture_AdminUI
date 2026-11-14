@@ -19,6 +19,19 @@ function post(path, body) {
   return api("/auth" + path, { method: "POST", body });
 }
 
+export function startRegistration(email) {
+  return post("/registrations", { email: email.trim() });
+}
+
+export function resendRegistration(id) {
+  return post(`/registrations/${encodeURIComponent(id)}/resend`);
+}
+
+export function verifyRegistration({ registrationId, otp, token, fullName, password }) {
+  const proof = token ? { token } : { otp };
+  return post("/registrations/verify", { registrationId, ...proof, fullName: fullName.trim(), password });
+}
+
 export function requestResetCode(email, resend = false) {
   return post(resend ? "/password-reset-otp-resends" : "/password-reset-otp-requests", { email: email.trim() });
 }

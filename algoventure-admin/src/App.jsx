@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthContext";
 import { RequireRole, HomeRedirect } from "./auth/RequireRole";
 import LoginPage from "./auth/LoginPage";
+import { RegisterPage, VerifyEmailPage } from "./auth/RegistrationPages";
 import ForgotPasswordPage from "./auth/ForgotPasswordPage";
 import ProfilePage from "./features/profile/ProfilePage";
 import { adminRoutes } from "./routes/AdminRoutes";
@@ -24,6 +25,8 @@ function App() {
         >
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             {adminRoutes}
