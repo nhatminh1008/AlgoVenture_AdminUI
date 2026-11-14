@@ -15,7 +15,7 @@ import "./InstructorLayout.css";
 const InstructorLayout = () => {
   const text = useText();
   const { user, logout } = useAuth();
-  const { stateLoadError } = useClassrooms();
+  const stateLoadError = useClassrooms()?.stateLoadError;
   const navItems = [
     {
       path: "/instructor/classes",
