@@ -9,6 +9,7 @@ import { useAuth } from "../../../auth/useAuth";
 import { createCurriculum } from "../../../shared/curriculum/curriculumCatalog";
 import { useApiData } from "../../../shared/hooks/useApiData";
 import {
+  closeQuiz,
   deleteQuiz,
   getInstructorState,
   saveAssignment,
@@ -41,6 +42,13 @@ export function ClassroomProvider({ children }) {
       };
     });
     return result;
+  }
+  async function markQuizClosed(id) {
+    await closeQuiz(id);
+    setData((previous) => ({
+      ...previous,
+      quizzes: previous.quizzes.map((quiz) => quiz.id === id ? { ...quiz, status: "Closed" } : quiz),
+    }));
   }
   async function removeQuiz(id) {
     await deleteQuiz(id);
@@ -75,6 +83,7 @@ export function ClassroomProvider({ children }) {
         saveClass: (v, id) => save("classes", saveClassroom, v, id),
         saveAssignment: (v, id) => save("assignments", saveAssignment, v, id),
         saveQuiz: (v, id) => save("quizzes", saveQuiz, v, id),
+        markQuizClosed,
         removeQuiz,
       }}
     >
