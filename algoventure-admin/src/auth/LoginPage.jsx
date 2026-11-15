@@ -6,18 +6,14 @@ import { loginDestination } from "./authRoutes";
 import "./LoginPage.css";
 import BrandMark from "../shared/components/BrandMark";
 import LoginArtwork from "./LoginArtwork";
-import { usePreferences, useText } from "../preferences/preferencesContext";
+import { useText } from "../preferences/preferencesContext";
+import LanguageToggle from "../preferences/LanguageToggle";
 
 const portalTitle = "AlgoVenture's Web Portal";
-const loginLanguages = [
-  { value: "vi", label: "Tiếng Việt" },
-  { value: "en", label: "English" },
-];
 
 export default function LoginPage() {
   const { user, login, sessionNotice, clearSessionNotice } = useAuth();
   const location = useLocation();
-  const { language, setLanguage } = usePreferences();
   const text = useText();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,12 +36,9 @@ export default function LoginPage() {
   }
   return (
     <main className="login-page">
-      <div className="login-language" role="group" aria-label={text("Ngôn ngữ", "Language")}>
+      <div className="login-language">
         <Globe size={17} aria-hidden="true" />
-        {loginLanguages.map(({ value, label }) => (
-          <button key={value} type="button" lang={value} aria-pressed={language === value}
-            onClick={() => setLanguage(value)}>{label}</button>
-        ))}
+        <LanguageToggle fullLabels />
       </div>
       <section className="login-access" aria-labelledby="login-title">
         <LoginArtwork />

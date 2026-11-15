@@ -18,7 +18,16 @@
   color: #c5d8f6;
 }
 .login-language > svg { margin-inline-end: 4px; }
-.login-language > button {
+.login-language .language-toggle {
+  --language-gap: 4px;
+  --language-inset: 0px;
+  --language-thumb-radius: 999px;
+  --language-thumb-bg: light-dark(#dceaff, var(--color-brand));
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+.login-language .language-toggle button {
   min-height: 36px;
   padding-inline: 12px;
   border-radius: 999px;
@@ -27,12 +36,11 @@
   white-space: nowrap;
   cursor: pointer;
 }
-.login-language > button:hover { background: #ffffff14; color: #fff; }
-.login-language > button[aria-pressed="true"] {
-  background: light-dark(#dceaff, var(--color-brand));
+.login-language .language-toggle button[aria-pressed="false"]:hover { background: #ffffff14; color: #fff; }
+.login-language .language-toggle button[aria-pressed="true"] {
   color: light-dark(#193c73, #fff);
 }
-.login-language > button:focus-visible { outline-color: #b9d1ff; outline-offset: 2px; }
+.login-language .language-toggle button:focus-visible { outline-color: #b9d1ff; outline-offset: 2px; }
 .login-access {
   position: relative;
   display: grid;

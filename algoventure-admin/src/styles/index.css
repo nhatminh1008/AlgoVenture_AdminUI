@@ -185,8 +185,8 @@ input, select, textarea { accent-color: var(--portal-purple); }
   z-index: -1;
   inset: var(--language-inset) auto var(--language-inset) var(--language-inset);
   width: calc((100% - 2 * var(--language-inset) - var(--language-gap)) / 2);
-  border-radius: 6px;
-  background: var(--color-brand);
+  border-radius: var(--language-thumb-radius, 6px);
+  background: var(--language-thumb-bg, var(--color-brand));
   content: "";
   transition: translate .25s cubic-bezier(.22, .8, .3, 1);
 }
