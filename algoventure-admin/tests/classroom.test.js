@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { createCurriculum, topics as portalTopics } from "../src/shared/curriculum/curriculumCatalog.js";
+import { createCurriculum } from "../src/shared/curriculum/curriculumCatalog.js";
 import {
   csvCell,
   exportStudentRows,
@@ -18,15 +18,18 @@ test("instructor resolves lessons from the backend curriculum, including Matrix"
       ].map((path) => new URL(path, import.meta.url)).find((path) => existsSync(path));
   assert.ok(backendCatalog, "Backend curriculum not found. Set BACKEND_CURRICULUM_PATH to curriculum.json.");
   const backend = JSON.parse(readFileSync(backendCatalog, "utf8"));
-  const { topics, getTopic, lessonName } = createCurriculum(backend);
+  const { topics, lessonName } = createCurriculum(backend);
   const ids = topics.flatMap((topic) => topic.lessons.map(([id]) => id));
   const legacyIds = ["stack", "queue", "tree-traversal", "bst"];
-  assert.deepEqual(portalTopics, backend, "Portal topic metadata, lesson labels and order must match the backend");
+  assert.deepEqual(topics, backend, "Portal must use the backend topic metadata, lesson labels and order");
   assert.equal(new Set(ids).size, ids.length);
   assert.equal(ids.length, 34);
   assert.deepEqual(ids.filter((id) => legacyIds.includes(id)), []);
-  assert.deepEqual(getTopic("matrix").lessons.map(([id]) => id),
-    ["matrix", "matrix-transpose", "matrix-spiral", "matrix-bfs", "matrix-dfs"]);
+  assert.deepEqual(topics.map(({ label }) => label), ["Array", "Linked List", "Stack", "Queue", "Tree", "Graph"]);
+  assert.deepEqual(topics.find(({ id }) => id === "array").lessons.map(([id]) => id), [
+    "linear", "binary", "bubble", "selection", "insertion", "merge", "quick",
+    "matrix", "matrix-transpose", "matrix-spiral", "matrix-bfs", "matrix-dfs",
+  ]);
   assert.equal(lessonName("matrix-bfs"), "BFS trên lưới");
   assert.equal(lessonName("stack"), "stack");
   for (const id of ['stack-push', 'stack-pop', 'stack-peek', 'queue-enqueue', 'queue-dequeue', 'queue-peek', 'tree-dfs', 'tree-bfs'])

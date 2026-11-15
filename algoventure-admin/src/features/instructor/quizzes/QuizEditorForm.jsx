@@ -12,7 +12,7 @@ import QuizQuestionEditor from "./QuizQuestionEditor";
 
 export default function QuizEditorForm({ classroom, existing }) {
   const text = useText();
-  const { saveQuiz, getTopic } = useClassrooms();
+  const { saveQuiz } = useClassrooms();
   const navigate = useNavigate();
   const [form, setForm] = useState(() =>
     existing
@@ -155,9 +155,6 @@ export default function QuizEditorForm({ classroom, existing }) {
           <div className="min-w-0 space-y-5">
             <section className="panel space-y-5 p-6">
               <div className="flex flex-wrap gap-2 text-xs">
-                <span className="rounded-full bg-portal-lavender px-3 py-1 font-semibold text-portal-purple-strong">
-                  {getTopic(classroom.topicId)?.label ?? classroom.topicId}
-                </span>
                 <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
                   {text("Bản nháp · Một đáp án đúng/câu")}
                 </span>

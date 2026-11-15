@@ -13,11 +13,9 @@ import { WorkspaceStats } from "../../../shared/components/WorkspaceStats";
 import ClassroomFilter from "../classrooms/ClassroomFilter";
 import { useClassroomScope } from "../classrooms/useClassroomScope";
 import { exportStudentRows, downloadFile } from "./studentResultsExport";
-import { useClassrooms } from "../workspace/ClassroomContext";
 
 export default function StudentProgressPage() {
   const text = useText();
-  const { getTopic } = useClassrooms();
   const scope = useClassroomScope();
   const [query, setQuery] = useState("");
   const rows = scope.rows.filter((row) =>
@@ -88,7 +86,6 @@ export default function StudentProgressPage() {
               <tr>
                 <th>{text("Sinh viên")}</th>
                 <th>{text("Lớp học")}</th>
-                <th>{text("Chủ đề")}</th>
                 <th title={text("Trung bình điểm cao nhất của từng quiz đã nộp")}>{text("Điểm quiz / 100")}</th>
                 <th>{text("Tiến độ bài thực hành")}</th>
               </tr>
@@ -111,7 +108,6 @@ export default function StudentProgressPage() {
                         {classroom.name}
                       </Link>
                     </td>
-                    <td>{getTopic(classroom.topicId)?.label ?? classroom.topicId}</td>
                     <td><strong className="text-portal-ink">{row.score ?? "—"}</strong></td>
                     <td><ProgressMeter completed={row.completedLessons} total={row.assignedLessons} percent={row.progressPercent} /></td>
                   </tr>
@@ -119,7 +115,7 @@ export default function StudentProgressPage() {
               })}
               {!rows.length && (
                 <tr>
-                  <td colSpan={5} className="p-10 text-center text-slate-500">
+                  <td colSpan={4} className="p-10 text-center text-slate-500">
                     {scope.invalid
                       ? text("Không tìm thấy lớp bạn phụ trách.")
                       : scope.rows.length

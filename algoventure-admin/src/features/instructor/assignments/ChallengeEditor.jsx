@@ -4,11 +4,17 @@ import { Link, useNavigate } from "react-router-dom";
 import { BookOpen, Check } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
 import { getLevel } from "../../../shared/curriculum/curriculumCatalog";
+import { TopicPicker } from "../../../shared/components/TopicPicker";
 import { useClassrooms } from "../workspace/ClassroomContext";
+
+const MAX_LESSONS = 25;
+const lessonsWithStartingValues = new Set([
+  "bubble", "selection", "insertion", "merge", "quick", "stack-push", "stack-pop", "stack-peek",
+]);
 
 export default function ChallengeEditor({ classes, saveAssignment, initialClassId, existing }) {
   const text = useText();
-  const { getTopic, lessonName } = useClassrooms();
+  const { topics, lessonName } = useClassrooms();
   const navigate = useNavigate();
   const [form, setForm] = useState(
     () =>
@@ -23,18 +29,31 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
   );
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [topicIds, setTopicIds] = useState(() => topics
+    .filter((topic) => topic.lessons.some(([id]) => existing?.lessonIds.includes(id)))
+    .map((topic) => topic.id));
   const classId = form.classId;
   const classroom = classes.find(item => item.id === classId);
-  const topic = classroom && getTopic(classroom.topicId);
+  const lessonGroups = topics.filter((topic) => topicIds.includes(topic.id));
+  const availableLessonIds = lessonGroups.flatMap((topic) => topic.lessons.map(([id]) => id));
+  const selectedLessonIds = new Set(form.lessonIds);
+  const allSelected = availableLessonIds.every((id) => selectedLessonIds.has(id));
   const archived = Boolean(classroom?.archivedAt || existing?.archivedAt);
   const readOnly = archived || Boolean(existing && existing.status !== "Draft");
   function update(field, value) {
     setForm((previous) => ({ ...previous, [field]: value }));
     setError("");
   }
+  function selectTopics(ids) {
+    setTopicIds(ids);
+    const allowed = new Set(topics.filter((topic) => ids.includes(topic.id))
+      .flatMap((topic) => topic.lessons.map(([id]) => id)));
+    setForm((previous) => ({ ...previous, lessonIds: previous.lessonIds.filter((id) => allowed.has(id)) }));
+    setError("");
+  }
   async function save(event) {
     event.preventDefault();
-    if (readOnly || isSubmitting) return;
+    if (readOnly || isSubmitting || !classroom || !form.lessonIds.length) return;
     const status = event.nativeEvent.submitter?.value === "Active" ? "Active" : "Draft";
     if (status === "Active" && !form.due) {
       setError(text("Chọn hạn hoàn thành trước khi giao cho lớp."));
@@ -108,6 +127,7 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
               required
               onChange={e => {
                 setForm(previous => ({ ...previous, classId: e.target.value, lessonIds: [], lessonConfigs: {} }));
+                setTopicIds([]);
                 setError("");
               }}
             >
@@ -126,7 +146,7 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
           </label>
           {classroom && (
             <p className="rounded-lg bg-portal-lavender p-3 text-xs text-portal-ink">
-              {topic?.label ?? classroom.topicId} · {getLevel(classroom.level).label}
+              {getLevel(classroom.level).label}
             </p>
           )}
           <fieldset disabled={readOnly || isSubmitting} className="space-y-5">
@@ -181,45 +201,58 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
           )}
           {!readOnly && (
             <div className="flex flex-wrap gap-3">
-              <button type="submit" name="status" value="Draft" className="btn-secondary" disabled={!classroom || isSubmitting}>{text("Lưu bản nháp")}</button>
-              <button type="submit" name="status" value="Active" className="btn-primary" disabled={!classroom || isSubmitting}><Check size={17} />{isSubmitting ? text("Đang lưu…") : text("Giao cho lớp")}</button>
+              <button type="submit" name="status" value="Draft" className="btn-secondary" disabled={!classroom || !form.lessonIds.length || isSubmitting}>{text("Lưu bản nháp")}</button>
+              <button type="submit" name="status" value="Active" className="btn-primary" disabled={!classroom || !form.lessonIds.length || isSubmitting}><Check size={17} />{isSubmitting ? text("Đang lưu…") : text("Giao cho lớp")}</button>
             </div>
           )}
         </section>
         <section className="panel p-6">
+          <div className="mb-5">
+            <TopicPicker topics={readOnly ? lessonGroups : topics} value={topicIds} onChange={selectTopics}
+              disabled={!classroom || readOnly || isSubmitting} />
+          </div>
           <h2 className="instructor-section-title instructor-lesson-heading">
             <BookOpen size={19} />
-            {text("Chọn bài học")}{" "}
+            {text("Chọn thuật toán", "Select algorithms")}{" "}
             <span className="ml-auto text-xs font-normal text-slate-500">
-              {form.lessonIds.length} {text(" đã chọn")}
+              {form.lessonIds.length}/{MAX_LESSONS} {text(" đã chọn")}
             </span>
           </h2>
-          {!readOnly && topic && <button disabled={isSubmitting} type="button" className="mb-3 text-sm font-semibold text-portal-purple-strong" onClick={() => update("lessonIds", form.lessonIds.length === topic.lessons.length ? [] : topic.lessons.map(([id]) => id))}>{form.lessonIds.length === topic.lessons.length ? text("Bỏ chọn tất cả") : text("Chọn tất cả bài")}</button>}
-          <fieldset disabled={readOnly || isSubmitting} className="space-y-2">
-            {topic?.lessons.map(([id, name]) => (
-              <label
-                key={id}
-                className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 text-sm ${form.lessonIds.includes(id) ? "border-portal-line-strong bg-portal-lavender/60 text-portal-ink" : "border-slate-100 text-slate-600"}`}
-              >
-                <input
-                  className="h-4 w-4 accent-portal-purple"
-                  type="checkbox"
-                  checked={form.lessonIds.includes(id)}
-                  onChange={() =>
-                    update(
-                      "lessonIds",
-                      form.lessonIds.includes(id)
-                        ? form.lessonIds.filter((value) => value !== id)
-                        : [...form.lessonIds, id],
-                    )
-                  }
-                />
-                {name}
-              </label>
+          {!readOnly && availableLessonIds.length > 0 && availableLessonIds.length <= MAX_LESSONS && (
+            <button disabled={isSubmitting} type="button" className="mb-3 text-sm font-semibold text-portal-purple-strong"
+              onClick={() => update("lessonIds", allSelected ? [] : availableLessonIds)}>
+              {allSelected ? text("Bỏ chọn tất cả") : text("Chọn tất cả bài")}
+            </button>
+          )}
+          <fieldset disabled={readOnly || isSubmitting} className="space-y-4">
+            {lessonGroups.map((topic) => (
+              <fieldset key={topic.id} className="space-y-2">
+                <legend className="mb-2 text-sm font-bold">{topic.label}</legend>
+                {topic.lessons.map(([id, name]) => (
+                  <label
+                    key={id}
+                    className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 text-sm ${selectedLessonIds.has(id) ? "border-portal-line-strong bg-portal-lavender/60 text-portal-ink" : "border-slate-100 text-slate-600"}`}
+                  >
+                    <input
+                      className="h-4 w-4 accent-portal-purple"
+                      type="checkbox"
+                      checked={selectedLessonIds.has(id)}
+                      disabled={!selectedLessonIds.has(id) && selectedLessonIds.size >= MAX_LESSONS}
+                      onChange={() => update(
+                        "lessonIds",
+                        selectedLessonIds.has(id) ? form.lessonIds.filter((value) => value !== id) : [...form.lessonIds, id],
+                      )}
+                    />
+                    {name}
+                  </label>
+                ))}
+              </fieldset>
             ))}
           </fieldset>
-          {form.lessonIds.filter(id => ["bubble", "selection", "insertion", "merge", "quick"].includes(id)).map(id => {
+          {form.lessonIds.map(id => {
             const config = form.lessonConfigs?.[id];
+            const stack = id.startsWith("stack-");
+            const hasStartingValues = lessonsWithStartingValues.has(id);
             const configure = (field, value) => update("lessonConfigs", { ...form.lessonConfigs, [id]: { ...config, [field]: value } });
             return <fieldset key={id} disabled={readOnly || isSubmitting} className="mt-4 space-y-3 rounded-xl border border-slate-200 p-4">
               <legend className="px-2 text-sm font-bold">{text("Cấu hình ")} {lessonName(id)}</legend>
@@ -232,18 +265,25 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
               {config && <>
                 <label className="block"><span className="field-label">{text("Thời gian làm bài (giây)")}</span><input className="field" type="number" min="30" max="3600" required value={config.timeLimitSeconds} onChange={e => configure("timeLimitSeconds", Number(e.target.value))} /></label>
                 <label className="block"><span className="field-label">{text("Độ khó")}</span><select className="field" value={config.difficulty} onChange={e => configure("difficulty", e.target.value)}><option value="easy">{text("Dễ")}</option><option value="medium">{text("Vừa")}</option><option value="hard">{text("Khó")}</option></select></label>
-                <label className="block"><span className="field-label">{text("Chuỗi số ban đầu")}</span><input className="field" value={Array.isArray(config.input) ? config.input.join(", ") : config.input ?? ""} placeholder="VD: 8, 3, 6, 2, 5" onChange={e => {
+                {hasStartingValues ? <label className="block"><span className="field-label">{text("Chuỗi số ban đầu")}</span><input className="field" value={Array.isArray(config.input) ? config.input.join(", ") : config.input ?? ""} placeholder="VD: 8, 3, 6, 2, 5" onChange={e => {
                   const next = { ...config };
                   if (e.target.value.trim()) next.input = e.target.value;
                   else delete next.input;
                   update("lessonConfigs", { ...form.lessonConfigs, [id]: next });
-                }} /><span className="mt-1 block text-xs text-slate-500">{text("2–8 số nguyên từ -99 đến 99. Để trống để tạo đề theo độ khó. Cấu hình được giữ cố định sau khi giao.")}</span></label>
+                }} /><span className="mt-1 block text-xs text-slate-500">{text("2–8 số nguyên từ -99 đến 99. Để trống để tạo đề theo độ khó. Cấu hình được giữ cố định sau khi giao.")}</span>
+                  {stack && <span className="mt-1 block text-xs text-slate-500">{id === "stack-push"
+                    ? text("Thẻ được đưa vào ngăn xếp theo thứ tự nhập.", "Cards are pushed in the order entered.")
+                    : text("Nhập từ đáy lên đỉnh. Số cuối cùng là đỉnh ngăn xếp.", "Enter values from bottom to top. The last value starts on top.")}</span>}
+                </label> : <p className="text-xs text-slate-500">{text(
+                  "Cấu hình được lưu cùng bài giao và đang chờ tích hợp vào mục Bài được giao trong Unity.",
+                  "Settings are saved with the assignment. Support in Unity’s assignment area is pending.",
+                )}</p>}
               </>}
             </fieldset>;
           })}
-          {!topic && (
+          {!lessonGroups.length && (
             <p className="py-6 text-center text-sm text-slate-400">
-              {text("Chọn lớp để xem bài học.")}
+              {text("Chọn cấu trúc dữ liệu để xem các thuật toán.", "Select data structures to see their algorithms.")}
             </p>
           )}
         </section>

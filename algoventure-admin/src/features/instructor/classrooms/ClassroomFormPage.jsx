@@ -1,20 +1,20 @@
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Check, BookOpen } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
 import { useClassrooms } from "../workspace/ClassroomContext";
-import { levels, getLevel } from "../../../shared/curriculum/curriculumCatalog";
+import { levels } from "../../../shared/curriculum/curriculumCatalog";
 
 export default function ClassroomFormPage() {
   const text = useText();
   const { classId } = useParams();
-  const { classes, assignments, quizzes, saveClass, topics, getTopic } = useClassrooms();
+  const { classes, saveClass } = useClassrooms();
   const existing = classes.find((item) => item.id === classId);
   const navigate = useNavigate();
   const [values, setValues] = useState(
     () =>
-      existing ?? { name: "", description: "", topicId: "", level: "basic" },
+      existing ?? { name: "", description: "", level: "basic" },
   );
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,12 +36,6 @@ export default function ClassroomFormPage() {
         </Link>
       </div>
     );
-  const topic = getTopic(values.topicId);
-  const topicLocked = Boolean(
-    existing &&
-      (assignments.some((item) => item.classId === classId) ||
-        quizzes.some((item) => item.classId === classId)),
-  );
   function field(name, value) {
     setValues((previous) => ({ ...previous, [name]: value }));
     setError("");
@@ -51,7 +45,8 @@ export default function ClassroomFormPage() {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const item = await saveClass(values, classId);
+      const { name, description, level } = values;
+      const item = await saveClass({ name, description, level }, classId);
       navigate(`/instructor/classes/${item.id}`, {
         state: {
           message: classId
@@ -66,7 +61,7 @@ export default function ClassroomFormPage() {
     }
   }
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-3xl">
       <Link
         className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-portal-purple-strong"
         to={existing ? `/instructor/classes/${classId}` : "/instructor/classes"}
@@ -77,157 +72,96 @@ export default function ClassroomFormPage() {
       <PageHeader
         title={classId ? text("Chỉnh sửa lớp học") : text("Tạo lớp học mới")}
       />
-      <div className="class-form-layout">
-        <form onSubmit={submit} className="panel space-y-6 p-6 sm:p-8">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">
-              {text("Thông tin lớp học")}
-            </h2>
-          </div>
-          <div>
-            <label className="field-label" htmlFor="class-name">
-              {text("Tên lớp ")} <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="class-name"
-              className="field"
-              autoFocus
-              required
-              maxLength={100}
-              value={values.name}
-              onChange={(e) => field("name", e.target.value)}
-              placeholder={text("VD: Sorting cơ bản — SE19")}
-            />
-          </div>
-          <div>
-            <label className="field-label" htmlFor="class-topic">
-              {text("Chủ đề ")} <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="class-topic"
-              className="field"
-              required
-              disabled={topicLocked}
-              value={values.topicId}
-              onChange={(e) => field("topicId", e.target.value)}
-            >
-              <option value="" disabled>
-                {text("Chọn chủ đề học tập")}
-              </option>
-              {topics.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name} — {item.label}
-                </option>
-              ))}
-            </select>
-            {topicLocked && (
-              <p className="mt-2 text-xs text-slate-500">
-                {text("Không thể đổi chủ đề khi lớp đã có bộ bài.")}
-              </p>
-            )}
-          </div>
-          <fieldset>
-            <legend className="field-label">
-              {text("Mức độ lớp học ")} <span className="text-red-500">*</span>
-            </legend>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {levels.map((item) => (
-                <label
-                  key={item.id}
-                  className={`cursor-pointer rounded-xl border p-4 ${values.level === item.id ? "border-portal-purple bg-portal-lavender/70" : "border-slate-200"}`}
-                >
-                  <span className="mb-2 flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="level"
-                      value={item.id}
-                      checked={values.level === item.id}
-                      onChange={() => field("level", item.id)}
-                      className="accent-portal-purple"
-                    />
-                    <strong className="text-sm text-slate-800">
-                      {item.label}
-                    </strong>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <div>
-            <label className="field-label" htmlFor="class-description">
-              {text("Mô tả và mục tiêu học tập")}
-            </label>
-            <textarea
-              id="class-description"
-              className="field"
-              rows={4}
-              maxLength={500}
-              value={values.description}
-              onChange={(e) => field("description", e.target.value)}
-              placeholder={text("Sinh viên sẽ luyện tập những kiến thức và kỹ năng nào?")}
-            />
-            <p className="mt-1 text-right text-xs text-slate-400">
-              {values.description.length}/500
-            </p>
-          </div>
-          {error && (
-            <p
-              role="alert"
-              className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
-            >
-              {error}
-            </p>
-          )}
-          <div className="flex justify-end gap-3 border-t border-slate-100 pt-5">
-            <Link
-              className="btn-secondary"
-              to={
-                existing
-                  ? `/instructor/classes/${classId}`
-                  : "/instructor/classes"
-              }
-            >
-              {text("Hủy")}
-            </Link>
-            <button className="btn-primary" type="submit" disabled={isSubmitting}>
-              <Check size={17} />
-              {classId ? text("Lưu thay đổi") : text("Tạo lớp học")}
-            </button>
-          </div>
-        </form>
-        <aside className="panel p-6">
-          <span className="mb-4 inline-flex rounded-xl bg-portal-lavender p-3 text-portal-purple-strong">
-            <BookOpen size={24} />
-          </span>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            {text("Nội dung của lớp")}
-          </p>
-          <h2 className="mt-2 text-lg font-bold text-slate-900">
-            {topic?.label ?? "Chọn chủ đề để xem bài học"}
+      <form onSubmit={submit} className="panel space-y-6 p-6 sm:p-8">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">
+            {text("Thông tin lớp học")}
           </h2>
-          <span className="mt-4 inline-block rounded-full bg-portal-lavender px-3 py-1 text-xs font-semibold text-portal-purple-strong">
-            {getLevel(values.level).label}
-          </span>
-          {topic && (
-            <>
-              <p className="mb-3 mt-6 text-xs font-semibold text-slate-500">
-                {topic.lessons.length} {text(" bài học")}
-              </p>
-              <ul className="space-y-2">
-                {topic.lessons.map(([id, name]) => (
-                  <li
-                    key={id}
-                    className="flex items-center gap-2 text-sm text-slate-600"
-                  >
-                    <Check size={14} className="shrink-0 text-portal-purple-strong" />
-                    {name}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </aside>
-      </div>
+        </div>
+        <div>
+          <label className="field-label" htmlFor="class-name">
+            {text("Tên lớp ")} <span className="text-red-500">*</span>
+          </label>
+          <input
+            id="class-name"
+            className="field"
+            autoFocus
+            required
+            maxLength={100}
+            value={values.name}
+            onChange={(e) => field("name", e.target.value)}
+            placeholder={text("VD: Sorting cơ bản — SE19")}
+          />
+        </div>
+        <fieldset>
+          <legend className="field-label">
+            {text("Mức độ lớp học ")} <span className="text-red-500">*</span>
+          </legend>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {levels.map((item) => (
+              <label
+                key={item.id}
+                className={`cursor-pointer rounded-xl border p-4 ${values.level === item.id ? "border-portal-purple bg-portal-lavender/70" : "border-slate-200"}`}
+              >
+                <span className="mb-2 flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="level"
+                    value={item.id}
+                    checked={values.level === item.id}
+                    onChange={() => field("level", item.id)}
+                    className="accent-portal-purple"
+                  />
+                  <strong className="text-sm text-slate-800">
+                    {item.label}
+                  </strong>
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <div>
+          <label className="field-label" htmlFor="class-description">
+            {text("Mô tả và mục tiêu học tập")}
+          </label>
+          <textarea
+            id="class-description"
+            className="field"
+            rows={4}
+            maxLength={500}
+            value={values.description}
+            onChange={(e) => field("description", e.target.value)}
+            placeholder={text("Sinh viên sẽ luyện tập những kiến thức và kỹ năng nào?")}
+          />
+          <p className="mt-1 text-right text-xs text-slate-400">
+            {values.description.length}/500
+          </p>
+        </div>
+        {error && (
+          <p
+            role="alert"
+            className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
+          >
+            {error}
+          </p>
+        )}
+        <div className="flex justify-end gap-3 border-t border-slate-100 pt-5">
+          <Link
+            className="btn-secondary"
+            to={
+              existing
+                ? `/instructor/classes/${classId}`
+                : "/instructor/classes"
+            }
+          >
+            {text("Hủy")}
+          </Link>
+          <button className="btn-primary" type="submit" disabled={isSubmitting}>
+            <Check size={17} />
+            {classId ? text("Lưu thay đổi") : text("Tạo lớp học")}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

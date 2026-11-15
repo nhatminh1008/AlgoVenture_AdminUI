@@ -1,80 +1,3 @@
-// Topic metadata, lesson IDs and order match the backend's curriculum.json.
-export const topics = [
-  {
-    id: "sorting",
-    name: "Sorting",
-    label: "Sắp xếp",
-    description: "So sánh, đổi chỗ, chia và hợp nhất dữ liệu.",
-    lessons: [
-      ["bubble", "Bubble Sort"],
-      ["selection", "Selection Sort"],
-      ["insertion", "Insertion Sort"],
-      ["merge", "Merge Sort"],
-      ["quick", "Quick Sort"],
-    ],
-  },
-  {
-    id: "searching",
-    name: "Searching",
-    label: "Tìm kiếm",
-    description: "Tìm kiếm tuần tự và thu hẹp phạm vi tìm kiếm.",
-    lessons: [
-      ["linear", "Linear Search"],
-      ["binary", "Binary Search"],
-    ],
-  },
-  {
-    id: "data-structures",
-    name: "Data Structures",
-    label: "Cấu trúc dữ liệu",
-    description: "Stack, Queue, danh sách liên kết và cây tìm kiếm.",
-    lessons: [
-      ["stack-push", "Stack · Push"],
-      ["stack-pop", "Stack · Pop"],
-      ["stack-peek", "Stack · Peek"],
-      ["queue-enqueue", "Queue · Enqueue"],
-      ["queue-dequeue", "Queue · Dequeue"],
-      ["queue-peek", "Queue · Peek"],
-      ["linked-list", "Linked List Construction"],
-      ["linked-traversal", "Linked List Traversal"],
-      ["linked-search", "Linked List Search"],
-      ["linked-insertion", "Linked List Insertion"],
-      ["linked-deletion", "Linked List Deletion"],
-      ["linked-reversal", "Linked List Reversal"],
-      ["tree-basics", "Cây cơ bản"],
-      ["tree-dfs", "Tree DFS"],
-      ["tree-bfs", "Tree BFS"],
-      ["bst-search", "Tìm kiếm trên BST"],
-      ["bst-insert", "Thêm nút vào BST"],
-      ["bst-delete", "Xóa nút khỏi BST"],
-    ],
-  },
-  {
-    id: "matrix",
-    name: "Matrix",
-    label: "Ma trận",
-    description: "Duyệt, chuyển vị và tìm đường trên lưới hai chiều.",
-    lessons: [
-      ["matrix", "Duyệt theo hàng"],
-      ["matrix-transpose", "Chuyển vị ma trận"],
-      ["matrix-spiral", "Duyệt xoắn ốc"],
-      ["matrix-bfs", "BFS trên lưới"],
-      ["matrix-dfs", "DFS trên lưới"],
-    ],
-  },
-  {
-    id: "graphs",
-    name: "Graphs / Pathfinding",
-    label: "Đồ thị và đường đi",
-    description: "Biểu diễn kết nối, duyệt đồ thị và tìm đường ngắn nhất.",
-    lessons: [
-      ["graph-basics", "Đồ thị cơ bản"],
-      ["bfs", "BFS"],
-      ["dfs", "DFS"],
-      ["dijkstra", "Dijkstra"],
-    ],
-  },
-];
 export const levels = [
   {
     id: "basic",
@@ -89,19 +12,12 @@ export const levels = [
     description: "Củng cố kiến thức và luyện tập các tình huống phức tạp hơn.",
   },
 ];
-export const getTopic = (id) => topics.find((topic) => topic.id === id);
 export const getLevel = (id) => levels.find((level) => level.id === id);
-export const lessonName = (id) =>
-  topics
-    .flatMap((topic) => topic.lessons)
-    .find((lesson) => lesson[0] === id)?.[1] ?? id;
 
 export function createCurriculum(topics) {
-  const byTopic = new Map(topics.map((topic) => [topic.id, topic]));
   const byLesson = new Map(topics.flatMap((topic) => topic.lessons));
   return {
     topics,
-    getTopic: (id) => byTopic.get(id),
     lessonName: (id) => byLesson.get(id) ?? id,
   };
 }

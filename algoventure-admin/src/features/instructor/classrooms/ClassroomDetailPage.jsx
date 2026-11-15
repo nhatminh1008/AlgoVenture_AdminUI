@@ -24,7 +24,7 @@ const assignmentStatus = {
 export default function ClassroomDetailPage() {
   const text = useText();
   const { classId } = useParams();
-  const { classes, students, assignments, getTopic, lessonName } = useClassrooms();
+  const { classes, students, assignments, lessonName } = useClassrooms();
   const [params] = useSearchParams();
   const location = useLocation();
   const classroom = classes.find((item) => item.id === classId);
@@ -41,7 +41,6 @@ export default function ClassroomDetailPage() {
         </Link>
       </div>
     );
-  const topic = getTopic(classroom.topicId);
   const tab = [
     "assignments",
     "quizzes",
@@ -71,7 +70,7 @@ export default function ClassroomDetailPage() {
         </p>
       )}
       <div className="instructor-detail-summary">
-        <div className="instructor-detail-tags"><span>{topic?.label ?? classroom.topicId}</span><span>{getLevel(classroom.level).label}</span><span><Users size={15} />{members.length} {text(" sinh viên")}</span></div>
+        <div className="instructor-detail-tags"><span>{getLevel(classroom.level).label}</span><span><Users size={15} />{members.length} {text(" sinh viên")}</span></div>
         {classroom.archivedAt ? (
           <span className="instructor-badge instructor-badge-closed">{text("Đã lưu trữ")}</span>
         ) : (

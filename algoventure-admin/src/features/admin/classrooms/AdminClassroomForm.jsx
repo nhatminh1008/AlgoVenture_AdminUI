@@ -1,11 +1,9 @@
 import { useText } from "../../../preferences/preferencesContext";
-import { getTopic, levels } from "../../../shared/curriculum/curriculumCatalog";
+import { levels } from "../../../shared/curriculum/curriculumCatalog";
 
 export default function AdminClassroomForm({
   editor,
-  originalTopicId,
   instructors,
-  topics,
   usersById,
   isSubmitting,
   onSubmit,
@@ -13,7 +11,6 @@ export default function AdminClassroomForm({
   onCancel,
 }) {
   const text = useText();
-  const includeOriginalTopic = originalTopicId && !topics.some(({ id }) => id === originalTopicId);
   return (
     <form onSubmit={onSubmit} className="panel mb-6 p-6" aria-label={editor.id ? text("Sửa lớp học") : text("Tạo lớp học")}>
       <h2 className="mb-4 text-lg font-bold">{editor.id ? text("Sửa lớp học") : text("Tạo lớp học")}</h2>
@@ -30,14 +27,6 @@ export default function AdminClassroomForm({
               <option value={editor.instructorId} disabled>{usersById.get(editor.instructorId)?.name ?? "Giảng viên hiện tại"} {text(" (không hoạt động)")}</option>
             )}
             {instructors.map(({ id, name, email }) => <option key={id} value={id}>{name} ({email})</option>)}
-          </select>
-        </label>
-        <label><span className="field-label">{text("Chủ đề")}</span>
-          <select className="field" required value={editor.topicId}
-            onChange={(event) => onChange({ ...editor, topicId: event.target.value })}>
-            <option value="">{text("Chọn chủ đề")}</option>
-            {includeOriginalTopic && <option value={originalTopicId}>{getTopic(originalTopicId)?.label ?? originalTopicId}</option>}
-            {topics.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
           </select>
         </label>
         <label><span className="field-label">{text("Cấp độ")}</span>

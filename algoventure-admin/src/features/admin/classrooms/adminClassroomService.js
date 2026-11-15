@@ -14,10 +14,6 @@ export function listClassrooms() {
   return api(ADMIN_CLASSROOMS_PATH);
 }
 
-export function listClassroomTopics() {
-  return api("/admin/curriculum");
-}
-
 export function saveClassroom(id, classroom) {
   return api(id ? getClassroomPath(id) : ADMIN_CLASSROOMS_PATH, {
     method: id ? "PUT" : "POST",
