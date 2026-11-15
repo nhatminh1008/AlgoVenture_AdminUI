@@ -3,8 +3,8 @@ import { roleLabels, statusLabels } from "../recordLabels.js";
 
 export default function UserForm({ form, isOwnProfile, isSaving, onSubmit, onFieldChange, onCancel }) {
   const text = useText();
-  const title = isOwnProfile ? text("Hồ sơ của tôi") : form.id ? text("Sửa tài khoản") : text("Tạo tài khoản");
-  const creating = !form.id;
+  const title = isOwnProfile ? text("Hồ sơ của tôi") : text("Tạo tài khoản");
+  const creating = !isOwnProfile;
   const saveLabel = isOwnProfile ? text("Lưu hồ sơ") : text("Lưu tài khoản");
   const joined = form.joined && new Date(form.joined).toLocaleDateString("vi-VN");
   return (
@@ -14,7 +14,7 @@ export default function UserForm({ form, isOwnProfile, isSaving, onSubmit, onFie
       </h2>
       {isOwnProfile && (
         <p className="text-sm text-slate-600">
-          {text("Vai trò và trạng thái của tài khoản do một quản trị viên khác cập nhật.")}
+          {text("Bạn có thể cập nhật thông tin cá nhân tại đây.", "You can update your personal information here.")}
         </p>
       )}
       <div className="grid gap-4 sm:grid-cols-2">
@@ -35,7 +35,6 @@ export default function UserForm({ form, isOwnProfile, isSaving, onSubmit, onFie
             required
             type="email"
             maxLength={254}
-            disabled={!!form.id && !isOwnProfile}
             value={form.email}
             aria-describedby={isOwnProfile ? "profile-email-hint" : undefined}
             onChange={(e) => onFieldChange("email", e.target.value)}
@@ -46,7 +45,7 @@ export default function UserForm({ form, isOwnProfile, isSaving, onSubmit, onFie
             </span>
           )}
         </label>
-        {!form.id && (
+        {creating && (
           <label>
             <span className="field-label">{text("Mật khẩu (10–72 ký tự)")}{creating && <span aria-hidden="true"> *</span>}</span>
             <input
@@ -87,7 +86,6 @@ export default function UserForm({ form, isOwnProfile, isSaving, onSubmit, onFie
                 {["Active", "Suspended"].map((v) => (
                   <option key={v} value={v}>{text(statusLabels[v])}</option>
                 ))}
-                {!creating && <option value="Deactive">{text(statusLabels.Deactive)}</option>}
               </select>
             </label>
           </>

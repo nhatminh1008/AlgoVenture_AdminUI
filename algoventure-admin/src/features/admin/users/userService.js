@@ -12,16 +12,22 @@ function profileFields({ dateOfBirth, phone, address }) {
   };
 }
 
-export function saveUser(user) {
-  const body = { name: user.name.trim(), role: user.role, status: user.status, profile: profileFields(user) };
-  if (!user.id) {
-    body.email = user.email.trim();
-    body.password = user.password;
-  }
-  return api(user.id ? `/admin/users/${encodeURIComponent(user.id)}` : "/admin/users", {
-    method: user.id ? "PUT" : "POST",
-    body,
+export function createUser(user) {
+  return api("/admin/users", {
+    method: "POST",
+    body: {
+      email: user.email.trim(),
+      name: user.name.trim(),
+      password: user.password,
+      role: user.role,
+      status: user.status,
+      profile: profileFields(user),
+    },
   });
+}
+
+export function lockUser(id) {
+  return api("/admin/users/" + encodeURIComponent(id) + "/lock", { method: "PUT" });
 }
 
 export function saveMyProfile({ email, name, dateOfBirth, phone, address }) {

@@ -1,7 +1,7 @@
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { listUsers, saveMyProfile, saveUser } from "./userService";
+import { createUser, listUsers, lockUser, saveMyProfile } from "./userService";
 import { useAuth } from "../../../auth/useAuth";
 import { useApiData } from "../../../shared/hooks/useApiData";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
@@ -43,7 +43,7 @@ export default function UserManagementPage() {
         const updated = await saveMyProfile(form);
         if (!(await updateSessionProfile(updated))) return;
       } else {
-        await saveUser(form);
+        await createUser(form);
       }
       setForm((current) => (current === form ? null : current));
       await state.refresh();
@@ -54,6 +54,25 @@ export default function UserManagementPage() {
       setIsSaving(false);
     }
   }
+  async function suspend(account) {
+    if (isSaving || !window.confirm(text(
+      "Tạm khóa tài khoản của " + account.name + "? Tài khoản sẽ bị chặn đăng nhập.",
+      "Suspend " + account.name + "'s account? The account will be unable to sign in.",
+    ))) return;
+    setIsSaving(true);
+    setMessage("");
+    setActionError("");
+    try {
+      await lockUser(account.id);
+      await state.refresh();
+      setMessage(text("Đã tạm khóa tài khoản.", "Account suspended."));
+    } catch (failure) {
+      setActionError(failure.message);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   const field = (name, value) =>
     setForm((previous) => ({ ...previous, [name]: value }));
   return (
@@ -88,7 +107,9 @@ export default function UserManagementPage() {
         role={role}
         onQueryChange={setQuery}
         onRoleChange={setRole}
-        onEdit={(account) => {
+        disabled={isSaving}
+        onLock={suspend}
+        onEditOwnProfile={(account) => {
           setForm({ ...account });
           setActionError("");
           setMessage("");

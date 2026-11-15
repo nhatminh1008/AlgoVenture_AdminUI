@@ -1,5 +1,5 @@
 import { useText } from "../../../preferences/preferencesContext";
-import { Pencil } from "lucide-react";
+import { Lock, Pencil } from "lucide-react";
 import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import RecordBadge from "../RecordBadge";
@@ -11,7 +11,7 @@ const accountStatusDescriptions = {
   Deactive: "Đã vô hiệu hóa, lịch sử tài khoản vẫn được lưu.",
 };
 
-export default function UserList({ rows, currentUserId, query, role, onQueryChange, onRoleChange, onEdit }) {
+export default function UserList({ rows, currentUserId, query, role, onQueryChange, onRoleChange, disabled, onEditOwnProfile, onLock }) {
   const text = useText();
   const pagination = usePagination(rows, query + role);
   return (
@@ -66,14 +66,17 @@ export default function UserList({ rows, currentUserId, query, role, onQueryChan
                 <td><RecordBadge value={u.role} role /></td>
                 <td><RecordBadge value={u.status} /></td>
                 <td>
-                  <button
-                    type="button"
-                    className="btn-row-action"
-                    onClick={() => onEdit(u)}
-                  >
-                    <Pencil aria-hidden="true" />
-                    {u.id === currentUserId ? text("Sửa hồ sơ của tôi") : text("Chỉnh sửa")}
-                  </button>
+                  {u.id === currentUserId ? (
+                    <button type="button" className="btn-row-action" disabled={disabled} onClick={() => onEditOwnProfile(u)}>
+                      <Pencil aria-hidden="true" />
+                      {text("Sửa hồ sơ của tôi")}
+                    </button>
+                  ) : u.status === "Active" && (
+                    <button type="button" className="btn-row-action btn-row-action-danger" disabled={disabled} onClick={() => onLock(u)}>
+                      <Lock aria-hidden="true" />
+                      {text("Tạm khóa", "Suspend")}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

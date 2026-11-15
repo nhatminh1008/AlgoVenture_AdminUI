@@ -1,6 +1,7 @@
 import { useText } from "../../../preferences/preferencesContext";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Lock, Pencil } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
 import { useClassrooms } from "../workspace/ClassroomContext";
 import QuizPreview from "./QuizPreview";
@@ -30,6 +31,28 @@ export default function QuizDetailPage() {
 function QuizDetailContent({ classroom, quiz }) {
   const text = useText();
   const location = useLocation();
+  const { markQuizClosed } = useClassrooms();
+  const [closing, setClosing] = useState(false);
+  const [closeError, setCloseError] = useState("");
+  const [closedHere, setClosedHere] = useState(false);
+
+  async function close() {
+    if (closing || !window.confirm(text(
+      "Đóng bài trắc nghiệm? Học viên sẽ dừng nộp bài mới. Kết quả đã ghi được giữ lại.",
+      "Close this quiz? Learners will no longer be able to submit. Existing results are kept.",
+    ))) return;
+    setClosing(true);
+    setCloseError("");
+    try {
+      await markQuizClosed(quiz.id);
+      setClosedHere(true);
+    } catch (failure) {
+      setCloseError(failure.message);
+    } finally {
+      setClosing(false);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-4xl">
       <Link
@@ -51,19 +74,26 @@ function QuizDetailContent({ classroom, quiz }) {
             {text("Chỉnh sửa bản nháp")}
           </Link>
         )}
+        {quiz.status === "Published" && !quiz.archivedAt && !classroom.archivedAt && (
+          <button type="button" className="btn-secondary" disabled={closing} onClick={close}>
+            <Lock aria-hidden="true" size={16} />
+            {closing ? text("Đang lưu…") : text("Đóng bài trắc nghiệm", "Close quiz")}
+          </button>
+        )}
       </PageHeader>
-      {location.state?.message && (
+      {closeError && <p role="alert" className="mb-4 text-sm text-red-700">{closeError}</p>}
+      {(closedHere || location.state?.message) && (
         <p
           role="status"
           className="mb-5 rounded-xl bg-portal-lavender p-4 text-sm text-portal-ink"
         >
-          {location.state.message}
+          {closedHere ? text("Đã đóng bài trắc nghiệm.", "Quiz closed.") : location.state.message}
         </p>
       )}
       <section className="panel mb-6 space-y-3 p-6">
         <div className="flex flex-wrap gap-3 text-xs text-slate-500">
           <span className="font-semibold text-portal-purple-strong">
-            {getQuizStatusLabel(quiz)}
+            {text(getQuizStatusLabel(quiz))}
           </span>
           {classroom.archivedAt && <span>{text("Lớp đã lưu trữ")}</span>}
           <span>{quiz.questions.length} {text(" câu hỏi")}</span>

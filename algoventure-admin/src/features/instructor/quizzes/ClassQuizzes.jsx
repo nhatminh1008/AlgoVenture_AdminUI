@@ -58,7 +58,7 @@ export default function ClassQuizzes({ classId, archivedAt }) {
               <span
                 className={`rounded-full px-3 py-1 text-xs font-semibold ${quiz.archivedAt || quiz.status === "Closed" ? "bg-slate-100 text-slate-600" : quiz.status === "Draft" ? "bg-amber-50 text-amber-700" : "bg-portal-lavender text-portal-purple-strong"}`}
               >
-                {getQuizStatusLabel(quiz)}
+                {text(getQuizStatusLabel(quiz))}
               </span>
             </div>
             <h3 className="mb-2 mt-5 break-words text-lg font-bold text-slate-900">
