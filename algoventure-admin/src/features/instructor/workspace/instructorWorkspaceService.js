@@ -46,3 +46,7 @@ export function saveQuiz(values, id) {
 export function deleteQuiz(id) {
   return api(`/instructor/quizzes/${id}`, { method: "DELETE" });
 }
+
+export function closeQuiz(id) {
+  return api("/instructor/assignments/" + encodeURIComponent(id) + "/close", { method: "POST" });
+}

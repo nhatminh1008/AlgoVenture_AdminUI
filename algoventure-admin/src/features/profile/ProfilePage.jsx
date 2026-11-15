@@ -3,7 +3,7 @@ import { CircleCheck, Info, KeyRound, Save, UserRound } from "lucide-react";
 import { saveMyProfile as saveAdminProfile } from "../admin/users/userService";
 import { api } from "../../api/apiClient";
 import { useAuth } from "../../auth/useAuth";
-import { resetPasswordErrors } from "../../auth/authValidation";
+import { resetPasswordErrors, usernameError } from "../../auth/authValidation";
 import { useApiData } from "../../shared/hooks/useApiData";
 import { ApiFeedback } from "../../shared/components/ApiFeedback";
 import { useText } from "../../preferences/preferencesContext";
@@ -13,6 +13,7 @@ const load = () => api("/profile");
 const personalFields = [
   ["name", "Họ tên", "Full name", "text", "name", 100, true],
   ["email", "Email", "Email", "email", "email", 254, true],
+  ["username", "Tên đăng nhập", "Username", "text", "username", 30],
   ["dateOfBirth", "Ngày sinh", "Date of birth", "date", "bday"],
   ["phone", "Số điện thoại", "Phone", "tel", "tel", 20],
   ["address", "Địa chỉ", "Address", "text", "street-address", 255],
@@ -42,6 +43,11 @@ function ProfileForm({ user, onSaved, onPasswordChange }) {
   async function save(event) {
     event.preventDefault();
     if (!changed || saving) return;
+    const invalidUsername = form.username?.trim() && usernameError(form.username);
+    if (invalidUsername) {
+      setError(invalidUsername);
+      return;
+    }
     setSaving(true);
     setError("");
     setSaved(false);

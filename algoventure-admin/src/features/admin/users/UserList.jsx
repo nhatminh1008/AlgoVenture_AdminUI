@@ -1,5 +1,5 @@
 import { useText } from "../../../preferences/preferencesContext";
-import { Eye, Lock, Pencil } from "lucide-react";
+import { Eye, Lock, LockOpen, Pencil } from "lucide-react";
 import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import RecordBadge from "../RecordBadge";
@@ -20,7 +20,7 @@ export default function UserList({ rows, currentUserId, query, role, onQueryChan
         <input
           aria-label={text("Tìm tài khoản")}
           className="field flex-1"
-          placeholder={text("Tìm theo tên hoặc email…")}
+          placeholder={text("Tìm theo tên, email hoặc tên đăng nhập…", "Search by name, email, or username…")}
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
         />
@@ -69,12 +69,18 @@ export default function UserList({ rows, currentUserId, query, role, onQueryChan
                   <div className="table-actions">
                     <button type="button" className="btn-row-action" onClick={() => onOpen(u)}>
                       {u.id === currentUserId ? <Pencil aria-hidden="true" /> : <Eye aria-hidden="true" />}
-                      {u.id === currentUserId ? text("Sửa hồ sơ của tôi") : text("Xem", "View")}
+                      {u.id === currentUserId ? text("Sửa hồ sơ của tôi") : text("Xem và phân quyền", "View account and role")}
                     </button>
                     {u.id !== currentUserId && u.status === "Active" && (
                       <button type="button" className="btn-row-action btn-row-action-danger"
-                        onClick={() => onLock(u)} disabled={isSaving}>
+                        onClick={() => onLock(u, true)} disabled={isSaving}>
                         <Lock aria-hidden="true" />{text("Khóa", "Lock")}
+                      </button>
+                    )}
+                    {u.id !== currentUserId && u.status === "Suspended" && (
+                      <button type="button" className="btn-row-action"
+                        onClick={() => onLock(u, false)} disabled={isSaving}>
+                        <LockOpen aria-hidden="true" />{text("Mở khóa", "Unlock")}
                       </button>
                     )}
                   </div>

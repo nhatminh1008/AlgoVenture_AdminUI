@@ -32,3 +32,7 @@ export function maskEmail(email) {
   const [local, domain] = email.split("@");
   return `${local.slice(0, 1)}***@${domain}`;
 }
+export function usernameError(username) {
+  return /^[A-Za-z0-9][A-Za-z0-9_.-]{2,29}$/.test(username.trim())
+    ? undefined : "Tên đăng nhập cần 3–30 ký tự, dùng chữ cái, số, dấu chấm, gạch dưới hoặc gạch ngang.";
+}

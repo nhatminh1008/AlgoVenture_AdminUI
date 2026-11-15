@@ -3,17 +3,17 @@ import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import AdminDetailsDialog from "../AdminDetailsDialog";
 import { roleLabels, statusLabels } from "../recordLabels.js";
 
-export default function UserForm({ form, isOwnProfile, viewing, isSaving, actionError, onSubmit, onFieldChange, onCancel }) {
+export default function UserForm({ form, isOwnProfile, viewing, roleChanged, isSaving, actionError, onSubmit, onFieldChange, onCancel }) {
   const text = useText();
   const title = isOwnProfile ? text("Hồ sơ của tôi") : viewing ? text("Thông tin tài khoản", "Account details") : text("Tạo tài khoản");
   const creating = !form.id;
   const fieldsDisabled = viewing || (isOwnProfile && isSaving);
-  const saveLabel = isOwnProfile ? text("Lưu hồ sơ") : text("Lưu tài khoản");
+  const saveLabel = isOwnProfile ? text("Lưu hồ sơ") : viewing ? text("Lưu vai trò", "Save role") : text("Lưu tài khoản");
   const joined = form.joined && new Date(form.joined).toLocaleDateString("vi-VN");
   const fields = (
     <form onSubmit={onSubmit} className={creating ? "panel mb-6 space-y-4 p-6" : "space-y-4"}>
       {creating && <h2 className="text-lg font-bold">{title}</h2>}
-      {isOwnProfile && <ApiFeedback actionError={actionError} />}
+      {!creating && <ApiFeedback actionError={actionError} />}
       <div className="grid gap-4 sm:grid-cols-2">
         <label data-view-only={viewing || undefined}>
           <span className="field-label">{text("Họ tên")}{creating && <span aria-hidden="true"> *</span>}</span>
@@ -59,27 +59,32 @@ export default function UserForm({ form, isOwnProfile, viewing, isSaving, action
             />
           </label>
         )}
-        {viewing && (
-          <>
-            <div className="text-slate-600"><span className="field-label">{text("Vai trò")}</span>{text(roleLabels[form.role])}</div>
-            <div className="text-slate-600"><span className="field-label">{text("Trạng thái")}</span>{text(statusLabels[form.status])}</div>
-          </>
-        )}
-        {creating && (
-          <>
+        {!isOwnProfile && (
             <label>
-              <span className="field-label">{text("Vai trò")}{creating && <span aria-hidden="true"> *</span>}</span>
+              <span id="user-role-label" className="field-label">{text("Vai trò")}{creating && <span aria-hidden="true"> *</span>}</span>
               <select
                 className="field"
                 required
+                disabled={isSaving}
                 value={form.role}
+                aria-labelledby="user-role-label"
+                aria-describedby={form.id ? "user-role-note" : undefined}
                 onChange={(e) => onFieldChange("role", e.target.value)}
               >
                 {["admin", "instructor", "learner"].map((v) => (
                   <option key={v} value={v}>{text(roleLabels[v])}</option>
                 ))}
               </select>
+              {form.id && <span id="user-role-note" className="mt-1 block text-sm text-slate-600">
+                {text("Sau khi đổi vai trò, người dùng cần đăng nhập lại để nhận quyền mới.",
+                  "After a role change, the user signs in again to use their new permissions.")}
+              </span>}
             </label>
+        )}
+        {viewing && (
+          <div className="text-slate-600"><span className="field-label">{text("Trạng thái")}</span>{text(statusLabels[form.status])}</div>
+        )}
+        {creating && (
             <label>
               <span className="field-label">{text("Trạng thái")}{creating && <span aria-hidden="true"> *</span>}</span>
               <select
@@ -93,7 +98,6 @@ export default function UserForm({ form, isOwnProfile, viewing, isSaving, action
                 ))}
               </select>
             </label>
-          </>
         )}
       </div>
       <fieldset className="grid gap-4 sm:grid-cols-2">
@@ -138,8 +142,8 @@ export default function UserForm({ form, isOwnProfile, viewing, isSaving, action
           {text("Ngày tham gia ")} <time dateTime={form.joined}>{joined}</time>
         </p>
       )}
-      {!viewing && <div className="flex gap-3">
-        <button className="btn-primary" disabled={isSaving}>
+      <div className="flex gap-3">
+        <button className="btn-primary" disabled={isSaving || (viewing && !roleChanged)}>
           {isSaving ? text("Đang lưu…") : saveLabel}
         </button>
         <button
@@ -150,11 +154,11 @@ export default function UserForm({ form, isOwnProfile, viewing, isSaving, action
         >
           {text("Hủy")}
         </button>
-      </div>}
+      </div>
     </form>
   );
   return creating ? fields : (
-    <AdminDetailsDialog title={title} onClose={onCancel} closeDisabled={isOwnProfile && isSaving}>
+    <AdminDetailsDialog title={title} onClose={onCancel} closeDisabled={isSaving}>
       {fields}
     </AdminDetailsDialog>
   );

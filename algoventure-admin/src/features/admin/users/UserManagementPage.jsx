@@ -1,7 +1,7 @@
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { createUser, listUsers, lockUser, saveMyProfile } from "./userService";
+import { changeUserRole, createUser, listUsers, saveMyProfile, setUserLocked } from "./userService";
 import { useAuth } from "../../../auth/useAuth";
 import { useApiData } from "../../../shared/hooks/useApiData";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
@@ -28,15 +28,16 @@ export default function UserManagementPage() {
   const [message, setMessage] = useState("");
   const isOwnProfile = form?.id === user.id;
   const viewing = !!form?.id && !isOwnProfile;
-  const displayedForm = viewing ? state.data.find((account) => account.id === form.id) ?? form : form;
+  const savedAccount = viewing ? state.data.find((account) => account.id === form.id) : null;
+  const roleChanged = !!savedAccount && form.role !== savedAccount.role;
   const rows = state.data.filter(
     (u) =>
       (role === "all" || u.role === role) &&
-      `${u.name} ${u.email}`.toLowerCase().includes(query.toLowerCase()),
+      `${u.name} ${u.email} ${u.username ?? ""}`.toLowerCase().includes(query.toLowerCase()),
   );
   async function save(event) {
     event.preventDefault();
-    if (isSaving || viewing) return;
+    if (isSaving || (viewing && !roleChanged)) return;
     setIsSaving(true);
     setMessage("");
     setActionError("");
@@ -44,6 +45,8 @@ export default function UserManagementPage() {
       if (isOwnProfile) {
         const updated = await saveMyProfile(form);
         if (!(await updateSessionProfile(updated))) return;
+      } else if (viewing) {
+        await changeUserRole(form);
       } else {
         await createUser(form);
       }
@@ -56,18 +59,18 @@ export default function UserManagementPage() {
       setIsSaving(false);
     }
   }
-  async function lock(account) {
+  async function changeLock(account, locked) {
     if (isSaving || !window.confirm(text(
-      `Khóa tài khoản “${account.email}”? Người dùng sẽ bị đăng xuất và không thể đăng nhập.`,
-      `Lock “${account.email}”? The user will be signed out and unable to sign in.`,
+      locked ? `Khóa tài khoản “${account.email}”? Người dùng sẽ bị đăng xuất.` : `Mở khóa tài khoản “${account.email}”?`,
+      locked ? `Lock “${account.email}”? The user will be signed out.` : `Unlock “${account.email}”?`,
     ))) return;
     setIsSaving(true);
     setActionError("");
     setMessage("");
     try {
-      await lockUser(account.id);
+      await setUserLocked(account, locked);
       await state.refresh();
-      setMessage(text("Đã khóa tài khoản.", "Account locked."));
+      setMessage(locked ? text("Đã khóa tài khoản.", "Account locked.") : text("Đã mở khóa tài khoản.", "Account unlocked."));
     } catch (failure) {
       setActionError(failure.message);
     } finally {
@@ -95,9 +98,10 @@ export default function UserManagementPage() {
       <ApiFeedback state={state} message={message} actionError={isOwnProfile ? undefined : actionError} />
       {form && (
         <UserForm
-          form={displayedForm}
+          form={form}
           isOwnProfile={isOwnProfile}
           viewing={viewing}
+          roleChanged={roleChanged}
           isSaving={isSaving}
           actionError={actionError}
           onSubmit={save}
@@ -116,7 +120,7 @@ export default function UserManagementPage() {
         onQueryChange={setQuery}
         onRoleChange={setRole}
         isSaving={isSaving}
-        onLock={lock}
+        onLock={changeLock}
         onOpen={(account) => {
           setForm({ ...account });
           setActionError("");

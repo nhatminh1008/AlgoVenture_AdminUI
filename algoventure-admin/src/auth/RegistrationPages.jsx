@@ -5,7 +5,7 @@ import { useText } from "../preferences/preferencesContext";
 import AuthLayout from "./AuthLayout";
 import { AuthField, EmailField, FormError, NewPasswordFields, OtpField, RequiredFieldsNote } from "./AuthFields";
 import { useAuthForm, useFieldError, useSecondsRemaining } from "./authForms";
-import { passwordErrors, registrationProof } from "./authValidation";
+import { passwordErrors, registrationProof, usernameError } from "./authValidation";
 import { resendRegistration, startRegistration, verifyRegistration } from "./authService";
 
 export function RegisterPage() {
@@ -56,6 +56,7 @@ export function VerifyEmailPage() {
   const [delivery, setDelivery] = useState(location.state);
   const [otp, setOtp] = useState("");
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [verified, setVerified] = useState(false);
@@ -76,16 +77,17 @@ export function VerifyEmailPage() {
   function submit(event) {
     event.preventDefault();
     const errors = passwordErrors(password, confirmation);
+    const invalidUsername = username.trim() ? usernameError(username) : undefined;
     if (!fullName.trim()) {
       setFailure({ fields: { ...errors?.fields, fullName: "Vui lòng nhập họ tên." } });
       return;
     }
-    if (errors) {
-      setFailure(errors);
+    if (errors || invalidUsername) {
+      setFailure({ fields: { ...errors?.fields, username: invalidUsername } });
       return;
     }
     run(async () => {
-      await verifyRegistration({ registrationId, token: link?.token, otp, fullName, password });
+      await verifyRegistration({ registrationId, token: link?.token, otp, fullName, username, password });
       setPassword("");
       setConfirmation("");
       setCaptured(captureLink(""));
@@ -138,9 +140,12 @@ export function VerifyEmailPage() {
             <AuthField label={text("Họ và tên", "Full name")} name="fullName" icon={UserRound} required markRequired
               maxLength={100} autoComplete="name" value={fullName} error={fieldError("fullName")}
               onChange={(event) => setFullName(event.target.value)} />
+            <AuthField label={text("Tên đăng nhập (tùy chọn)", "Username (optional)")} name="username" icon={UserRound}
+              maxLength={30} autoComplete="username" value={username} error={fieldError("username")}
+              onChange={(event) => setUsername(event.target.value)} />
             <NewPasswordFields password={password} confirmation={confirmation} setPassword={setPassword}
               setConfirmation={setConfirmation} errors={{ password: fieldError("password"), confirmation: fieldError("confirmation") }} />
-            <FormError failure={failure} fields={link ? ["fullName", "password", "confirmation"] : ["otp", "fullName", "password", "confirmation"]} />
+            <FormError failure={failure} fields={["otp", "fullName", "username", "password", "confirmation"]} />
             <button className="login-submit" disabled={busy}>
               {busy ? text("Đang xử lý…", "Working…") : text("Xác thực và tạo tài khoản", "Verify and create account")}
             </button>
