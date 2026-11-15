@@ -238,7 +238,7 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
             </span>
           </h2>
           {!readOnly && availableLessonIds.length > 0 && availableLessonIds.length <= MAX_LESSONS && (
-            <button disabled={isSubmitting} type="button" className="mb-3 text-sm font-semibold text-portal-purple-strong"
+            <button disabled={isSubmitting} type="button" className="instructor-touch-link mb-3 inline-flex text-sm font-semibold text-portal-purple-strong"
               onClick={() => update("lessonIds", allSelected ? [] : availableLessonIds)}>
               {allSelected ? text("Bỏ chọn tất cả") : text("Chọn tất cả bài")}
             </button>
@@ -250,7 +250,7 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
                 {topic.lessons.map(([id, name]) => (
                   <label
                     key={id}
-                    className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 text-sm ${selectedLessonIds.has(id) ? "border-portal-line-strong bg-portal-lavender/60 text-portal-ink" : "border-slate-100 text-slate-600"}`}
+                    className={`instructor-pick flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 text-sm ${selectedLessonIds.has(id) ? "border-portal-line-strong bg-portal-lavender/60 text-portal-ink" : "border-slate-100 text-slate-600"}`}
                   >
                     <input
                       className="h-4 w-4 accent-portal-purple"
@@ -275,7 +275,7 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
             const configure = (field, value) => update("lessonConfigs", { ...form.lessonConfigs, [id]: { ...config, [field]: value } });
             return <fieldset key={id} disabled={readOnly || isSubmitting} className="mt-4 space-y-3 rounded-xl border border-slate-200 p-4">
               <legend className="px-2 text-sm font-bold">{text("Cấu hình ")} {lessonName(id)}</legend>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(config)} onChange={event => {
+              <label className="instructor-pick flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(config)} onChange={event => {
                 const next = { ...form.lessonConfigs };
                 if (event.target.checked) next[id] = { timeLimitSeconds: 300, difficulty: "easy" };
                 else delete next[id];

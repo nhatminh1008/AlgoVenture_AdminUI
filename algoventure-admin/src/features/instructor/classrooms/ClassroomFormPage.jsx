@@ -71,7 +71,7 @@ export default function ClassroomFormPage() {
       <PageHeader
         title={classId ? text("Chỉnh sửa lớp học") : text("Tạo lớp học mới")}
       />
-      <form onSubmit={submit} className="panel space-y-6 p-6 sm:p-8">
+      <form onSubmit={submit} className="instructor-compact-panel panel space-y-6 p-6 sm:p-8">
         <div>
           <h2 className="text-lg font-bold text-slate-900">
             {text("Thông tin lớp học")}

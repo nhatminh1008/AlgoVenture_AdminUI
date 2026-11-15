@@ -44,13 +44,13 @@ export default function FeatureFlagsPage() {
       </p>
       <div className="space-y-5">
         {["Learning", "Social", "System"].map((category) => (
-          <section className="panel p-6" key={category}>
+          <section className="admin-feature-panel panel p-6" key={category}>
             <h2 className="mb-3 text-lg font-bold">{text({ Learning: "Học tập", Social: "Cộng đồng", System: "Hệ thống" }[category])}</h2>
             {state.data
               .filter((f) => f.category === category)
               .map((f) => (
                 <div
-                  className="flex items-center justify-between gap-4 border-b border-slate-100 py-4 last:border-0"
+                  className="admin-feature-row flex items-center justify-between gap-4 border-b border-slate-100 py-4 last:border-0"
                   key={f.id}
                 >
                   <div>
@@ -65,12 +65,10 @@ export default function FeatureFlagsPage() {
                     aria-checked={f.enabled}
                     aria-label={f.title}
                     disabled={!!updatingFeatureId}
-                    className={`relative h-6 w-11 shrink-0 rounded-full ${f.enabled ? "bg-portal-purple" : "bg-portal-control-line"}`}
+                    className="admin-feature-switch"
                     onClick={() => toggle(f)}
                   >
-                    <span
-                      className={`absolute top-1 h-4 w-4 rounded-full bg-white ${f.enabled ? "right-1" : "left-1"}`}
-                    />
+                    <span aria-hidden="true" />
                   </button>
                 </div>
               ))}

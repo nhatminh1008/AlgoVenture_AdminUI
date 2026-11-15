@@ -44,7 +44,7 @@ export default function ResultsExportPage() {
       <PageHeader title={text("Xuất kết quả")} />
       {scope.classroom && <ClassNavigation classId={scope.classroom.id} active="export" />}
       <div className="instructor-export">
-      <section className="panel space-y-6 p-6 sm:p-8">
+      <section className="instructor-compact-panel panel space-y-6 p-6 sm:p-8">
         <div>
           <h2 className="font-bold text-slate-900">{text("Phạm vi báo cáo")}</h2>
         </div>
@@ -54,7 +54,7 @@ export default function ResultsExportPage() {
         </div>
         <fieldset>
           <legend className="field-label">{text("Định dạng tệp")}</legend>
-          <div className="flex gap-4">
+          <div className="instructor-export-formats flex gap-4">
             {["CSV", "JSON"].map((value) => (
               <label
                 key={value}

@@ -4,11 +4,11 @@ import { useText } from "../../../preferences/preferencesContext";
 
 export default function InstructorBackLink({ destination, onBack, children }) {
   const text = useText();
-  const className = "mb-5 inline-flex items-center gap-2 text-sm text-portal-muted hover:text-portal-purple-strong";
+  const className = "instructor-touch-link mb-5 inline-flex max-w-full items-center gap-2 text-left text-sm text-portal-muted hover:text-portal-purple-strong";
   const content = (
     <>
-      <ArrowLeft size={16} aria-hidden="true" />
-      {children ?? text("Quay lại")}
+      <ArrowLeft className="shrink-0" size={16} aria-hidden="true" />
+      <span className="min-w-0 wrap-anywhere">{children ?? text("Quay lại")}</span>
     </>
   );
   return onBack ? (

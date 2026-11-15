@@ -14,12 +14,12 @@ export default function QuizQuestionEditor({
   return (
     <section
       id={`question-${question.id}`}
-      className="panel quiz-question-editor p-5 sm:p-6"
+      className="instructor-compact-panel panel quiz-question-editor p-5 sm:p-6"
       aria-label={`Soạn câu ${index + 1}`}
     >
       <div className="mb-5 flex items-center justify-between gap-3">
         <h2 className="quiz-question-title"><span>{String(index + 1).padStart(2, "0")}</span>{text("Câu hỏi ")} {index + 1}</h2>
-        <div className="flex gap-1">
+        <div className="quiz-question-controls flex gap-1">
           <button
             className="rounded-lg p-2 hover:bg-slate-50"
             disabled={isSaving || index === 0}
@@ -83,7 +83,7 @@ export default function QuizQuestionEditor({
             return (
               <div
                 key={option.id}
-                className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 rounded-xl border p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] ${isCorrect ? "border-portal-line-strong bg-portal-lavender/50" : "border-slate-200"}`}
+                className={`quiz-option grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 rounded-xl border p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] ${isCorrect ? "border-portal-line-strong bg-portal-lavender/50" : "border-slate-200"}`}
               >
                 <span className="text-xs font-bold text-slate-500">{letter}</span>
                 <input
@@ -101,7 +101,7 @@ export default function QuizQuestionEditor({
                     })
                   }
                 />
-                <label className="col-span-2 col-start-2 row-start-2 inline-flex min-h-10 w-fit cursor-pointer items-center gap-2 text-sm font-medium text-portal-purple-strong sm:col-span-1 sm:col-start-3 sm:row-start-1">
+                <label className="quiz-option-correct col-span-2 col-start-2 row-start-2 inline-flex min-h-10 w-fit cursor-pointer items-center gap-2 text-sm font-medium text-portal-purple-strong sm:col-span-1 sm:col-start-3 sm:row-start-1">
                   <input
                     type="radio"
                     name={`correct-${question.id}`}
@@ -115,7 +115,7 @@ export default function QuizQuestionEditor({
                 </label>
                 <button
                   disabled={question.options.length <= 2}
-                  className="col-start-3 row-start-1 p-1 text-slate-400 hover:text-red-500 sm:col-start-4"
+                  className="quiz-option-remove col-start-3 row-start-1 p-1 text-slate-400 hover:text-red-500 sm:col-start-4"
                   aria-label={`${text("Xóa lựa chọn", "Delete choice")} ${letter}`}
                   onClick={() =>
                     onChange({
@@ -131,7 +131,7 @@ export default function QuizQuestionEditor({
           })}
         </div>
         <button
-          className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-portal-purple-strong disabled:text-slate-400"
+          className="instructor-touch-link mt-3 inline-flex items-center gap-1 text-xs font-semibold text-portal-purple-strong disabled:text-slate-400"
           disabled={question.options.length >= 6}
           onClick={() =>
             onChange({

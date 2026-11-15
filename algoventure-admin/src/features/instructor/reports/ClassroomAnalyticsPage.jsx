@@ -61,7 +61,7 @@ export default function ClassroomAnalyticsPage() {
         { label: text("Điểm quiz trung bình / 100"), value: average ?? "—", icon: <ChartNoAxesColumn /> },
       ]} />
       <div className="analytics-layout">
-        <section className="panel min-w-0 p-6">
+        <section className="instructor-compact-panel panel min-w-0 p-6">
           <h2 className="instructor-chart-title"><GraduationCap size={19} />{text("Sinh viên theo lớp")}</h2>
           {scope.rows.length ? (
             <div className="mt-5" style={{ height: Math.max(256, chart.length * 42) }}>
@@ -103,7 +103,7 @@ export default function ClassroomAnalyticsPage() {
             </p>
           )}
         </section>
-        <section className="panel p-6">
+        <section className="instructor-compact-panel panel p-6">
           <h2 className="instructor-chart-title"><ChartNoAxesColumn size={19} />{text("Phân bố điểm quiz")}</h2>
           {graded.length ? (
             <div className="mt-5 h-64">

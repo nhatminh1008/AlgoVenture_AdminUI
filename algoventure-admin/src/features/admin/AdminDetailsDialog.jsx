@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import { useText } from "../../preferences/preferencesContext";
 import "./AdminDetailsDialog.css";
 
-export default function AdminDetailsDialog({ title, onClose, closeDisabled = false, children }) {
+export default function AdminDetailsDialog({ title, onClose, closeDisabled = false, footer, children }) {
   const text = useText();
   const titleId = useId();
   const dialogRef = useRef(null);
@@ -26,6 +26,7 @@ export default function AdminDetailsDialog({ title, onClose, closeDisabled = fal
         </button>
       </header>
       <div className="admin-details-dialog-body space-y-6">{children}</div>
+      {footer && <footer className="admin-details-dialog-footer">{footer}</footer>}
     </dialog>
   );
 }

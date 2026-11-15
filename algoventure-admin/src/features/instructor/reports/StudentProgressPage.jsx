@@ -1,5 +1,6 @@
 import { useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
+import RecordTable from "../../../shared/components/RecordTable";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import ClassNavigation from "../classrooms/ClassNavigation";
 import PracticeEvidence from "./PracticeEvidence";
@@ -31,6 +32,35 @@ export default function StudentProgressPage() {
   const graded = rows.filter((row) => row.score != null);
   const assigned = rows.filter((row) => row.assignedLessons > 0);
   const pagination = usePagination(rows, scope.selected + query);
+  const columns = [
+    {
+      key: "student", title: text("Sinh viên"), layout: "primary",
+      render: (row) => <StudentIdentity name={row.name} email={row.email} />,
+    },
+    {
+      key: "classroom", title: text("Lớp học"),
+      render: (row) => (
+        <Link className="instructor-touch-link inline-flex wrap-anywhere text-portal-purple-strong"
+          to={`/instructor/classes/${row.classId}`} state={childState}>
+          {scope.classes.find((item) => item.id === row.classId)?.name}
+        </Link>
+      ),
+    },
+    {
+      key: "score", title: text("Điểm quiz / 100"),
+      hint: text("Trung bình điểm cao nhất của từng quiz đã nộp"),
+      render: (row) => <strong className="text-portal-ink">{row.score ?? "—"}</strong>,
+    },
+    {
+      key: "progress", title: text("Tiến độ bài thực hành"), layout: "wide",
+      render: (row) => <ProgressMeter completed={row.completedLessons} total={row.assignedLessons} percent={row.progressPercent} />,
+    },
+  ];
+  const emptyMessage = scope.invalid
+    ? text("Không tìm thấy lớp bạn phụ trách.")
+    : scope.rows.length
+      ? text("Không tìm thấy sinh viên phù hợp.")
+      : text("Lớp chưa có sinh viên và kết quả học tập.");
   return (
     <div className="mx-auto max-w-6xl">
       {back.to && <InstructorBackLink destination={back} />}
@@ -70,7 +100,7 @@ export default function StudentProgressPage() {
         },
       ]} />
       <div className="panel overflow-hidden">
-        <div className="flex flex-wrap gap-3 border-b border-slate-100 p-5">
+        <div className="instructor-compact-panel flex flex-wrap gap-3 border-b border-slate-100 p-5">
           <label className="relative min-w-48 flex-1">
             <span className="sr-only">{text("Tìm sinh viên")}</span>
             <Search
@@ -86,55 +116,9 @@ export default function StudentProgressPage() {
           </label>
           <ClassroomFilter scope={scope} />
         </div>
-        <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>{text("Sinh viên")}</th>
-                <th>{text("Lớp học")}</th>
-                <th title={text("Trung bình điểm cao nhất của từng quiz đã nộp")}>{text("Điểm quiz / 100")}</th>
-                <th>{text("Tiến độ bài thực hành")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagination.items.map((row) => {
-                const classroom = scope.classes.find(
-                  (item) => item.id === row.classId,
-                );
-                return (
-                  <tr key={row.id}>
-                    <td>
-                      <StudentIdentity name={row.name} email={row.email} />
-                    </td>
-                    <td>
-                      <Link
-                        className="text-portal-purple-strong"
-                        to={`/instructor/classes/${row.classId}`}
-                        state={childState}
-                      >
-                        {classroom.name}
-                      </Link>
-                    </td>
-                    <td><strong className="text-portal-ink">{row.score ?? "—"}</strong></td>
-                    <td><ProgressMeter completed={row.completedLessons} total={row.assignedLessons} percent={row.progressPercent} /></td>
-                  </tr>
-                );
-              })}
-              {!rows.length && (
-                <tr>
-                  <td colSpan={4} className="p-10 text-center text-slate-500">
-                    {scope.invalid
-                      ? text("Không tìm thấy lớp bạn phụ trách.")
-                      : scope.rows.length
-                        ? text("Không tìm thấy sinh viên phù hợp.")
-                        : text("Lớp chưa có sinh viên và kết quả học tập.")}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-          <Pagination pagination={pagination} />
-        </div>
+        <RecordTable label={text("Tiến độ học tập")} columns={columns} rows={pagination.items}
+          emptyMessage={<span className="block p-3 text-center text-portal-muted">{emptyMessage}</span>} />
+        <Pagination pagination={pagination} />
         <p className="border-t border-slate-100 p-4 text-xs text-slate-500">
           {rows.length} {text(" sinh viên")}
         </p>

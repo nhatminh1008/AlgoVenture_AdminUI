@@ -56,7 +56,7 @@ export default function PlatformSettingsPage() {
       <div className="mb-6"><Appearance /></div>
       <ApiFeedback state={state} message={message} actionError={actionError} />
       {form && (
-        <form onSubmit={save} className="panel space-y-6 p-6">
+        <form onSubmit={save} className="admin-form panel space-y-6 p-6">
           <label className="block">
             <span className="field-label">{text("Tên nền tảng")}</span>
             <input
@@ -79,7 +79,7 @@ export default function PlatformSettingsPage() {
                   }} />
               </label>)}
           </fieldset>
-          <label className="flex items-center gap-3">
+          <label className="admin-check-option flex items-center gap-3">
             <input
               type="checkbox"
               checked={form.maintenance}
@@ -90,7 +90,7 @@ export default function PlatformSettingsPage() {
           <p className="text-sm text-slate-500">
             {text("Khi bật bảo trì, Unity tạm dừng truy cập màn chơi sau khi đồng bộ. Portal vẫn mở cho quản trị viên.")}
           </p>
-          <div className="flex flex-wrap gap-3">
+          <div className="admin-form-actions flex flex-wrap gap-3">
             <button className="btn-primary" disabled={isSubmitting}>
               {text("Lưu cài đặt")}
             </button>

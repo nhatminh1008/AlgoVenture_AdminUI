@@ -105,3 +105,202 @@
 @media (max-width: 1200px) { .class-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.challenge-editor-layout { gap: 18px; }.challenge-editor-layout > section:last-child fieldset { grid-template-columns: 1fr; }.class-form-layout { grid-template-columns: minmax(0, 1fr) 250px; }.classes-table td, .classes-table th { padding-left: 12px; padding-right: 12px; } }
 @media (max-width: 850px) { .class-form-layout, .challenge-editor-layout, .analytics-layout, .instructor-export { grid-template-columns: 1fr; gap: 22px; }.quiz-editor-summary { position: static; }.classes-toolbar { flex-wrap: wrap; }.classes-search { flex-basis: 100%; }.classes-filter { flex: 1; max-width: none; min-width: 0; }.classes-filter-icon { display: none; }.classes-table, .classes-table tbody { display: block; }.classes-table thead { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }.classes-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 22px 18px; border-top: 1px solid var(--portal-line); gap: 19px 12px; }.classes-table tbody tr:first-child { border-top: none; }.classes-table td, .classes-table .class-name-cell { display: block; width: auto; padding: 0; border: none; font-size: 15px; }.classes-table .class-name-cell { grid-column: 1 / -1; }.classes-table td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 7px; color: var(--portal-muted); font-size: 13px; }.classes-table .class-actions-cell { grid-column: 1 / -1; }.class-actions-cell > div { justify-content: flex-end; gap: 10px; }.class-assign { margin-right: auto; } }
 @media (max-width: 600px) { .instructor-page-header { align-items: flex-start; }.class-card-grid { grid-template-columns: 1fr; gap: 16px; }.class-create-card { min-height: 180px; }.instructor-detail-summary { padding: 17px; }.instructor-detail-tags { gap: 9px; font-size: 12px; }.instructor-detail-tags > span + span { padding-left: 9px; }.challenge-editor-layout > section { padding: 20px; }.classes-section-heading h2 { font-size: 19px; } }
+
+.quiz-editor-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.instructor-roster {
+  border-color: var(--portal-line);
+}
+
+.instructor-roster li + li {
+  border-top: 1px solid var(--portal-line);
+}
+
+@media (max-width: 1023px) {
+  .quiz-editor-summary {
+    position: static;
+  }
+}
+
+@media (min-width: 1024px) {
+  .quiz-editor-workspace {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 24px;
+  }
+
+  .quiz-editor-summary {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .quiz-editor-questions {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .instructor-page-header {
+    display: grid;
+    justify-content: stretch;
+    gap: 12px;
+  }
+
+  .instructor-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .instructor-tabs a {
+    flex-direction: column;
+    justify-content: center;
+    min-height: 52px;
+    gap: 4px;
+    padding: 5px 3px;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .instructor-detail-summary,
+  .instructor-compact-panel,
+  .instructor-export-preview,
+  .challenge-editor-layout > section {
+    min-width: 0;
+    padding: 14px;
+    overflow-wrap: anywhere;
+  }
+
+  .instructor-invite {
+    flex-wrap: wrap;
+  }
+
+  .instructor-section-actions > .btn-primary {
+    width: 100%;
+  }
+
+  .instructor-touch-link {
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .classes-search > button {
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translateY(-50%);
+  }
+
+  .classes-search:has(> button) .field {
+    padding-inline-end: 50px;
+  }
+
+  .instructor-pick {
+    min-height: 44px;
+  }
+
+  .instructor-pick input,
+  .quiz-option-correct input {
+    width: 18px;
+    height: 18px;
+    flex: none;
+    accent-color: var(--portal-purple);
+  }
+
+  .instructor-recipient {
+    display: grid;
+  }
+
+  .instructor-export-formats {
+    gap: 8px;
+  }
+
+  .instructor-export-format {
+    min-height: 44px;
+    padding: 8px;
+  }
+
+  .instructor-shell .field {
+    min-width: 0;
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .instructor-authoring {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  .instructor-authoring,
+  .quiz-question-editor {
+    scroll-margin-top: calc(72px + env(safe-area-inset-top));
+  }
+
+  .instructor-action-bar {
+    position: fixed;
+    z-index: 15;
+    inset: auto 0 0;
+    display: flex;
+    gap: 8px;
+    padding: 10px max(14px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+    border-top: 1px solid var(--portal-line);
+    background: var(--portal-surface);
+  }
+
+  .instructor-action-bar > button {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: 6px;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .quiz-editor-actions > button svg {
+    display: none;
+  }
+
+  .quiz-editor-summary dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 16px;
+  }
+
+  .quiz-editor-summary dl > div {
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 0;
+  }
+
+  .quiz-question-nav {
+    padding-top: 12px;
+    margin-top: 12px;
+  }
+
+  .quiz-question-nav a,
+  .quiz-question-controls button,
+  .quiz-option-remove {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+  }
+
+  .quiz-question-title > span {
+    display: none;
+  }
+
+  .quiz-option {
+    column-gap: 8px;
+    padding: 8px;
+  }
+
+  .quiz-option-correct {
+    min-height: 44px;
+  }
+}

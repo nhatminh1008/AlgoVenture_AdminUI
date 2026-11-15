@@ -6,6 +6,7 @@ import { listClassroomChallengeSets, listClassroomMembers } from "./adminClassro
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import { useApiData } from "../../../shared/hooks/useApiData";
 import AdminDetailsDialog from "../AdminDetailsDialog";
+import RecordTable from "../../../shared/components/RecordTable";
 import RecordBadge from "../RecordBadge";
 
 export default function ClassroomDetailsPanel({ classroom, onClose }) {
@@ -19,6 +20,24 @@ export default function ClassroomDetailsPanel({ classroom, onClose }) {
   const setsPage = usePagination(challengeSets.data, classroomId);
   const membersReady = !members.loading && !members.error;
   const setsReady = !challengeSets.loading && !challengeSets.error;
+  const columns = [
+    {
+      key: "title", title: text("Tên bộ thử thách", "Challenge set name"), layout: "primary",
+      render: (set) => <>
+        {set.title}
+        {set.description && <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{set.description}</p>}
+      </>,
+    },
+    { key: "lessonCount", title: text("Số bài", "Lessons"), render: (set) => set.lessonIds.length },
+    {
+      key: "due", title: text("Hạn nộp", "Due date"),
+      render: (set) => set.due ? <time dateTime={set.due}>{set.due}</time> : text("Chưa đặt"),
+    },
+    {
+      key: "status", title: text("Trạng thái"),
+      render: (set) => <RecordBadge value={set.archivedAt ? "Đã lưu trữ" : set.status === "Active" ? "Publish" : set.status} />,
+    },
+  ];
   return <AdminDetailsDialog title={classroom.name} onClose={onClose}>
     {classroom.description && <p>{classroom.description}</p>}
     <section className="space-y-3" aria-labelledby="classroom-members-heading">
@@ -41,23 +60,8 @@ export default function ClassroomDetailsPanel({ classroom, onClose }) {
       </h3>
       <ApiFeedback state={challengeSets} />
       {setsReady && (challengeSets.data.length ? <>
-        <div className="overflow-x-auto rounded-lg border border-slate-100">
-          <table className="data-table" aria-labelledby="classroom-challenge-sets-heading">
-            <thead><tr>
-              <th scope="col">{text("Tên bộ thử thách", "Challenge set name")}</th>
-              <th scope="col">{text("Số bài", "Lessons")}</th>
-              <th scope="col">{text("Hạn nộp", "Due date")}</th>
-              <th scope="col">{text("Trạng thái")}</th>
-            </tr></thead>
-            <tbody>
-              {setsPage.items.map((set) => <tr key={set.id}>
-                <td>{set.title}{set.description && <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{set.description}</p>}</td>
-                <td>{set.lessonIds.length}</td>
-                <td>{set.due ? <time dateTime={set.due}>{set.due}</time> : text("Chưa đặt")}</td>
-                <td><RecordBadge value={set.archivedAt ? "Đã lưu trữ" : set.status === "Active" ? "Publish" : set.status} /></td>
-              </tr>)}
-            </tbody>
-          </table>
+        <div className="overflow-hidden rounded-lg border border-slate-100">
+          <RecordTable label={text("Bộ thử thách")} columns={columns} rows={setsPage.items} />
         </div>
         <Pagination pagination={setsPage} />
       </> : <p className="text-sm text-slate-500">{text("Lớp chưa có bộ thử thách.", "This classroom has no challenge sets.")}</p>)}

@@ -6,6 +6,7 @@ import LanguageToggle from "../preferences/LanguageToggle";
 import ThemeToggle from "../preferences/ThemeToggle";
 import BrandMark from "../shared/components/BrandMark";
 import "./PortalFrame.css";
+import "./PortalMobile.css";
 
 const normalize = (value) => value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
 
@@ -60,23 +61,28 @@ export default function PortalFrame({ user, logout, navItems, className = "", ch
   useEffect(() => {
     if (!menuOpen) return;
     const previous = document.body.style.overflow;
+    const trigger = menuButton.current;
     document.body.style.overflow = "hidden";
     sidebar.current?.querySelector("a")?.focus();
     const desktop = window.matchMedia("(min-width: 1025px)");
     const resize = () => { if (desktop.matches) setMenuOpen(false); };
     desktop.addEventListener("change", resize);
-    return () => { document.body.style.overflow = previous; desktop.removeEventListener("change", resize); menuButton.current?.focus(); };
+    return () => {
+      document.body.style.overflow = previous;
+      desktop.removeEventListener("change", resize);
+      if (!desktop.matches) trigger?.focus();
+    };
   }, [menuOpen]);
 
   return (
     <div className={`portal-frame ${className}`}>
       <a href="#main-content" className="skip-link">{text("Đến nội dung chính")}</a>
       {menuOpen && <button className="portal-backdrop" aria-label={text("Đóng điều hướng")} tabIndex={-1} onClick={closeMenu} />}
-      <aside ref={sidebar} className={`portal-sidebar${menuOpen ? " is-open" : ""}`} onKeyDown={(event) => {
+      <aside id={navigationId} ref={sidebar} className={`portal-sidebar${menuOpen ? " is-open" : ""}`} onKeyDown={(event) => {
         if (!menuOpen) return;
         if (event.key === "Escape") closeMenu();
         if (event.key === "Tab") {
-          const elements = [...sidebar.current.querySelectorAll("a, button")].filter((element) => element.getClientRects().length);
+          const elements = [...sidebar.current.querySelectorAll("a[href], button:not(:disabled)")].filter((element) => element.getClientRects().length);
           const first = elements[0], last = elements.at(-1);
           if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
           else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
@@ -86,7 +92,7 @@ export default function PortalFrame({ user, logout, navItems, className = "", ch
           <BrandMark className="portal-mark" /><span>AlgoVenture</span>
         </Link>
         <button className="portal-drawer-close" onClick={closeMenu} aria-label={text("Đóng menu")}><X size={20} /></button>
-        <nav id={navigationId} aria-label={text("Điều hướng chính")} className="portal-navigation">
+        <nav aria-label={text("Điều hướng chính")} className="portal-navigation">
           {navItems.map((item, index) => <div key={item.path}>
             {(index === 0 || item.group !== navItems[index - 1].group) && <p className="portal-nav-label">{item.group || "Không gian làm việc"}</p>}
             <NavLink to={item.path} end={item.path === "/admin"} onClick={() => setMenuOpen(false)} className={({ isActive }) => `portal-nav-link${isActive ? " is-active" : ""}`}>
@@ -95,6 +101,10 @@ export default function PortalFrame({ user, logout, navItems, className = "", ch
           </div>)}
         </nav>
         <div className="portal-sidebar-bottom">
+          <div className="portal-drawer-preferences">
+            <ThemeToggle />
+            <LanguageToggle />
+          </div>
           <div className="portal-account">
             <span className="portal-avatar" aria-hidden="true">{initials}</span>
             <div><NavLink to="/profile" title={user.name} onClick={closeMenu}><strong>{user.name}</strong></NavLink></div>

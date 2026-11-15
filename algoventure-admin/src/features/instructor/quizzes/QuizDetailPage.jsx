@@ -88,7 +88,7 @@ function QuizDetailContent({ classroom, quiz }) {
           {closedHere ? text("Đã đóng bài trắc nghiệm.", "Quiz closed.") : location.state.message}
         </p>
       )}
-      <section className="panel mb-6 space-y-3 p-6">
+      <section className="instructor-compact-panel panel mb-6 space-y-3 p-6">
         <div className="flex flex-wrap gap-3 text-xs text-slate-500">
           <span className="font-semibold text-portal-purple-strong">
             {text(getQuizStatusLabel(quiz))}

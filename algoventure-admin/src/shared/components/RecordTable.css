@@ -1,0 +1,96 @@
+.record-table-label { display: none; }
+
+.record-table-scroll {
+  position: relative;
+  overflow-x: auto;
+}
+
+@media (max-width: 760px) {
+  .record-table-scroll {
+    overflow: visible;
+  }
+
+  .record-table {
+    display: block;
+  }
+
+  .record-table thead {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .record-table tbody {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .record-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--portal-line);
+    border-radius: 12px;
+    background: var(--portal-subtle);
+  }
+
+  .record-table tbody td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .record-table :is(.record-table-primary, .record-table-secondary, .record-table-wide, .record-table-actions, td[colspan]) {
+    grid-column: 1 / -1;
+  }
+
+  .record-table .record-table-primary {
+    font-size: 16px;
+    line-height: 1.45;
+  }
+
+  .record-table .record-table-secondary {
+    margin-top: -9px;
+    color: var(--portal-muted);
+    font-size: 13px;
+  }
+
+  .record-table-label {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--portal-muted);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .record-table td[colspan] {
+    padding: 13px 0;
+  }
+
+  .record-table .record-badge,
+  .record-table .instructor-badge, .record-table .btn-row-action {
+    white-space: normal;
+  }
+
+  .record-table .record-table-actions {
+    padding-top: 10px;
+    border-top: 1px solid var(--portal-line);
+  }
+
+  .record-table-actions .table-actions > :first-child {
+    flex: 1 1 auto;
+  }
+
+  .record-table-actions > .btn-row-action {
+    width: 100%;
+  }
+
+}

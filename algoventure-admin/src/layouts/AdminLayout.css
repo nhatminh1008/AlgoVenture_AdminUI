@@ -1,0 +1,160 @@
+.admin-shell .admin-field-value {
+  border-color: var(--portal-line);
+  background: var(--portal-subtle);
+  color: var(--portal-muted);
+  overflow-wrap: anywhere;
+}
+
+.admin-feature-switch {
+  display: grid;
+  width: 44px;
+  min-height: 24px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 8px;
+}
+
+.admin-feature-switch span {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--portal-control-line);
+}
+
+.admin-feature-switch[aria-checked="true"] span {
+  background: var(--portal-purple);
+}
+
+.admin-feature-switch span::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+}
+
+.admin-feature-switch[aria-checked="true"] span::after {
+  transform: translateX(20px);
+}
+
+@media (max-width: 760px) {
+  .admin-feature-switch { min-height: 44px; }
+}
+
+@media (max-width: 600px) {
+  .admin-shell .admin-page-header {
+    display: grid;
+    justify-content: stretch;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .admin-shell .admin-form-actions > :is(button, a) { flex: 1 1 auto; padding-inline: 12px; white-space: normal; }
+
+  .admin-shell .admin-form-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .admin-shell :is(.admin-table-toolbar, .admin-table-filters, .admin-form.panel, .admin-feature-panel) {
+    padding: 14px;
+  }
+
+  .admin-table-filters {
+    display: grid;
+  }
+
+  .admin-table-help {
+    padding: 0 14px;
+  }
+
+  .admin-table-help summary {
+    padding-block: 9px;
+  }
+
+  .admin-shell :is(.field, .admin-form fieldset, .admin-form label, .admin-feature-row > div) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-shell .field {
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .admin-check-option {
+    min-height: 44px;
+    padding-block: 6px;
+  }
+
+  .admin-check-option > input {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  .admin-shell .admin-details-dialog {
+    inset: auto 0 0;
+    width: 100%;
+    max-width: none;
+    max-height: min(92dvh, calc(100dvh - env(safe-area-inset-top)));
+    margin: 0;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .admin-shell .admin-details-dialog-header {
+    padding: 10px 14px;
+  }
+
+  .admin-shell .admin-details-dialog-body {
+    padding: 14px 14px max(14px, env(safe-area-inset-bottom));
+    overflow-wrap: anywhere;
+  }
+
+  .admin-shell .admin-details-dialog-footer {
+    padding: 10px 14px max(10px, env(safe-area-inset-bottom));
+  }
+
+  .admin-shell #admin-activity {
+    scroll-margin-top: calc(72px + env(safe-area-inset-top));
+  }
+
+  .admin-shell :is(.dashboard-section, .dashboard-activity) {
+    padding: 14px;
+  }
+
+  .admin-shell .dashboard-section-heading {
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .admin-shell .dashboard-section-heading a {
+    min-height: 44px;
+  }
+
+  .admin-shell .resource-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-shell .resource-tile {
+    padding: 12px;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-shell .activity-row {
+    display: grid;
+    grid-template-columns: 8px minmax(0, 1fr);
+    gap: 4px 10px;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-shell .activity-row time {
+    grid-column: 2;
+    margin: 0;
+    white-space: normal;
+  }
+}

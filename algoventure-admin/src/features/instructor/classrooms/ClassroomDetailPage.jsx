@@ -1,5 +1,6 @@
 import { useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
+import RecordTable from "../../../shared/components/RecordTable";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import {
   Link,
@@ -35,6 +36,14 @@ export default function ClassroomDetailPage() {
   const sets = assignments.filter((item) => item.classId === classId);
   const membersPage = usePagination(members, classId);
   const setsPage = usePagination(sets, classId);
+  const memberColumns = [
+    { key: "name", title: text("Sinh viên"), layout: "primary", render: (member) => <StudentIdentity name={member.name} /> },
+    { key: "email", title: text("Email"), layout: "secondary", render: (member) => member.email },
+    {
+      key: "score", title: text("Điểm quiz / 100"),
+      render: (member) => <strong className="text-portal-ink">{member.score ?? "—"}</strong>,
+    },
+  ];
   if (!classroom)
     return (
       <div className="panel p-8">
@@ -81,21 +90,21 @@ export default function ClassroomDetailPage() {
           <div className="instructor-invite"><span>{text("Mã tham gia")}</span><strong>{classroom.inviteCode}</strong></div>
         )}
       </div>
-      {classroom.description && <p className="mb-5 whitespace-pre-wrap text-sm text-slate-600">{classroom.description}</p>}
+      {classroom.description && <p className="mb-5 wrap-anywhere whitespace-pre-wrap text-sm text-slate-600">{classroom.description}</p>}
       <ClassNavigation classId={classId} active={tab} state={location.state?.back ? { back } : undefined} />
       <section id="class-panel">
         {tab === "quizzes" && <ClassQuizzes key={classId} classId={classId} archivedAt={classroom.archivedAt} />}
         {tab === "assignments" && (
           <div className="space-y-4">
             <Pagination pagination={setsPage} />
-            <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">{text("Bộ thử thách (")}{sets.length})</h2>{!classroom.archivedAt && <Link className="btn-primary" to={`/instructor/classes/${classId}/assign`} state={childState}><Plus size={17} />{text("Giao bài")}</Link>}</div>
+            <div className="instructor-section-actions flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">{text("Bộ thử thách (")}{sets.length})</h2>{!classroom.archivedAt && <Link className="btn-primary" to={`/instructor/classes/${classId}/assign`} state={childState}><Plus size={17} />{text("Giao bài")}</Link>}</div>
             {setsPage.items.map((set) => {
               const canEdit = !classroom.archivedAt && !set.archivedAt && set.status === "Draft" && set.assignmentTemplateId;
               const destination = canEdit
                 ? `/instructor/challenges?assignmentTemplateId=${encodeURIComponent(set.assignmentTemplateId)}`
                 : `/instructor/challenges?classId=${encodeURIComponent(classId)}&assignmentId=${encodeURIComponent(set.id)}`;
               return (
-                <article className="panel p-5 sm:p-6" key={set.id}>
+                <article className="instructor-compact-panel panel p-5 sm:p-6" key={set.id}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <h2 className="font-semibold text-slate-900">
@@ -125,7 +134,7 @@ export default function ClassroomDetailPage() {
                   <Link
                     to={destination}
                     state={childState}
-                    className="mt-4 inline-flex text-sm font-semibold text-portal-purple-strong"
+                    className="instructor-touch-link mt-4 inline-flex text-sm font-semibold text-portal-purple-strong"
                   >
                     {canEdit
                       ? text("Chỉnh sửa bộ bài →")
@@ -146,29 +155,10 @@ export default function ClassroomDetailPage() {
           <div className="panel overflow-hidden">
             {members.length ? (
               <>
-                <div className="overflow-x-auto">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>{text("Sinh viên")}</th>
-                        <th>{text("Email")}</th>
-                        <th>{text("Điểm quiz / 100")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {membersPage.items.map((member) => (
-                        <tr key={member.id}>
-                          <td><StudentIdentity name={member.name} /></td>
-                          <td>{member.email}</td>
-                          <td><strong className="text-portal-ink">{member.score ?? "—"}</strong></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <Pagination pagination={membersPage} />
-                </div>
+                <RecordTable label={text("Sinh viên")} columns={memberColumns} rows={membersPage.items} />
+                <Pagination pagination={membersPage} />
                 <Link
-                  className="m-5 inline-flex text-sm font-semibold text-portal-purple-strong"
+                  className="instructor-touch-link m-5 inline-flex text-sm font-semibold text-portal-purple-strong"
                   to={`/instructor/progress?classId=${classId}`}
                   state={childState}
                 >

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useApiData } from "../../../shared/hooks/useApiData";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import { AdminPageHeader } from "../AdminPageHeader";
+import RecordTable from "../../../shared/components/RecordTable";
 import RecordBadge from "../RecordBadge";
 import { listLessons } from "./lessonService";
 export default function LessonLibraryPage() {
@@ -17,6 +18,23 @@ export default function LessonLibraryPage() {
     `${a.name} ${a.topicId}`.toLowerCase().includes(query.toLowerCase()),
   );
   const pagination = usePagination(rows, query);
+  const columns = [
+    { key: "name", title: text("Bài học"), layout: "primary", render: (lesson) => lesson.name },
+    { key: "topic", title: text("Chủ đề"), render: (lesson) => lesson.topicId },
+    {
+      key: "difficulty", title: text("Độ khó"),
+      render: (lesson) => lesson.hasDifficultyPresets ? lesson.difficulty : text("Theo chặng", "By stage"),
+    },
+    { key: "status", title: text("Trạng thái"), render: (lesson) => <RecordBadge value={lesson.status} /> },
+    {
+      key: "actions", title: text("Thao tác"), layout: "actions",
+      render: (lesson) => (
+        <Link className="btn-row-action" to={`/admin/levels?lessonId=${lesson.id}`}>
+          <SlidersHorizontal aria-hidden="true" />{text("Cấu hình")}
+        </Link>
+      ),
+    },
+  ];
   return (
     <div className="mx-auto max-w-5xl">
       <AdminPageHeader title="Content & Levels" />
@@ -28,41 +46,9 @@ export default function LessonLibraryPage() {
         onChange={(e) => setQuery(e.target.value)}
         placeholder={text("Tìm bài học hoặc chủ đề…")}
       />
-      <div className="panel overflow-x-auto">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>{text("Bài học")}</th>
-              <th>{text("Chủ đề")}</th>
-              <th>{text("Độ khó")}</th>
-              <th>{text("Trạng thái")}</th>
-              <th>{text("Thao tác")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagination.items.map((a) => (
-              <tr key={a.id}>
-                <td>{a.name}</td>
-                <td>{a.topicId}</td>
-                <td>{a.hasDifficultyPresets ? a.difficulty : text("Theo chặng", "By stage")}</td>
-                <td><RecordBadge value={a.status} /></td>
-                <td>
-                  <Link
-                    className="btn-row-action"
-                    to={`/admin/levels?lessonId=${a.id}`}
-                  >
-                    <SlidersHorizontal aria-hidden="true" />{text("Cấu hình")}
-                  </Link>
-                </td>
-              </tr>
-            ))}
-            {!rows.length && (
-              <tr>
-                <td colSpan={5}>{text("Không tìm thấy bài học.")}</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <div className="panel overflow-hidden">
+        <RecordTable label={text("Thư viện bài học")} columns={columns} rows={pagination.items}
+          emptyMessage={text("Không tìm thấy bài học.")} />
         <Pagination pagination={pagination} />
       </div>
     </div>

@@ -2,6 +2,7 @@ import { useText } from "../preferences/preferencesContext";
 import { useAuth } from "../auth/useAuth";
 import { Outlet } from "react-router-dom";
 import PortalFrame from "./PortalFrame";
+import "./AdminLayout.css";
 import {
   LayoutDashboard,
   Users,

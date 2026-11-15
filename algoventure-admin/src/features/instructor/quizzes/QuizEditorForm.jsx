@@ -1,7 +1,7 @@
 import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { useText } from "../../../preferences/preferencesContext";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, Plus, Save, Send } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
@@ -35,6 +35,23 @@ export default function QuizEditorForm({ classroom, existing }) {
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [preview, setPreview] = useState(false);
+  const editorStart = useRef(null);
+  const errorNotice = useRef(null);
+
+  useEffect(() => {
+    if (error && window.matchMedia("(max-width: 600px)").matches) {
+      errorNotice.current?.scrollIntoView({ block: "center" });
+    }
+  }, [error]);
+
+  function changePreview(show) {
+    setPreview(show);
+    if (window.matchMedia("(max-width: 600px)").matches) {
+      editorStart.current?.focus({ preventScroll: true });
+      editorStart.current?.scrollIntoView();
+    }
+  }
+
   function update(field, value) {
     setForm((previous) => ({ ...previous, [field]: value }));
     setError("");
@@ -93,13 +110,17 @@ export default function QuizEditorForm({ classroom, existing }) {
     if (validation) setError(validation);
     else {
       setError("");
-      setPreview(true);
+      changePreview(true);
     }
   }
   return (
-    <div className="mx-auto max-w-6xl">
+    <div
+      className={`mx-auto max-w-6xl${preview ? "" : " instructor-authoring"}`}
+      ref={editorStart}
+      tabIndex={-1}
+    >
       {preview ? (
-        <InstructorBackLink onBack={() => setPreview(false)}>{text("Quay lại soạn câu hỏi")}</InstructorBackLink>
+        <InstructorBackLink onBack={() => changePreview(false)}>{text("Quay lại soạn câu hỏi")}</InstructorBackLink>
       ) : (
         <InstructorBackLink destination={back} />
       )}
@@ -113,7 +134,7 @@ export default function QuizEditorForm({ classroom, existing }) {
         }
       >
         {!preview && (
-          <>
+          <div className="instructor-action-bar quiz-editor-actions flex flex-wrap items-center gap-2">
             <button
               className="btn-secondary"
               disabled={isSaving}
@@ -138,11 +159,12 @@ export default function QuizEditorForm({ classroom, existing }) {
               <Send size={16} />
               {isSaving ? text("Đang lưu…") : text("Giao cho lớp")}
             </button>
-          </>
+          </div>
         )}
       </PageHeader>
       {error && (
         <p
+          ref={errorNotice}
           role="alert"
           className="mb-5 rounded-xl bg-red-50 p-4 text-sm text-red-700"
         >
@@ -152,50 +174,73 @@ export default function QuizEditorForm({ classroom, existing }) {
       {preview ? (
         <QuizPreview quiz={form} />
       ) : (
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="min-w-0 space-y-5">
-            <section className="panel space-y-5 p-6">
-              <div className="flex flex-wrap gap-2 text-xs">
-                <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
-                  {text("Bản nháp · Một đáp án đúng/câu")}
-                </span>
-              </div>
-              <label className="block">
-                <span className="field-label">{text("Tên bộ câu hỏi *")}</span>
-                <input
-                  className="field"
-                  disabled={isSaving}
-                  maxLength={100}
-                  value={form.title}
-                  onChange={(event) => update("title", event.target.value)}
-                  placeholder={text("VD: Kiểm tra kiến thức Bubble Sort")}
-                />
-              </label>
-              <label className="block">
-                <span className="field-label">{text("Hướng dẫn")}</span>
-                <textarea
-                  className="field"
-                  disabled={isSaving}
-                  rows={3}
-                  maxLength={1000}
-                  value={form.description}
-                  onChange={(event) =>
-                    update("description", event.target.value)
-                  }
-                  placeholder={text("Nội dung và mục tiêu của bộ câu hỏi...")}
-                />
-              </label>
-              <label className="block">
-                <span className="field-label">{text("Hạn hoàn thành (tùy chọn)")}</span>
-                <input
-                  type="date"
-                  className="field sm:max-w-64"
-                  disabled={isSaving}
-                  value={form.due}
-                  onChange={(event) => update("due", event.target.value)}
-                />
-              </label>
+        <div className="quiz-editor-workspace">
+          <section className="instructor-compact-panel panel space-y-5 p-6">
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
+                {text("Bản nháp · Một đáp án đúng/câu")}
+              </span>
+            </div>
+            <label className="block">
+              <span className="field-label">{text("Tên bộ câu hỏi *")}</span>
+              <input
+                className="field"
+                disabled={isSaving}
+                maxLength={100}
+                value={form.title}
+                onChange={(event) => update("title", event.target.value)}
+                placeholder={text("VD: Kiểm tra kiến thức Bubble Sort")}
+              />
+            </label>
+            <label className="block">
+              <span className="field-label">{text("Hướng dẫn")}</span>
+              <textarea
+                className="field"
+                disabled={isSaving}
+                rows={3}
+                maxLength={1000}
+                value={form.description}
+                onChange={(event) =>
+                  update("description", event.target.value)
+                }
+                placeholder={text("Nội dung và mục tiêu của bộ câu hỏi...")}
+              />
+            </label>
+            <label className="block">
+              <span className="field-label">{text("Hạn hoàn thành (tùy chọn)")}</span>
+              <input
+                type="date"
+                className="field sm:max-w-64"
+                disabled={isSaving}
+                value={form.due}
+                onChange={(event) => update("due", event.target.value)}
+              />
+            </label>
+          </section>
+          <aside className="quiz-editor-summary min-w-0 space-y-5">
+            <section className="instructor-compact-panel panel p-5">
+              <h2 className="mb-4 font-bold text-slate-900">
+                {text("Tổng quan bộ câu hỏi")}
+              </h2>
+              <dl className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-slate-500">{text("Số câu hỏi")}</dt>
+                  <dd className="font-semibold">{form.questions.length}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-slate-500">{text("Tổng điểm")}</dt>
+                  <dd className="font-semibold">
+                    {form.questions.reduce(
+                      (sum, question) => sum + (Number(question.points) || 0),
+                      0,
+                    )}
+                  </dd>
+                </div>
+              </dl>
+              <nav className="quiz-question-nav" aria-label={text("Danh sách câu hỏi")}>{pagination.items.map((question, offset) => <a key={question.id} href={`#question-${question.id}`}>{pagination.page * 10 + offset + 1}</a>)}</nav>
             </section>
+          </aside>
+          <div className="quiz-editor-questions min-w-0 space-y-5">
             <Pagination pagination={pagination} />
             {pagination.items.map((question, offset) => (
               <QuizQuestionEditor
@@ -223,29 +268,6 @@ export default function QuizEditorForm({ classroom, existing }) {
               {text("Thêm câu hỏi (")}{form.questions.length}/{MAX_QUESTIONS})
             </button>
           </div>
-          <aside className="quiz-editor-summary min-w-0 space-y-5">
-            <section className="panel p-5">
-              <h2 className="mb-4 font-bold text-slate-900">
-                {text("Tổng quan bộ câu hỏi")}
-              </h2>
-              <dl className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-slate-500">{text("Số câu hỏi")}</dt>
-                  <dd className="font-semibold">{form.questions.length}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-slate-500">{text("Tổng điểm")}</dt>
-                  <dd className="font-semibold">
-                    {form.questions.reduce(
-                      (sum, question) => sum + (Number(question.points) || 0),
-                      0,
-                    )}
-                  </dd>
-                </div>
-              </dl>
-              <nav className="quiz-question-nav" aria-label={text("Danh sách câu hỏi")}>{pagination.items.map((question, offset) => <a key={question.id} href={`#question-${question.id}`}>{pagination.page * 10 + offset + 1}</a>)}</nav>
-            </section>
-          </aside>
         </div>
       )}
     </div>

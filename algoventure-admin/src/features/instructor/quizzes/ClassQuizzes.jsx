@@ -1,4 +1,5 @@
 import Pagination from "../../../shared/components/Pagination";
+import RecordTable from "../../../shared/components/RecordTable";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { useText } from "../../../preferences/preferencesContext";
 import { useRef, useState } from "react";
@@ -30,9 +31,52 @@ export default function ClassQuizzes({ classId, archivedAt }) {
     }
   }
   const pagination = usePagination(rows, classId);
+  const columns = [
+    {
+      key: "title", title: text("Tên bộ câu hỏi", "Quiz name"), layout: "primary",
+      render: (quiz) => <>
+        <div className="font-semibold text-slate-900 wrap-anywhere">{quiz.title}</div>
+        {quiz.description && <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 wrap-anywhere">{quiz.description}</p>}
+      </>,
+    },
+    { key: "questions", title: text("Số câu hỏi"), render: (quiz) => quiz.questions.length },
+    { key: "points", title: text("Tổng điểm"), render: (quiz) => quiz.questions.reduce((sum, question) => sum + question.points, 0) },
+    { key: "due", title: text("Hạn hoàn thành"), render: (quiz) => quiz.due || text("Chưa đặt") },
+    {
+      key: "status", title: text("Trạng thái"),
+      render: (quiz) => {
+        const badgeClass = quiz.archivedAt || quiz.status === "Closed"
+          ? "instructor-badge-closed"
+          : quiz.status === "Draft" ? "instructor-badge-draft" : "";
+        return <span className={`instructor-badge ${badgeClass}`}>{text(getQuizStatusLabel(quiz))}</span>;
+      },
+    },
+    {
+      key: "actions", title: text("Thao tác"), layout: "actions",
+      render: (quiz) => {
+        const quizUrl = `${quizBase}/${quiz.id}`;
+        return (
+          <div className="table-actions">
+            <Link className="btn-row-action" aria-label={`${text("Xem và làm thử")}: ${quiz.title}`} to={quizUrl} state={childState}>
+              <Eye aria-hidden="true" />{text("Xem và làm thử")}
+            </Link>
+            {canEditQuiz(quiz, archivedAt) && <>
+              <Link className="btn-row-action" aria-label={`${text("Chỉnh sửa")}: ${quiz.title}`} to={`${quizUrl}/edit`} state={childState}>
+                <FilePenLine aria-hidden="true" />{text("Chỉnh sửa")}
+              </Link>
+              <button type="button" className="btn-row-action btn-row-action-icon btn-row-action-danger"
+                aria-label={`${text("Xóa bộ câu hỏi", "Delete quiz")}: ${quiz.title}`} onClick={() => remove(quiz)}>
+                <Trash2 aria-hidden="true" />
+              </button>
+            </>}
+          </div>
+        );
+      },
+    },
+  ];
   return (
     <div>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+      <div className="instructor-section-actions mb-5 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="font-bold text-slate-900">{text("Bộ câu hỏi trắc nghiệm")}</h2>
         </div>
@@ -53,64 +97,7 @@ export default function ClassQuizzes({ classId, archivedAt }) {
       )}
       {rows.length ? (
         <div className="panel overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="data-table" aria-label={text("Bộ câu hỏi trắc nghiệm")}>
-              <thead>
-                <tr>
-                  <th scope="col">{text("Tên bộ câu hỏi", "Quiz name")}</th>
-                  <th scope="col">{text("Số câu hỏi")}</th>
-                  <th scope="col">{text("Tổng điểm")}</th>
-                  <th scope="col">{text("Hạn hoàn thành")}</th>
-                  <th scope="col">{text("Trạng thái")}</th>
-                  <th scope="col"><span className="sr-only">{text("Thao tác")}</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                {pagination.items.map((quiz) => {
-                  const quizUrl = `${quizBase}/${quiz.id}`;
-                  const badgeClass = quiz.archivedAt || quiz.status === "Closed"
-                    ? "instructor-badge-closed"
-                    : quiz.status === "Draft" ? "instructor-badge-draft" : "";
-                  return (
-                    <tr key={quiz.id}>
-                      <td className="min-w-40">
-                        <div className="font-semibold text-slate-900 wrap-anywhere">{quiz.title}</div>
-                        {quiz.description && (
-                          <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 wrap-anywhere">{quiz.description}</p>
-                        )}
-                      </td>
-                      <td>{quiz.questions.length}</td>
-                      <td>{quiz.questions.reduce((sum, question) => sum + question.points, 0)}</td>
-                      <td className="whitespace-nowrap">{quiz.due || text("Chưa đặt")}</td>
-                      <td><span className={`instructor-badge ${badgeClass}`}>{text(getQuizStatusLabel(quiz))}</span></td>
-                      <td>
-                        <div className="flex items-center gap-2 whitespace-nowrap">
-                          <Link className="btn-row-action" aria-label={`${text("Xem và làm thử")}: ${quiz.title}`} to={quizUrl} state={childState}>
-                            <Eye aria-hidden="true" />{text("Xem và làm thử")}
-                          </Link>
-                          {canEditQuiz(quiz, archivedAt) && (
-                            <>
-                              <Link className="btn-row-action" aria-label={`${text("Chỉnh sửa")}: ${quiz.title}`} to={`${quizUrl}/edit`} state={childState}>
-                                <FilePenLine aria-hidden="true" />{text("Chỉnh sửa")}
-                              </Link>
-                              <button
-                                type="button"
-                                className="btn-row-action btn-row-action-icon btn-row-action-danger"
-                                aria-label={`${text("Xóa bộ câu hỏi", "Delete quiz")}: ${quiz.title}`}
-                                onClick={() => remove(quiz)}
-                              >
-                                <Trash2 aria-hidden="true" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <RecordTable label={text("Bộ câu hỏi trắc nghiệm")} columns={columns} rows={pagination.items} />
           <Pagination pagination={pagination} />
         </div>
       ) : (

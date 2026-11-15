@@ -71,7 +71,7 @@ export default function QuizPreview({ quiz }) {
           <fieldset
             key={question.id}
             disabled={Boolean(result)}
-            className="panel p-5 sm:p-6"
+            className="instructor-compact-panel panel p-5 sm:p-6"
           >
             <legend className="sr-only">{text("Câu ")} {pagination.page * 10 + offset + 1}</legend>
             <div className="mb-4 flex items-start justify-between gap-3">
@@ -86,7 +86,7 @@ export default function QuizPreview({ quiz }) {
               {question.options.map((option, optionIndex) => (
                 <label
                   key={option.id}
-                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-sm ${result && option.id === question.correctOptionId ? "border-portal-line-strong bg-portal-lavender text-portal-ink" : result && answers[question.id] === option.id ? "border-red-200 bg-red-50 text-red-800" : "border-slate-200 text-slate-600"}`}
+                  className={`instructor-pick flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-sm ${result && option.id === question.correctOptionId ? "border-portal-line-strong bg-portal-lavender text-portal-ink" : result && answers[question.id] === option.id ? "border-red-200 bg-red-50 text-red-800" : "border-slate-200 text-slate-600"}`}
                 >
                   <input
                     aria-required="true"

@@ -43,7 +43,7 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
     }
   }
   return (
-    <form onSubmit={save} className="panel space-y-6 p-6">
+    <form onSubmit={save} className="admin-form panel space-y-6 p-6">
       <h2 className="text-xl font-bold">{lesson.name}</h2>
       {error && (
         <p role="alert" className="text-red-700">
@@ -70,10 +70,11 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
           />
         </label>
         {lesson.hasDifficultyPresets && <label>
-          <span className="field-label">{text("Độ khó bắt đầu tối thiểu", "Minimum starting difficulty")}</span>
+          <span id="lesson-difficulty-label" className="field-label">{text("Độ khó bắt đầu tối thiểu", "Minimum starting difficulty")}</span>
           <select
             className="field"
             value={form.difficulty}
+            aria-labelledby="lesson-difficulty-label"
             aria-describedby="lesson-difficulty-note"
             onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
           >
@@ -98,17 +99,19 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
           </select>
         </label>
         <label>
-          <span className="field-label">{text("Giới hạn thời gian (giây)")}</span>
+          <span id="lesson-time-label" className="field-label">{text("Giới hạn thời gian (giây)")}</span>
           <input
             className="field"
             type="number"
             min={10}
             max={86400}
             required
+            aria-labelledby="lesson-time-label"
+            aria-describedby="lesson-time-note"
             value={form.config.timeLimit}
             onChange={(e) => config("timeLimit", Number(e.target.value))}
           />
-          <span className="mt-1 block text-sm text-portal-muted">
+          <span id="lesson-time-note" className="mt-1 block text-sm text-portal-muted">
             {text("Áp dụng cho thử thách. Giới hạn riêng của bài giao được ưu tiên khi có.", "Applies to challenges. An assignment-specific limit takes precedence when configured.")}
           </span>
         </label>
@@ -142,7 +145,7 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
           ))}
         </div>
       </fieldset>}
-      {lesson.hasHints && <label className="flex items-center gap-3">
+      {lesson.hasHints && <label className="admin-check-option flex items-center gap-3">
         <input
           type="checkbox"
           checked={form.config.hintsAllowed}
@@ -158,7 +161,7 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
         </p>}
         <div className="grid max-h-56 gap-2 overflow-auto sm:grid-cols-2">
           {prerequisites.items.map((a) => (
-              <label className="flex items-center gap-2 text-sm" key={a.id}>
+              <label className="admin-check-option flex items-center gap-2 text-sm" key={a.id}>
                 <input
                   type="checkbox"
                   checked={form.config.prerequisites.includes(a.id)}
@@ -178,7 +181,7 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
         <Pagination pagination={prerequisites} />
       </fieldset>
       </fieldset>
-      <div className="flex gap-3">
+      <div className="admin-form-actions flex gap-3">
         <button className="btn-primary" disabled={isSaving}>
           {isSaving ? text("Đang lưu…") : text("Lưu cấu hình")}
         </button>
