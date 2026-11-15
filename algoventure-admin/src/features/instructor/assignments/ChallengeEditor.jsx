@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { BookOpen, Check } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
+import InstructorBackLink from "../workspace/InstructorBackLink";
+import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import { getLevel } from "../../../shared/curriculum/curriculumCatalog";
 import { TopicPicker } from "../../../shared/components/TopicPicker";
 import { useClassrooms } from "../workspace/ClassroomContext";
@@ -12,10 +14,11 @@ const lessonsWithStartingValues = new Set([
   "bubble", "selection", "insertion", "merge", "quick", "stack-push", "stack-pop", "stack-peek",
 ]);
 
-export default function ChallengeEditor({ classes, saveAssignment, initialClassId, existing }) {
+export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, initialClassId, existing, templateMode = false }) {
   const text = useText();
-  const { topics, lessonName } = useClassrooms();
+  const { topics, lessonName, duplicateAssignmentTemplate } = useClassrooms();
   const navigate = useNavigate();
+  const { back, childState } = useInstructorNavigation("/instructor/challenges");
   const [form, setForm] = useState(
     () =>
       existing ?? {
@@ -38,8 +41,8 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
   const availableLessonIds = lessonGroups.flatMap((topic) => topic.lessons.map(([id]) => id));
   const selectedLessonIds = new Set(form.lessonIds);
   const allSelected = availableLessonIds.every((id) => selectedLessonIds.has(id));
-  const archived = Boolean(classroom?.archivedAt || existing?.archivedAt);
-  const readOnly = archived || Boolean(existing && existing.status !== "Draft");
+  const readOnly = !templateMode || Boolean(existing?.locked);
+  const canEnterContent = templateMode || Boolean(classroom);
   function update(field, value) {
     setForm((previous) => ({ ...previous, [field]: value }));
     setError("");
@@ -53,12 +56,7 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
   }
   async function save(event) {
     event.preventDefault();
-    if (readOnly || isSubmitting || !classroom || !form.lessonIds.length) return;
-    const status = event.nativeEvent.submitter?.value === "Active" ? "Active" : "Draft";
-    if (status === "Active" && !form.due) {
-      setError(text("Chọn hạn hoàn thành trước khi giao cho lớp."));
-      return;
-    }
+    if (readOnly || isSubmitting || !form.lessonIds.length) return;
     setIsSubmitting(true);
     try {
       const lessonConfigs = structuredClone(Object.fromEntries(Object.entries(form.lessonConfigs ?? {}).filter(([id]) => form.lessonIds.includes(id))));
@@ -69,13 +67,26 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
         }
         if (config.input && (config.input.length < 2 || config.input.length > 8 || config.input.some(n => !Number.isInteger(n) || n < -99 || n > 99))) throw new Error("Chuỗi gồm 2–8 số nguyên từ -99 đến 99.");
       }
-      const item = await saveAssignment({ ...form, lessonConfigs, status }, existing?.id);
-      const message =
-        item.status === "Active"
-          ? text("Đã giao bộ thử thách.")
-          : text("Đã lưu bản nháp.");
+      await saveAssignmentTemplate({
+        title: form.title, description: form.description, algorithmIds: form.lessonIds, algorithmConfigs: lessonConfigs,
+      }, existing?.id);
+      const message = text("Đã lưu bản nháp.");
       setError("");
-      navigate("/instructor/challenges", { state: { message } });
+      navigate(back.to, { replace: true, state: { ...back.state, message } });
+    } catch (failure) {
+      setError(failure.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+  async function duplicate() {
+    setIsSubmitting(true);
+    setError("");
+    try {
+      const template = await duplicateAssignmentTemplate(existing.id);
+      navigate(`/instructor/challenges?assignmentTemplateId=${encodeURIComponent(template.id)}`, {
+        replace: true, state: { back },
+      });
     } catch (failure) {
       setError(failure.message);
     } finally {
@@ -84,6 +95,7 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
   }
   return (
     <div className="mx-auto max-w-6xl">
+      <InstructorBackLink destination={back} />
       <PageHeader
         title={
           readOnly && existing
@@ -93,13 +105,18 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
               : text("Tạo bộ thử thách")
         }
       >
-        <Link to="/instructor/challenges" className="btn-secondary">{text("Về bộ thử thách")}</Link>
+        {templateMode && existing?.locked && (
+          <button type="button" className="btn-primary" onClick={duplicate} disabled={isSubmitting}>
+            {text("Nhân bản đề", "Duplicate template")}
+          </button>
+        )}
       </PageHeader>
-      {!classes.length && (
+      {!templateMode && !classes.length && (
         <p className="panel mb-6 p-6 text-sm">
           {text("Bạn cần")}{" "}
           <Link
             to="/instructor/classes/new"
+            state={childState}
             className="font-semibold text-portal-purple-strong"
           >
             {text("tạo lớp học")}
@@ -118,7 +135,7 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
       <form onSubmit={save} className="challenge-editor-layout">
         <section className="panel space-y-5 p-6">
           <h2 className="font-bold text-slate-900">{text("Thông tin bộ bài")}</h2>
-          <label className="block">
+          {!templateMode && <label className="block">
             <span className="field-label">{text("Lớp nhận bài")}</span>
             <select
               className="field"
@@ -143,7 +160,7 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
                 </option>
               ))}
             </select>
-          </label>
+          </label>}
           {classroom && (
             <p className="rounded-lg bg-portal-lavender p-3 text-xs text-portal-ink">
               {getLevel(classroom.level).label}
@@ -171,7 +188,7 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
                 onChange={(e) => update("description", e.target.value)}
               />
             </label>
-            <div className="grid gap-4 sm:grid-cols-2">
+            {!templateMode && <div className="grid gap-4 sm:grid-cols-2">
               <label>
                 <span className="field-label">{text("Hạn hoàn thành")}</span>
                 <input
@@ -181,11 +198,12 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
                   onChange={(e) => update("due", e.target.value)}
                 />
               </label>
-            </div>
+            </div>}
           </fieldset>
           {readOnly && (
             <p className="text-xs leading-5 text-slate-500">
-              {existing?.archivedAt ? text("Bộ thử thách đã lưu trữ.")
+              {templateMode ? text("Đề đã được giao. Nhân bản để sửa nội dung.", "This template has been assigned. Duplicate it to make changes.")
+                : existing?.archivedAt ? text("Bộ thử thách đã lưu trữ.")
                 : classroom?.archivedAt ? text("Lớp học đã lưu trữ.")
                   : existing?.status === "Closed" ? text("Bộ thử thách đã đóng.")
                     : text("Bộ bài đã công bố. Không thể chỉnh sửa nội dung.")}
@@ -201,15 +219,16 @@ export default function ChallengeEditor({ classes, saveAssignment, initialClassI
           )}
           {!readOnly && (
             <div className="flex flex-wrap gap-3">
-              <button type="submit" name="status" value="Draft" className="btn-secondary" disabled={!classroom || !form.lessonIds.length || isSubmitting}>{text("Lưu bản nháp")}</button>
-              <button type="submit" name="status" value="Active" className="btn-primary" disabled={!classroom || !form.lessonIds.length || isSubmitting}><Check size={17} />{isSubmitting ? text("Đang lưu…") : text("Giao cho lớp")}</button>
+              <button type="submit" className="btn-primary" disabled={!form.lessonIds.length || isSubmitting}>
+                <Check size={17} />{isSubmitting ? text("Đang lưu…") : text("Lưu bộ thử thách", "Save challenge set")}
+              </button>
             </div>
           )}
         </section>
         <section className="panel p-6">
           <div className="mb-5">
             <TopicPicker topics={readOnly ? lessonGroups : topics} value={topicIds} onChange={selectTopics}
-              disabled={!classroom || readOnly || isSubmitting} />
+              disabled={!canEnterContent || readOnly || isSubmitting} />
           </div>
           <h2 className="instructor-section-title instructor-lesson-heading">
             <BookOpen size={19} />

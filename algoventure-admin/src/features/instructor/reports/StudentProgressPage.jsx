@@ -7,6 +7,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Download, Search, Users, ChartNoAxesColumn, TrendingUp } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
+import InstructorBackLink from "../workspace/InstructorBackLink";
+import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import { StudentIdentity } from "../classrooms/StudentIdentity";
 import { ProgressMeter } from "./ProgressMeter";
 import { WorkspaceStats } from "../../../shared/components/WorkspaceStats";
@@ -17,6 +19,9 @@ import { exportStudentRows, downloadFile } from "./studentResultsExport";
 export default function StudentProgressPage() {
   const text = useText();
   const scope = useClassroomScope();
+  const { back, childState } = useInstructorNavigation(
+    scope.classroom ? `/instructor/classes/${scope.classroom.id}?tab=students` : undefined,
+  );
   const [query, setQuery] = useState("");
   const rows = scope.rows.filter((row) =>
     `${row.name} ${row.email}`
@@ -28,6 +33,7 @@ export default function StudentProgressPage() {
   const pagination = usePagination(rows, scope.selected + query);
   return (
     <div className="mx-auto max-w-6xl">
+      {back.to && <InstructorBackLink destination={back} />}
       <PageHeader
         title={text("Tiến độ học tập")}
       >
@@ -104,6 +110,7 @@ export default function StudentProgressPage() {
                       <Link
                         className="text-portal-purple-strong"
                         to={`/instructor/classes/${row.classId}`}
+                        state={childState}
                       >
                         {classroom.name}
                       </Link>

@@ -73,62 +73,62 @@ export default function QuizQuestionEditor({
         <legend className="field-label">
           {text("Lựa chọn và đáp án đúng")}
         </legend>
+        <p className="mb-3 text-sm text-portal-muted">
+          {text("Đánh dấu một lựa chọn là đáp án đúng trước khi giao cho lớp.", "Mark one choice as correct before assigning the quiz.")}
+        </p>
         <div className="space-y-2">
-          {question.options.map((option, optionIndex) => (
-            <div
-              key={option.id}
-              className={`flex items-center gap-2 rounded-xl border p-3 ${question.correctOptionId === option.id ? "border-portal-line-strong bg-portal-lavender/50" : "border-slate-200"}`}
-            >
-              <input
-                type="radio"
-                name={`correct-${question.id}`}
-                aria-label={`Đáp án đúng ${String.fromCharCode(65 + optionIndex)}`}
-                className="h-4 w-4 shrink-0 accent-portal-purple"
-                checked={question.correctOptionId === option.id}
-                onChange={() =>
-                  onChange({
-                    correctOptionId: option.id,
-                  })
-                }
-              />
-              <span className="text-xs font-bold text-slate-500">
-                {String.fromCharCode(65 + optionIndex)}
-              </span>
-              <input
-                className="field min-w-0 flex-1"
-                aria-label={`Lựa chọn ${String.fromCharCode(65 + optionIndex)}`}
-                maxLength={500}
-                value={option.text}
-                onChange={(event) =>
-                  onChange({
-                    options: question.options.map((item) =>
-                      item.id === option.id
-                        ? { ...item, text: event.target.value }
-                        : item,
-                    ),
-                  })
-                }
-              />
-              <button
-                disabled={question.options.length <= 2}
-                className="shrink-0 p-1 text-slate-400 hover:text-red-500"
-                aria-label={`Xóa lựa chọn ${String.fromCharCode(65 + optionIndex)}`}
-                onClick={() =>
-                  onChange({
-                    options: question.options.filter(
-                      (item) => item.id !== option.id,
-                    ),
-                    correctOptionId:
-                      question.correctOptionId === option.id
-                        ? ""
-                        : question.correctOptionId,
-                  })
-                }
+          {question.options.map((option, optionIndex) => {
+            const letter = String.fromCharCode(65 + optionIndex);
+            const isCorrect = question.correctOptionId === option.id;
+            return (
+              <div
+                key={option.id}
+                className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 rounded-xl border p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] ${isCorrect ? "border-portal-line-strong bg-portal-lavender/50" : "border-slate-200"}`}
               >
-                <Trash2 size={15} />
-              </button>
-            </div>
-          ))}
+                <span className="text-xs font-bold text-slate-500">{letter}</span>
+                <input
+                  className="field min-w-0"
+                  aria-label={`${text("Lựa chọn", "Choice")} ${letter}`}
+                  maxLength={500}
+                  value={option.text}
+                  onChange={(event) =>
+                    onChange({
+                      options: question.options.map((item) =>
+                        item.id === option.id
+                          ? { ...item, text: event.target.value }
+                          : item,
+                      ),
+                    })
+                  }
+                />
+                <label className="col-span-2 col-start-2 row-start-2 inline-flex min-h-10 w-fit cursor-pointer items-center gap-2 text-sm font-medium text-portal-purple-strong sm:col-span-1 sm:col-start-3 sm:row-start-1">
+                  <input
+                    type="radio"
+                    name={`correct-${question.id}`}
+                    className="h-4 w-4 shrink-0 accent-portal-purple"
+                    checked={isCorrect}
+                    onChange={() => onChange({ correctOptionId: option.id })}
+                  />
+                  {isCorrect
+                    ? text(`${letter} là đáp án đúng`, `${letter} is correct`)
+                    : text(`Đánh dấu ${letter} là đáp án đúng`, `Mark ${letter} as correct`)}
+                </label>
+                <button
+                  disabled={question.options.length <= 2}
+                  className="col-start-3 row-start-1 p-1 text-slate-400 hover:text-red-500 sm:col-start-4"
+                  aria-label={`${text("Xóa lựa chọn", "Delete choice")} ${letter}`}
+                  onClick={() =>
+                    onChange({
+                      options: question.options.filter((item) => item.id !== option.id),
+                      correctOptionId: isCorrect ? "" : question.correctOptionId,
+                    })
+                  }
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            );
+          })}
         </div>
         <button
           className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-portal-purple-strong disabled:text-slate-400"

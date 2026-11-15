@@ -10,8 +10,11 @@ import { createCurriculum } from "../../../shared/curriculum/curriculumCatalog";
 import { useApiData } from "../../../shared/hooks/useApiData";
 import {
   deleteQuiz,
+  deliverAssignment,
+  duplicateAssignmentTemplate,
   getInstructorState,
   saveAssignment,
+  saveAssignmentTemplate,
   saveClassroom,
   saveQuiz,
 } from "./instructorWorkspaceService";
@@ -49,6 +52,15 @@ export function ClassroomProvider({ children }) {
       quizzes: previous.quizzes.filter((item) => item.id !== id),
     }));
   }
+  async function deliver(classroomId, values) {
+    const assignment = await save("assignments", (body) => deliverAssignment(classroomId, body), values);
+    setData((previous) => ({
+      ...previous,
+      assignmentTemplates: previous.assignmentTemplates.map((template) =>
+        template.id === values.assignmentTemplateId ? { ...template, locked: true } : template),
+    }));
+    return assignment;
+  }
   if (!data)
     return (
       <div className="p-8">
@@ -74,6 +86,9 @@ export function ClassroomProvider({ children }) {
         refresh,
         saveClass: (v, id) => save("classes", saveClassroom, v, id),
         saveAssignment: (v, id) => save("assignments", saveAssignment, v, id),
+        saveAssignmentTemplate: (v, id) => save("assignmentTemplates", saveAssignmentTemplate, v, id),
+        duplicateAssignmentTemplate: (id) => save("assignmentTemplates", duplicateAssignmentTemplate, id),
+        deliverAssignment: deliver,
         saveQuiz: (v, id) => save("quizzes", saveQuiz, v, id),
         removeQuiz,
       }}

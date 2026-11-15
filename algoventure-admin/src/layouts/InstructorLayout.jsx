@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom";
 import {
   GraduationCap,
   ClipboardList,
+  ListChecks,
   TrendingUp,
   BarChart2,
   Download,
@@ -26,6 +27,11 @@ const InstructorLayout = () => {
       path: "/instructor/challenges",
       name: text("Bộ thử thách"), group: text("Giảng dạy"),
       icon: <ClipboardList size={20} />,
+    },
+    {
+      path: "/instructor/quizzes",
+      name: text("Trắc nghiệm"), group: text("Giảng dạy"),
+      icon: <ListChecks size={20} />,
     },
     {
       path: "/instructor/progress",

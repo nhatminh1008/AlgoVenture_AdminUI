@@ -4,7 +4,7 @@ import { Layers, ClipboardList, Users } from "lucide-react";
 
 const icons = { assignments: Layers, quizzes: ClipboardList, students: Users };
 
-export default function ClassNavigation({ classId, active }) {
+export default function ClassNavigation({ classId, active, state }) {
   const text = useText();
   const base = `/instructor/classes/${classId}`;
   const items = [
@@ -17,7 +17,7 @@ export default function ClassNavigation({ classId, active }) {
       {items.map(([id, label, to]) => {
         const Icon = icons[id];
         return (
-        <Link key={id} to={to} aria-current={active === id ? "page" : undefined}
+        <Link key={id} to={to} state={state} aria-current={active === id ? "page" : undefined}
         >
           <Icon size={15} aria-hidden="true" />{label}
         </Link>

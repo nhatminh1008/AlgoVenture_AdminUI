@@ -1,8 +1,9 @@
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { useClassrooms } from "../workspace/ClassroomContext";
 
 export function useClassroomScope() {
   const [params, setParams] = useSearchParams();
+  const { state } = useLocation();
   const { classes, students, assignments, quizzes } = useClassrooms();
   const requested = params.get("classId");
   const classroom = classes.find((item) => item.id === requested);
@@ -17,7 +18,7 @@ export function useClassroomScope() {
     const next = new URLSearchParams(params);
     if (value) next.set("classId", value);
     else next.delete("classId");
-    setParams(next);
+    setParams(next, { state: state?.back ? { back: state.back } : undefined });
   };
   return {
     classes,

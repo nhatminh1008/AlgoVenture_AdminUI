@@ -3,11 +3,13 @@ import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import InstructorLayout from "../layouts/InstructorLayout";
 import ChallengeSetsPage from "../features/instructor/assignments/ChallengeSetsPage";
+import AssignChallengePage from "../features/instructor/assignments/AssignChallengePage";
 import StudentProgressPage from "../features/instructor/reports/StudentProgressPage";
 import ResultsExportPage from "../features/instructor/reports/ResultsExportPage";
 import InstructorClassroomsPage from "../features/instructor/classrooms/InstructorClassroomsPage";
 import ClassroomFormPage from "../features/instructor/classrooms/ClassroomFormPage";
 import ClassroomDetailPage from "../features/instructor/classrooms/ClassroomDetailPage";
+import InstructorQuizzesPage from "../features/instructor/quizzes/InstructorQuizzesPage";
 import QuizEditorPage from "../features/instructor/quizzes/QuizEditorPage";
 import QuizDetailPage from "../features/instructor/quizzes/QuizDetailPage";
 import { ClassroomProvider } from "../features/instructor/workspace/ClassroomContext";
@@ -28,6 +30,7 @@ function InstructorRoutes() {
           <Route path="classes/new" element={<ClassroomFormPage key="new" />} />
           <Route path="classes/:classId" element={<ClassroomDetailPage />} />
           <Route path="classes/:classId/edit" element={<ClassroomFormPage />} />
+          <Route path="classes/:classId/assign" element={<AssignChallengePage />} />
           <Route path="classes/:classId/quizzes/new" element={<QuizEditorPage />} />
           <Route
             path="classes/:classId/quizzes/:quizId"
@@ -39,6 +42,7 @@ function InstructorRoutes() {
           />
           <Route path="challenges" element={<ChallengeSetsPage />} />
           <Route path="challenges/new" element={<ChallengeSetsPage />} />
+          <Route path="quizzes" element={<InstructorQuizzesPage />} />
           <Route path="progress" element={<StudentProgressPage />} />
           <Route
             path="analytics"

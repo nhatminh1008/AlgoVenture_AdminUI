@@ -1,7 +1,9 @@
 import { useText } from "../../../preferences/preferencesContext";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
+import InstructorBackLink from "../workspace/InstructorBackLink";
+import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import { useClassrooms } from "../workspace/ClassroomContext";
 import QuizPreview from "./QuizPreview";
 import { canEditQuiz, getQuizStatusLabel } from "./quizStatus";
@@ -30,15 +32,10 @@ export default function QuizDetailPage() {
 function QuizDetailContent({ classroom, quiz }) {
   const text = useText();
   const location = useLocation();
+  const { back, childState } = useInstructorNavigation(`/instructor/classes/${classroom.id}?tab=quizzes`);
   return (
     <div className="mx-auto max-w-4xl">
-      <Link
-        to={`/instructor/classes/${classroom.id}?tab=quizzes`}
-        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500"
-      >
-        <ArrowLeft size={16} />
-        {text("Trắc nghiệm của lớp")}
-      </Link>
+      <InstructorBackLink destination={back} />
       <PageHeader
         title={quiz.title}
       >
@@ -46,6 +43,7 @@ function QuizDetailContent({ classroom, quiz }) {
           <Link
             className="btn-primary"
             to={`/instructor/classes/${classroom.id}/quizzes/${quiz.id}/edit`}
+            state={childState}
           >
             <Pencil size={16} />
             {text("Chỉnh sửa bản nháp")}

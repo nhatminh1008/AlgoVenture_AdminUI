@@ -28,11 +28,11 @@ Sau khi đăng nhập, người dùng có thể đổi mật khẩu trong hồ s
 ## Luồng lớp học dùng chung
 
 1. Admin tạo/phân công lớp hoặc Instructor tạo lớp của mình qua Portal.
-2. Instructor tạo bộ thử thách, chọn bài từ curriculum Backend, đặt hạn và chuyển sang `Active`; quiz dùng trạng thái `Published`.
+2. Instructor lưu đề từ curriculum Backend trong **Bộ thử thách**. Trong lớp, instructor chọn đề, chọn sinh viên nhận và đặt hạn. Mỗi lần giao tạo một `assignmentId` riêng và lần giao đầu khóa đề. Instructor có thể nhân bản đề đã khóa. Quiz dùng trạng thái `Published`.
 3. Learner đăng nhập Unity và gọi `POST /api/learner/classes/join` với `{code}` là mã lớp 8 ký tự.
-4. `GET /api/learner/classes/{id}/assignments` trả các bài đã công bố trong lớp; `GET /api/learner/assignments/{id}` lấy nội dung.
+4. `GET /api/learner/classes/{id}/assignments` trả các bài đã công bố mà sinh viên được giao trong lớp. `GET /api/learner/assignments/{id}` lấy nội dung.
 5. Quiz gửi `{clientAttemptId,answers:[{questionId,selectedIndex}]}` tới `POST /api/learner/assignments/{id}/attempts`; Backend chấm điểm.
-6. Minigame dùng đề, nhật ký và API completion phù hợp bài học; gửi `assignmentId` khi làm bài giao. Instructor đọc lại `/api/instructor/state` để xem kết quả và tiến độ, `/api/instructor/classes/{id}/practice` để xem evidence của lớp.
+6. Minigame gửi `assignmentId` trong nhật ký và yêu cầu completion khi làm bài giao. Backend ghi kết quả cho lần giao tương ứng. Instructor đọc `/api/instructor/state` để xem tiến độ bài giao và `/api/instructor/classes/{id}/practice` để xem lượt luyện tập trên bản đồ.
 
 API chỉ cho phép truy cập lớp/bài trong phạm vi được cấp quyền. Gửi lại cùng mã lượt không được nhân đôi kết quả. Việc lưu log không tự công nhận hoàn thành; dữ liệu khách/local không tự nhập thành kết quả server.
 
@@ -52,7 +52,7 @@ Bộ thử thách hỗ trợ `lessonConfigs` cho `bubble`, `selection`, `inserti
 
 `timeLimitSeconds`: 30–3600; `difficulty`: easy/medium/hard; `input`: 2–8 số nguyên từ -99 đến 99. Chỉ cấu hình bài đã chọn; nội dung công bố được giữ cố định. Bài tùy chỉnh dùng phạm vi assignment riêng.
 
-Schema hiện hành là V28, gồm 26 bảng nghiệp vụ; xem [DATABASE.md](../AlgoVenture_Backend/DATABASE.md). Các tài liệu cũ về backend nhúng trong AdminUI, PostgreSQL cổng 55432, bảng profile/completion trước hợp nhất hoặc Web Game cũ không phải hướng dẫn chạy ba repo hiện tại.
+Schema hiện hành là V32. Xem [DATABASE.md](../AlgoVenture_Backend/DATABASE.md). Các tài liệu cũ về backend nhúng trong AdminUI, PostgreSQL cổng 55432, bảng profile/completion trước hợp nhất hoặc Web Game cũ không phải hướng dẫn chạy ba repo hiện tại.
 
 AI là dịch vụ tùy chọn. Khi chưa có model phù hợp, hệ thống trả trạng thái chưa sẵn sàng; log hoặc fixture kiểm thử không chứng minh chất lượng mô hình. Xem [AI README](ai-service/README.md) cho môi trường Python, manifest và giới hạn hiện tại.
 

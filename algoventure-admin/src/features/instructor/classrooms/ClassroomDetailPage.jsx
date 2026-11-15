@@ -9,6 +9,8 @@ import {
 } from "react-router-dom";
 import { Plus, Pencil, Users, Layers, Download } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
+import InstructorBackLink from "../workspace/InstructorBackLink";
+import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import { StudentIdentity } from "./StudentIdentity";
 import { useClassrooms } from "../workspace/ClassroomContext";
 import { getLevel } from "../../../shared/curriculum/curriculumCatalog";
@@ -27,6 +29,7 @@ export default function ClassroomDetailPage() {
   const { classes, students, assignments, lessonName } = useClassrooms();
   const [params] = useSearchParams();
   const location = useLocation();
+  const { back, childState } = useInstructorNavigation("/instructor/classes");
   const classroom = classes.find((item) => item.id === classId);
   const members = students.filter((item) => item.classId === classId);
   const sets = assignments.filter((item) => item.classId === classId);
@@ -50,11 +53,12 @@ export default function ClassroomDetailPage() {
     : "assignments";
   return (
     <div className="mx-auto max-w-6xl">
+      <InstructorBackLink destination={back} />
       <PageHeader
         title={classroom.name}
       >
         {!classroom.archivedAt && (
-          <Link to={`/instructor/classes/${classId}/edit`} className="btn-secondary">
+          <Link to={`/instructor/classes/${classId}/edit`} state={childState} className="btn-secondary">
             <Pencil size={16} />
             {text("Sửa thông tin")}
           </Link>
@@ -78,59 +82,62 @@ export default function ClassroomDetailPage() {
         )}
       </div>
       {classroom.description && <p className="mb-5 whitespace-pre-wrap text-sm text-slate-600">{classroom.description}</p>}
-      <ClassNavigation classId={classId} active={tab} />
+      <ClassNavigation classId={classId} active={tab} state={location.state?.back ? { back } : undefined} />
       <section id="class-panel">
         {tab === "quizzes" && <ClassQuizzes key={classId} classId={classId} archivedAt={classroom.archivedAt} />}
         {tab === "assignments" && (
           <div className="space-y-4">
             <Pagination pagination={setsPage} />
-            <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">{text("Bộ thử thách (")}{sets.length})</h2>{!classroom.archivedAt && <Link className="btn-primary" to={`/instructor/challenges/new?classId=${classId}`}><Plus size={17} />{text("Giao thử thách")}</Link>}</div>
-            {setsPage.items.map((set) => (
-              <article className="panel p-5 sm:p-6" key={set.id}>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h2 className="font-semibold text-slate-900">
-                      {set.title}
-                    </h2>
-                    <p className="mt-2 text-xs text-slate-500">
-                      {set.lessonIds.length} {text(" bài · Hạn: ")} {set.due || "Chưa đặt"}
-                    </p>
-                  </div>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${!set.archivedAt && set.status === "Active" ? "bg-portal-lavender text-portal-purple-strong" : "bg-slate-100 text-slate-600"}`}
-                  >
-                    {set.archivedAt ? text("Đã lưu trữ") : assignmentStatus[set.status]}
-                  </span>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {set.lessonIds.map((id) => (
+            <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">{text("Bộ thử thách (")}{sets.length})</h2>{!classroom.archivedAt && <Link className="btn-primary" to={`/instructor/classes/${classId}/assign`} state={childState}><Plus size={17} />{text("Giao bài")}</Link>}</div>
+            {setsPage.items.map((set) => {
+              const canEdit = !classroom.archivedAt && !set.archivedAt && set.status === "Draft" && set.assignmentTemplateId;
+              const destination = canEdit
+                ? `/instructor/challenges?assignmentTemplateId=${encodeURIComponent(set.assignmentTemplateId)}`
+                : `/instructor/challenges?classId=${encodeURIComponent(classId)}&assignmentId=${encodeURIComponent(set.id)}`;
+              return (
+                <article className="panel p-5 sm:p-6" key={set.id}>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h2 className="font-semibold text-slate-900">
+                        {set.title}
+                      </h2>
+                      <p className="mt-2 text-xs text-slate-500">
+                        {set.lessonIds.length} {text(" bài · Hạn: ")} {set.due || text("Chưa đặt")}
+                        {set.status !== "Draft" && ` · ${set.recipientCount} ${text("người nhận", "recipients")}`}
+                      </p>
+                    </div>
                     <span
-                      key={id}
-                      className="rounded-md bg-slate-50 px-2.5 py-1 text-xs text-slate-600"
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${!set.archivedAt && set.status === "Active" ? "bg-portal-lavender text-portal-purple-strong" : "bg-slate-100 text-slate-600"}`}
                     >
-                      {lessonName(id)}
+                      {set.archivedAt ? text("Đã lưu trữ") : assignmentStatus[set.status]}
                     </span>
-                  ))}
-                </div>
-                <Link
-                  to={`/instructor/challenges?classId=${classId}&assignmentId=${set.id}`}
-                  className="mt-4 inline-flex text-sm font-semibold text-portal-purple-strong"
-                >
-                  {!classroom.archivedAt && !set.archivedAt && set.status === "Draft"
-                    ? text("Chỉnh sửa bộ bài →")
-                    : text("Xem bộ bài →")}
-                </Link>
-              </article>
-            ))}
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {set.lessonIds.map((id) => (
+                      <span
+                        key={id}
+                        className="rounded-md bg-slate-50 px-2.5 py-1 text-xs text-slate-600"
+                      >
+                        {lessonName(id)}
+                      </span>
+                    ))}
+                  </div>
+                  <Link
+                    to={destination}
+                    state={childState}
+                    className="mt-4 inline-flex text-sm font-semibold text-portal-purple-strong"
+                  >
+                    {canEdit
+                      ? text("Chỉnh sửa bộ bài →")
+                      : text("Xem bộ bài →")}
+                  </Link>
+                </article>
+              );
+            })}
             {!sets.length && (
               <div className="panel p-10 text-center">
                 <Layers size={32} className="mx-auto mb-3 text-slate-300" />
                 <h2 className="font-semibold">{text("Lớp chưa có bộ thử thách")}</h2>
-                {!classroom.archivedAt && (
-                  <Link className="btn-primary mt-5" to={`/instructor/challenges/new?classId=${classId}`}>
-                    {text("Tạo bộ thử thách")}
-                  </Link>
-                )}
               </div>
             )}
           </div>
@@ -163,6 +170,7 @@ export default function ClassroomDetailPage() {
                 <Link
                   className="m-5 inline-flex text-sm font-semibold text-portal-purple-strong"
                   to={`/instructor/progress?classId=${classId}`}
+                  state={childState}
                 >
                   {text("Xem dữ liệu học tập →")}
                 </Link>

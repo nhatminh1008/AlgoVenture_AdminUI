@@ -2,9 +2,11 @@ import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Eye, Plus, Save, Send } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Eye, Plus, Save, Send } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
+import InstructorBackLink from "../workspace/InstructorBackLink";
+import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import { useClassrooms } from "../workspace/ClassroomContext";
 import { createQuestion, validateQuiz, MAX_QUESTIONS } from "./quizValidation";
 import QuizPreview from "./QuizPreview";
@@ -14,6 +16,8 @@ export default function QuizEditorForm({ classroom, existing }) {
   const text = useText();
   const { saveQuiz } = useClassrooms();
   const navigate = useNavigate();
+  const classPath = `/instructor/classes/${classroom.id}`;
+  const { back } = useInstructorNavigation(existing ? `${classPath}/quizzes/${existing.id}` : `${classPath}?tab=quizzes`);
   const [form, setForm] = useState(() =>
     existing
       ? structuredClone(existing)
@@ -64,8 +68,11 @@ export default function QuizEditorForm({ classroom, existing }) {
     setError("");
     try {
       const quiz = await saveQuiz(values, existing?.id);
-      navigate(`/instructor/classes/${classroom.id}/quizzes/${quiz.id}`, {
+      const quizPath = `${classPath}/quizzes/${quiz.id}`;
+      navigate(quizPath, {
+        replace: true,
         state: {
+          ...(back.to === quizPath ? back.state : { back }),
           message:
             status === "Published"
               ? text("Đã giao bộ câu hỏi cho lớp.")
@@ -91,13 +98,11 @@ export default function QuizEditorForm({ classroom, existing }) {
   }
   return (
     <div className="mx-auto max-w-6xl">
-      <Link
-        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500"
-        to={`/instructor/classes/${classroom.id}?tab=quizzes`}
-      >
-        <ArrowLeft size={16} />
-        {text("Trắc nghiệm của lớp")}
-      </Link>
+      {preview ? (
+        <InstructorBackLink onBack={() => setPreview(false)}>{text("Quay lại soạn câu hỏi")}</InstructorBackLink>
+      ) : (
+        <InstructorBackLink destination={back} />
+      )}
       <PageHeader
         title={
           preview
@@ -107,11 +112,7 @@ export default function QuizEditorForm({ classroom, existing }) {
               : text("Tạo bộ câu hỏi")
         }
       >
-        {preview ? (
-          <button className="btn-secondary" onClick={() => setPreview(false)}>
-            {text("Quay lại soạn câu hỏi")}
-          </button>
-        ) : (
+        {!preview && (
           <>
             <button
               className="btn-secondary"

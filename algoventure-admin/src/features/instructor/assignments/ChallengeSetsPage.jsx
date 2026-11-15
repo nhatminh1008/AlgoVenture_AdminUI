@@ -1,20 +1,32 @@
 import { useText } from "../../../preferences/preferencesContext";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { useClassrooms } from "../workspace/ClassroomContext";
+import InstructorBackLink from "../workspace/InstructorBackLink";
+import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import ChallengeList from "./ChallengeList";
 import ChallengeEditor from "./ChallengeEditor";
 
 export default function ChallengeSetsPage() {
   const text = useText();
-  const { classes, assignments, saveAssignment } = useClassrooms();
+  const { classes, assignments, assignmentTemplates, saveAssignmentTemplate } = useClassrooms();
   const [params] = useSearchParams();
   const location = useLocation();
+  const { back } = useInstructorNavigation("/instructor/challenges");
   const editingId = params.get("assignmentId");
+  const assignmentTemplateId = params.get("assignmentTemplateId");
   const creating = location.pathname.endsWith("/new");
-  if (!creating && !editingId) return <ChallengeList />;
+  if (!creating && !editingId && !assignmentTemplateId) return <ChallengeList />;
+  if (creating || assignmentTemplateId) {
+    const template = assignmentTemplates.find((item) => item.id === assignmentTemplateId);
+    if (!assignmentTemplateId || template) {
+      const existing = template && { ...template, lessonIds: template.algorithmIds, lessonConfigs: template.algorithmConfigs };
+      return <ChallengeEditor key={assignmentTemplateId ?? "new-template"} existing={existing}
+        saveAssignmentTemplate={saveAssignmentTemplate} templateMode />;
+    }
+  }
   const existing = assignments.find(item => item.id === editingId);
   const classId = existing?.classId ?? params.get("classId") ?? "";
-  if (editingId && (!existing || (params.has("classId") && params.get("classId") !== existing.classId)))
-    return <div className="panel p-8"><h1 className="text-xl font-bold">{text("Không tìm thấy bộ thử thách")}</h1><Link className="btn-secondary mt-4" to="/instructor/challenges">{text("Về bộ thử thách")}</Link></div>;
-  return <ChallengeEditor key={editingId ?? "new"} classes={classes} saveAssignment={saveAssignment} initialClassId={classId} existing={existing} />;
+  if (!existing || (params.has("classId") && params.get("classId") !== existing.classId))
+    return <div className="panel p-8"><InstructorBackLink destination={back} /><h1 className="text-xl font-bold">{text("Không tìm thấy bộ thử thách")}</h1></div>;
+  return <ChallengeEditor key={editingId} classes={classes} initialClassId={classId} existing={existing} />;
 }

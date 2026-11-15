@@ -1,11 +1,27 @@
 import { api } from "../../../api/apiClient.js";
 
 export async function getInstructorState() {
-  const [state, topics] = await Promise.all([
+  const [state, topics, assignmentTemplates] = await Promise.all([
     api("/instructor/state"),
     api("/instructor/curriculum"),
+    api("/instructor/assignment-templates"),
   ]);
-  return { ...state, topics };
+  return { ...state, topics, assignmentTemplates };
+}
+
+export function saveAssignmentTemplate(values, id) {
+  return api(`/instructor/assignment-templates${id ? `/${id}` : ""}`, {
+    method: id ? "PUT" : "POST",
+    body: values,
+  });
+}
+
+export function duplicateAssignmentTemplate(assignmentTemplateId) {
+  return api(`/instructor/assignment-templates/${encodeURIComponent(assignmentTemplateId)}/duplicate`, { method: "POST" });
+}
+
+export function deliverAssignment(classroomId, values) {
+  return api(`/instructor/classes/${encodeURIComponent(classroomId)}/assignment-deliveries`, { method: "POST", body: values });
 }
 
 function saveInstructorRecord(resource, values, id) {

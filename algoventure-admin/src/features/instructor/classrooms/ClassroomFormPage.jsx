@@ -1,8 +1,10 @@
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
+import InstructorBackLink from "../workspace/InstructorBackLink";
+import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import { useClassrooms } from "../workspace/ClassroomContext";
 import { levels } from "../../../shared/curriculum/curriculumCatalog";
 
@@ -12,6 +14,7 @@ export default function ClassroomFormPage() {
   const { classes, saveClass } = useClassrooms();
   const existing = classes.find((item) => item.id === classId);
   const navigate = useNavigate();
+  const { back } = useInstructorNavigation(classId ? `/instructor/classes/${classId}` : "/instructor/classes");
   const [values, setValues] = useState(
     () =>
       existing ?? { name: "", description: "", level: "basic" },
@@ -47,8 +50,10 @@ export default function ClassroomFormPage() {
     try {
       const { name, description, level } = values;
       const item = await saveClass({ name, description, level }, classId);
-      navigate(`/instructor/classes/${item.id}`, {
+      navigate(existing ? back.to : `/instructor/classes/${item.id}`, {
+        replace: true,
         state: {
+          ...(existing ? back.state : { back }),
           message: classId
             ? text("Đã cập nhật thông tin lớp.")
             : text("Đã tạo lớp học."),
@@ -62,13 +67,7 @@ export default function ClassroomFormPage() {
   }
   return (
     <div className="mx-auto max-w-3xl">
-      <Link
-        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-portal-purple-strong"
-        to={existing ? `/instructor/classes/${classId}` : "/instructor/classes"}
-      >
-        <ArrowLeft size={16} />
-        {text("Quay lại")}
-      </Link>
+      <InstructorBackLink destination={back} />
       <PageHeader
         title={classId ? text("Chỉnh sửa lớp học") : text("Tạo lớp học mới")}
       />
@@ -148,11 +147,9 @@ export default function ClassroomFormPage() {
         <div className="flex justify-end gap-3 border-t border-slate-100 pt-5">
           <Link
             className="btn-secondary"
-            to={
-              existing
-                ? `/instructor/classes/${classId}`
-                : "/instructor/classes"
-            }
+            to={back.to}
+            state={back.state}
+            replace
           >
             {text("Hủy")}
           </Link>
