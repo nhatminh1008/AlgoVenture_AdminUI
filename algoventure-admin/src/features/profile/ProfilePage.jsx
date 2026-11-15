@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { CircleCheck, Info, Save, UserRound } from "lucide-react";
+import { CircleCheck, Info, KeyRound, Save, UserRound } from "lucide-react";
 import { api } from "../../api/apiClient";
 import { useAuth } from "../../auth/useAuth";
+import { resetPasswordErrors } from "../../auth/authValidation";
 import { useApiData } from "../../shared/hooks/useApiData";
 import { ApiFeedback } from "../../shared/components/ApiFeedback";
 import { useText } from "../../preferences/preferencesContext";
@@ -19,11 +20,11 @@ const displayNameField = ["displayName", "Tên hiển thị trong game", "Game d
 const roleLabels = { admin: "Quản trị viên", instructor: "Giảng viên", learner: "Học viên" };
 
 export default function ProfilePage() {
-  const { user, updateSessionProfile } = useAuth();
-  return <ProfileForm key={user.id} user={user} onSaved={updateSessionProfile} />;
+  const { user, updateSessionProfile, changePassword } = useAuth();
+  return <ProfileForm key={user.id} user={user} onSaved={updateSessionProfile} onPasswordChange={changePassword} />;
 }
 
-function ProfileForm({ user, onSaved }) {
+function ProfileForm({ user, onSaved, onPasswordChange }) {
   const text = useText();
   const state = useApiData(load, null);
   const [draft, setDraft] = useState({});
@@ -118,7 +119,82 @@ function ProfileForm({ user, onSaved }) {
           <ApiFeedback state={state} actionError={error} />
         </div>
       </section>
-
+      <ChangePasswordForm onChangePassword={onPasswordChange} />
     </div>
+  );
+}
+
+function ChangePasswordForm({ onChangePassword }) {
+  const text = useText();
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function submit(event) {
+    event.preventDefault();
+    if (saving) return;
+    const validation = resetPasswordErrors(newPassword, confirmation);
+    if (validation) {
+      setError(Object.values(validation.fields)[0]);
+      return;
+    }
+    if (currentPassword === newPassword) {
+      setError("Mật khẩu mới phải khác mật khẩu hiện tại.");
+      return;
+    }
+    setError("");
+    setSaving(true);
+    try {
+      await onChangePassword(currentPassword, newPassword);
+    } catch (failure) {
+      setError(failure.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="panel profile-card profile-password-card" aria-labelledby="profile-password-heading">
+      <div className="profile-card-heading">
+        <span className="profile-section-icon"><KeyRound size={20} aria-hidden="true" /></span>
+        <div>
+          <h2 id="profile-password-heading">{text("Đổi mật khẩu", "Change password")}</h2>
+          <p>{text("Bạn sẽ cần đăng nhập lại sau khi đổi mật khẩu.", "You'll need to sign in again after changing your password.")}</p>
+        </div>
+      </div>
+      <form onSubmit={submit} onChange={() => setError("")}>
+        <fieldset disabled={saving} className="profile-fields">
+          <label className="profile-field-wide">
+            <span className="field-label">{text("Mật khẩu hiện tại", "Current password")}</span>
+            <input className="field" type="password" name="currentPassword" autoComplete="current-password"
+              required maxLength={100} value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
+          </label>
+          <label>
+            <span className="field-label">{text("Mật khẩu mới", "New password")}</span>
+            <input className="field" type="password" name="newPassword" autoComplete="new-password" required
+              maxLength={72} value={newPassword} aria-describedby="profile-password-rules"
+              onChange={(event) => setNewPassword(event.target.value)} />
+          </label>
+          <label>
+            <span className="field-label">{text("Xác nhận mật khẩu mới", "Confirm new password")}</span>
+            <input className="field" type="password" name="confirmation" autoComplete="new-password" required
+              maxLength={72} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} />
+          </label>
+        </fieldset>
+        <p id="profile-password-rules" className="profile-note">
+          <Info size={17} aria-hidden="true" />
+          <span>{text("Ít nhất 6 ký tự, có chữ hoa và ký tự đặc biệt. Tối đa 72 byte UTF-8.",
+            "At least 6 characters, including an uppercase letter and a special character. Maximum 72 UTF-8 bytes.")}</span>
+        </p>
+        {error && <p role="alert" className="profile-feedback rounded-xl bg-red-50 p-4 text-sm text-red-700">{text(error)}</p>}
+        <div className="profile-card-footer">
+          <button type="submit" className="btn-primary" disabled={saving}>
+            {saving ? text("Đang lưu…", "Saving…") : text("Đổi mật khẩu", "Change password")}
+          </button>
+        </div>
+      </form>
+    </section>
   );
 }

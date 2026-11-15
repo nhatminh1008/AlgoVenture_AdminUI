@@ -73,7 +73,8 @@ export async function api(path, options = {}) {
     failure.fields = error.errors || undefined;
     throw failure;
   }
-  if (path === "/auth/login" || path === "/auth/logout") {
+  if (path === "/auth/login" || path === "/auth/logout" ||
+      (path === "/auth/change-password" && version === sessionVersion)) {
     expiredSessionVersion = undefined;
     resetSession();
   }

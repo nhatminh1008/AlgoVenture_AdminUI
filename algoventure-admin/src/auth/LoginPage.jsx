@@ -53,7 +53,6 @@ export default function LoginPage() {
           </form>
           <div className="login-auth-links">
             <Link className="login-link" to="/register">{text("Tạo tài khoản", "Create an account")}</Link>
-            <Link className="login-link" to="/forgot-password">{text("Quên mật khẩu?", "Forgot password?")}</Link>
           </div>
         </div>
       </section>
