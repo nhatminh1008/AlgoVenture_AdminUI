@@ -3,7 +3,7 @@ import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { useState } from "react";
 import { Archive, Pencil, Users } from "lucide-react";
-import { archiveClassroom, listClassrooms, saveClassroom } from "./adminClassroomService";
+import { archiveClassroom, listClassrooms, listClassroomTopics, saveClassroom } from "./adminClassroomService";
 import AdminClassroomForm from "./AdminClassroomForm";
 import ClassroomMembersPanel from "./ClassroomMembersPanel";
 import { listUsers } from "../users/userService";
@@ -18,6 +18,7 @@ export default function AdminClassroomsPage() {
   const text = useText();
   const classes = useApiData(listClassrooms, []);
   const users = useApiData(listUsers, []);
+  const topics = useApiData(listClassroomTopics, []);
   const [editor, setEditor] = useState(null);
   const [membersId, setMembersId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,6 +26,8 @@ export default function AdminClassroomsPage() {
   const [message, setMessage] = useState("");
   const instructors = users.data.filter(({ role, status }) => role === "instructor" && status === "Active");
   const usersById = new Map(users.data.map((user) => [user.id, user]));
+  const topicsById = new Map(topics.data.map((topic) => [topic.id, topic]));
+  const formUnavailable = isSubmitting || users.loading || !!users.error || topics.loading || !!topics.error;
   const selected = classes.data.find(({ id }) => id === membersId);
 
   function edit(classroom) {
@@ -77,17 +80,20 @@ export default function AdminClassroomsPage() {
   return (
     <div className="mx-auto max-w-6xl">
       <AdminPageHeader title="Classroom Management">
-        <button type="button" className="btn-primary" disabled={isSubmitting || users.loading || !!users.error}
+        <button type="button" className="btn-primary" disabled={formUnavailable}
           onClick={() => edit({ ...INITIAL_CLASSROOM_FORM })}>{text("Tạo lớp học")}</button>
       </AdminPageHeader>
       <p className="mb-4 text-sm">{text("Lưu trữ đưa lớp về chế độ chỉ xem, giữ điểm và lịch sử, đồng thời đóng bài được giao trong Unity.", "Archiving makes the class read-only, keeps scores and history, and closes its Unity assignments.")}</p>
       <ApiFeedback state={classes} message={message} />
       <ApiFeedback state={users} />
+      <ApiFeedback state={topics} />
       {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
       {editor && (
         <AdminClassroomForm
           editor={editor}
+          originalTopicId={classes.data.find(({ id }) => id === editor.id)?.topicId}
           instructors={instructors}
+          topics={topics.data}
           usersById={usersById}
           isSubmitting={isSubmitting}
           onSubmit={save}
@@ -103,14 +109,14 @@ export default function AdminClassroomsPage() {
               {pagination.items.map((classroom) => (
                 <tr key={classroom.id}>
                   <td>{classroom.name}{classroom.archivedAt && <small className="block text-slate-500">{text("Đã lưu trữ")}</small>}</td>
-                  <td>{getTopic(classroom.topicId)?.label ?? classroom.topicId} · {getLevel(classroom.level)?.label ?? classroom.level}</td>
+                  <td>{(topicsById.get(classroom.topicId) ?? getTopic(classroom.topicId))?.label ?? classroom.topicId} · {getLevel(classroom.level)?.label ?? classroom.level}</td>
                   <td>{usersById.get(classroom.instructorId)?.name ?? "Giảng viên chưa xác định"}</td>
                   <td><div className="table-actions">
                     <button type="button" className="btn-row-action" onClick={() => setMembersId(classroom.id)}>
                       <Users aria-hidden="true" />{text("Thành viên")}
                     </button>
                     {!classroom.archivedAt && <>
-                      <button type="button" className="btn-row-action" disabled={isSubmitting || users.loading || !!users.error} onClick={() => edit(classroom)}>
+                      <button type="button" className="btn-row-action" disabled={formUnavailable} onClick={() => edit(classroom)}>
                         <Pencil aria-hidden="true" />{text("Sửa lớp")}
                       </button>
                       <button type="button" className="btn-row-action btn-row-action-danger" disabled={isSubmitting} onClick={() => archive(classroom)}>

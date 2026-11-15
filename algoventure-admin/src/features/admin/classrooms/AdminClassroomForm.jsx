@@ -1,9 +1,11 @@
 import { useText } from "../../../preferences/preferencesContext";
-import { levels, topics } from "../../../shared/curriculum/curriculumCatalog";
+import { getTopic, levels } from "../../../shared/curriculum/curriculumCatalog";
 
 export default function AdminClassroomForm({
   editor,
+  originalTopicId,
   instructors,
+  topics,
   usersById,
   isSubmitting,
   onSubmit,
@@ -11,6 +13,7 @@ export default function AdminClassroomForm({
   onCancel,
 }) {
   const text = useText();
+  const includeOriginalTopic = originalTopicId && !topics.some(({ id }) => id === originalTopicId);
   return (
     <form onSubmit={onSubmit} className="panel mb-6 p-6" aria-label={editor.id ? text("Sửa lớp học") : text("Tạo lớp học")}>
       <h2 className="mb-4 text-lg font-bold">{editor.id ? text("Sửa lớp học") : text("Tạo lớp học")}</h2>
@@ -33,6 +36,7 @@ export default function AdminClassroomForm({
           <select className="field" required value={editor.topicId}
             onChange={(event) => onChange({ ...editor, topicId: event.target.value })}>
             <option value="">{text("Chọn chủ đề")}</option>
+            {includeOriginalTopic && <option value={originalTopicId}>{getTopic(originalTopicId)?.label ?? originalTopicId}</option>}
             {topics.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
           </select>
         </label>
