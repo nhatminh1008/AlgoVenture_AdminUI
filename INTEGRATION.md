@@ -23,7 +23,9 @@ Tất cả tài khoản nằm trong `app_users`. Portal dùng cookie phiên Http
 
 Unity/Learner dùng `POST /api/game/auth/login`, sau đó gửi `Authorization: Bearer <token>` cho `/api/game/**` và `/api/learner/**`. Token được quản lý riêng với cookie Portal. Backend kiểm tra vai trò, trạng thái tài khoản và `auth_version`; token/phiên cũ bị thu hồi theo quy tắc thay đổi tài khoản.
 
-Sau khi đăng nhập, người dùng có thể đổi mật khẩu trong hồ sơ. Luồng quên mật khẩu đang tắt mặc định. Đăng ký email cần cấu hình SMTP/OTP theo README Backend. API đăng ký cũ `/api/game/auth/register` có thể bị khóa khi bật xác thực email; không giả định endpoint này luôn mở. Setup Windows mới bật seed và sinh mật khẩu Portal tại `AlgoVenture_Backend/.runtime/dev-secrets.json`, khóa `adminPassword`/`instructorPassword`; `databasePassword` chỉ dành cho PostgreSQL. Cách thiết lập thủ công dùng mật khẩu do người chạy chọn. Seed không đổi tài khoản đã tồn tại và có thể tắt sau bootstrap.
+Portal và Unity desktop hỗ trợ **Đăng nhập bằng Google**. Email đã có tài khoản dùng lại quyền và hồ sơ. Email mới đi qua bước hoàn thiện hồ sơ để tạo Learner. Người dùng cũng có thể đăng nhập bằng username và mật khẩu. Xem [cấu hình OAuth trong README Backend](../AlgoVenture_Backend/README.md#đăng-nhập-bằng-google).
+
+Sau khi đăng nhập, người dùng có thể đổi mật khẩu trong hồ sơ. Quên mật khẩu và đăng ký email cần cấu hình SMTP/OTP theo README Backend. API đăng ký cũ `/api/game/auth/register` có thể bị khóa khi bật xác thực email; không giả định endpoint này luôn mở. Setup Windows mới bật seed và sinh mật khẩu Portal tại `AlgoVenture_Backend/.runtime/dev-secrets.json`, khóa `adminPassword`/`instructorPassword`; `databasePassword` chỉ dành cho PostgreSQL. Cách thiết lập thủ công dùng mật khẩu do người chạy chọn. Seed không đổi tài khoản đã tồn tại và có thể tắt sau bootstrap.
 
 ## Luồng lớp học dùng chung
 
@@ -52,7 +54,7 @@ Bộ thử thách hỗ trợ `lessonConfigs` cho `bubble`, `selection`, `inserti
 
 `timeLimitSeconds`: 30–3600; `difficulty`: easy/medium/hard; `input`: 2–8 số nguyên từ -99 đến 99. Chỉ cấu hình bài đã chọn; nội dung công bố được giữ cố định. Bài tùy chỉnh dùng phạm vi assignment riêng.
 
-Schema hiện hành là V28, gồm 26 bảng nghiệp vụ; xem [DATABASE.md](../AlgoVenture_Backend/DATABASE.md). Các tài liệu cũ về backend nhúng trong AdminUI, PostgreSQL cổng 55432, bảng profile/completion trước hợp nhất hoặc Web Game cũ không phải hướng dẫn chạy ba repo hiện tại.
+Schema hiện hành là V31, gồm 27 bảng nghiệp vụ. Xem [DATABASE.md](../AlgoVenture_Backend/DATABASE.md) để đối chiếu migration và cấu trúc các bảng.
 
 AI là dịch vụ tùy chọn. Khi chưa có model phù hợp, hệ thống trả trạng thái chưa sẵn sàng; log hoặc fixture kiểm thử không chứng minh chất lượng mô hình. Xem [AI README](ai-service/README.md) cho môi trường Python, manifest và giới hạn hiện tại.
 

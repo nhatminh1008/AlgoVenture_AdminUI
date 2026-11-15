@@ -5,7 +5,12 @@ import { roleLabels, statusLabels } from "../recordLabels.js";
 
 export default function UserForm({ form, isOwnProfile, viewing, isSaving, actionError, onSubmit, onFieldChange, onCancel }) {
   const text = useText();
+<<<<<<< Updated upstream
   const title = isOwnProfile ? text("Hồ sơ của tôi") : viewing ? text("Thông tin tài khoản", "Account details") : text("Tạo tài khoản");
+=======
+  const title = isOwnProfile ? text("Hồ sơ của tôi") : form.id
+    ? text("Sửa tài khoản và phân quyền", "Edit account and role") : text("Tạo tài khoản");
+>>>>>>> Stashed changes
   const creating = !form.id;
   const fieldsDisabled = viewing || (isOwnProfile && isSaving);
   const saveLabel = isOwnProfile ? text("Lưu hồ sơ") : text("Lưu tài khoản");
@@ -68,17 +73,23 @@ export default function UserForm({ form, isOwnProfile, viewing, isSaving, action
         {creating && (
           <>
             <label>
-              <span className="field-label">{text("Vai trò")}{creating && <span aria-hidden="true"> *</span>}</span>
+              <span id="user-role-label" className="field-label">{text("Vai trò")}{creating && <span aria-hidden="true"> *</span>}</span>
               <select
                 className="field"
                 required
                 value={form.role}
+                aria-labelledby="user-role-label"
+                aria-describedby={form.id ? "user-role-note" : undefined}
                 onChange={(e) => onFieldChange("role", e.target.value)}
               >
                 {["admin", "instructor", "learner"].map((v) => (
                   <option key={v} value={v}>{text(roleLabels[v])}</option>
                 ))}
               </select>
+              {form.id && <span id="user-role-note" className="mt-1 block text-sm text-slate-600">
+                {text("Sau khi đổi vai trò, người dùng cần đăng nhập lại để nhận quyền mới.",
+                  "After a role change, the user signs in again to use their new permissions.")}
+              </span>}
             </label>
             <label>
               <span className="field-label">{text("Trạng thái")}{creating && <span aria-hidden="true"> *</span>}</span>

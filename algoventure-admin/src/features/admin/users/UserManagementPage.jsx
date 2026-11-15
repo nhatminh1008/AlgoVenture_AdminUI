@@ -32,7 +32,7 @@ export default function UserManagementPage() {
   const rows = state.data.filter(
     (u) =>
       (role === "all" || u.role === role) &&
-      `${u.name} ${u.email}`.toLowerCase().includes(query.toLowerCase()),
+      `${u.name} ${u.email} ${u.username ?? ""}`.toLowerCase().includes(query.toLowerCase()),
   );
   async function save(event) {
     event.preventDefault();

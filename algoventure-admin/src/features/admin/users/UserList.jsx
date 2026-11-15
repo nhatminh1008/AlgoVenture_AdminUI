@@ -20,7 +20,7 @@ export default function UserList({ rows, currentUserId, query, role, onQueryChan
         <input
           aria-label={text("Tìm tài khoản")}
           className="field flex-1"
-          placeholder={text("Tìm theo tên hoặc email…")}
+          placeholder={text("Tìm theo tên, email hoặc tên đăng nhập…", "Search by name, email, or username…")}
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
         />
@@ -66,6 +66,7 @@ export default function UserList({ rows, currentUserId, query, role, onQueryChan
                 <td><RecordBadge value={u.role} role /></td>
                 <td><RecordBadge value={u.status} /></td>
                 <td>
+<<<<<<< Updated upstream
                   <div className="table-actions">
                     <button type="button" className="btn-row-action" onClick={() => onOpen(u)}>
                       {u.id === currentUserId ? <Pencil aria-hidden="true" /> : <Eye aria-hidden="true" />}
@@ -78,6 +79,16 @@ export default function UserList({ rows, currentUserId, query, role, onQueryChan
                       </button>
                     )}
                   </div>
+=======
+                  <button
+                    type="button"
+                    className="btn-row-action"
+                    onClick={() => onEdit(u)}
+                  >
+                    <Pencil aria-hidden="true" />
+                    {u.id === currentUserId ? text("Sửa hồ sơ của tôi") : text("Chỉnh sửa và phân quyền", "Edit account and role")}
+                  </button>
+>>>>>>> Stashed changes
                 </td>
               </tr>
             ))}
