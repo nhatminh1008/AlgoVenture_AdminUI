@@ -9,7 +9,7 @@ npm ci
 npm run dev
 ```
 
-Backend phải chạy ở `127.0.0.1:8081`. Mở Portal tại `http://127.0.0.1:5174`; cổng này phải trống. Vite proxy `/api` tới backend. Khi deploy, dùng reverse proxy cùng origin cho web và `/api`; cấu hình SPA fallback cho các route frontend.
+Mặc định mở Portal tại `http://127.0.0.1:5174` và Vite proxy `/api` tới `127.0.0.1:8081`. Đổi các địa chỉ trong file `AlgoVenture_Backend/.env` của repo Backend cùng cấp với AdminUI. Khi deploy, dùng reverse proxy cùng origin cho web và `/api`, rồi cấu hình SPA fallback cho các route frontend.
 
 Luồng Instructor theo UC9: chọn lớp → tạo/giao bộ thử thách → theo dõi tiến độ → xem phân tích hoặc xuất kết quả. Danh sách lớp có lối tắt giao thử thách và xem tiến độ. Khi chuyển giữa các mục trong lớp, lớp đang chọn được giữ trong URL. Có thể xuất CSV trực tiếp từ trang lớp hoặc tiến độ; trang xuất kết quả cung cấp thêm JSON.
 
