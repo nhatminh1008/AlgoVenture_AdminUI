@@ -56,7 +56,7 @@ npm ci
 npm run dev
 ```
 
-Mở [Portal](http://127.0.0.1:5174). Vite proxy `/api` tới `127.0.0.1:8081`; giữ cùng hostname trong suốt phiên đăng nhập. Cổng 5174 phải trống vì cấu hình dùng `strictPort`.
+Mở [Portal](http://127.0.0.1:5174). Vite lấy `PORTAL_HOST`, `PORTAL_PORT`, `BACKEND_URL` và `PORT` từ `AlgoVenture_Backend/.env` ở repo cùng cấp. Mặc định `/api` được proxy tới `127.0.0.1:8081`. Giữ cùng hostname trong suốt phiên đăng nhập. Xem [cấu hình chung](../AlgoVenture_Backend/README.md#cấu-hình-chung-cho-backend-portal-và-unity).
 
 Với setup Windows tự động khi Run hoặc qua script, tài khoản ban đầu là `admin@algoventure.edu` và `instructor@algoventure.edu`. Mở `AlgoVenture_Backend/.runtime/dev-secrets.json` trên máy của bạn để xem mật khẩu đã sinh tại khóa `adminPassword` và `instructorPassword`; `databasePassword` là mật khẩu PostgreSQL, không phải mật khẩu Portal. Nếu dùng runtime tùy chỉnh, tìm file trong thư mục runtime đó. Seed không đổi mật khẩu tài khoản đã tồn tại; sau lần khởi tạo đầu có thể đặt `app.seed.enabled=false` trong cấu hình local.
 
@@ -66,7 +66,7 @@ Nếu tự cấu hình Backend với database ngoài thay vì dùng script Windo
 
 Mở repo Unity bằng đúng Editor và làm theo [README Unity](../AlgoVenture_Unity/README.md), dùng API local `http://127.0.0.1:8081`. [INTEGRATION.md](INTEGRATION.md) mô tả cookie/CSRF của Portal, JWT của Unity và luồng lớp học dùng chung.
 
-AI không bắt buộc để chạy Portal và các API cơ bản. Nếu dùng, xem [ai-service/README.md](ai-service/README.md), chạy service và đặt `AI_SERVICE_URL` trong môi trường khởi động Backend. Clone mới không có sẵn trọng số model đã đánh giá.
+AI không bắt buộc để chạy Portal và các API cơ bản. Nếu dùng, xem [ai-service/README.md](ai-service/README.md), chạy service và đặt `AI_SERVICE_URL` trong file `.env` của Backend. Clone mới không có sẵn trọng số model đã đánh giá.
 
 ## Dữ liệu và chức năng
 
