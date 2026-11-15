@@ -44,7 +44,7 @@ export default function LessonLibraryPage() {
               <tr key={a.id}>
                 <td>{a.name}</td>
                 <td>{a.topicId}</td>
-                <td>{a.difficulty}</td>
+                <td>{a.hasDifficultyPresets ? a.difficulty : text("Theo chặng", "By stage")}</td>
                 <td><RecordBadge value={a.status} /></td>
                 <td>
                   <Link

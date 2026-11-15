@@ -61,6 +61,35 @@ test("API unauthorized responses revoke UI access and surface server validation 
   }
 });
 
+test("changing a password preserves the session on validation errors and refreshes CSRF after success", async () => {
+  const { api: request } = await import("../src/api/apiClient.js?test=password-change");
+  const originalFetch = globalThis.fetch;
+  const headers = [];
+  let attempts = 0;
+  let tokenFetches = 0;
+  globalThis.fetch = async (path, options) => {
+    if (path.endsWith("/csrf")) {
+      return Response.json({ headerName: "X-XSRF-TOKEN", token: `token-${++tokenFetches}` });
+    }
+    headers.push(options.headers["X-XSRF-TOKEN"]);
+    if (path.endsWith("/change-password") && ++attempts === 1) {
+      return Response.json({ message: "Mật khẩu hiện tại không đúng." }, { status: 400 });
+    }
+    return new Response(null, { status: 204 });
+  };
+  try {
+    const change = (currentPassword) => request("/auth/change-password", {
+      method: "POST", body: { currentPassword, newPassword: "New@Test123" },
+    });
+    await assert.rejects(change("wrong"), { status: 400, message: "Mật khẩu hiện tại không đúng." });
+    assert.equal(await change("Current@Test123"), null);
+    await request("/auth/login", { method: "POST" });
+    assert.deepEqual(headers, ["token-1", "token-1", "token-2"]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("a revoked Deactive session forwards the account notice", async () => {
   const { api: request } = await import("../src/api/apiClient.js?test=deactive-notice");
   const originalFetch = globalThis.fetch;

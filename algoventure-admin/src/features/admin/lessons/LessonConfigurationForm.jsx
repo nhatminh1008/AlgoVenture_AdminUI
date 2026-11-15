@@ -10,7 +10,10 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const prerequisites = usePagination(lessons.filter((item) => item.id !== lesson.id), lesson.id);
+  const required = lesson.requiredPrerequisites ?? [];
+  const prerequisites = usePagination(
+    lessons.filter((item) => item.id !== lesson.id && !required.includes(item.id)), lesson.id,
+  );
   function config(key, value) {
     setForm((previous) => ({
       ...previous,
@@ -22,11 +25,17 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
     if (isSaving) return;
     setIsSaving(true);
     setMessage("");
+    setError("");
     try {
-      const rows = await updateLesson(lesson.id, form);
+      const { name, difficulty, status } = form;
+      const rows = await updateLesson(lesson.id, {
+        name, difficulty, status,
+        config: { ...form.config, prerequisites: form.config.prerequisites.filter((id) => !required.includes(id)) },
+      });
       onSaved(rows);
+      const saved = rows.find((row) => row.id === lesson.id);
+      if (saved) setForm(structuredClone(saved));
       setMessage(text("Đã lưu cấu hình."));
-      setError("");
     } catch (f) {
       setError(f.message);
     } finally {
@@ -46,8 +55,10 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
           {message}
         </p>
       )}
-      <p className="text-sm">{text("Publish mở bài trong Unity theo điều kiện tiên quyết. Unpublished khóa bài, giữ tiến độ đã ghi nhận.", "Publish makes the lesson available subject to prerequisites. Unpublished locks it and keeps recorded progress.")}</p>
-      <div className="grid gap-5 sm:grid-cols-2">
+      <p className="text-sm">{text("Unity áp dụng cấu hình khi mở bài. Bài chưa công bố sẽ bị khóa và giữ tiến độ đã ghi nhận.",
+        "Unity applies these settings when opening the lesson. Unpublished lessons are locked and recorded progress is kept.")}</p>
+      <fieldset disabled={isSaving} className="space-y-6">
+        <div className="grid gap-5 sm:grid-cols-2">
         <label>
           <span className="field-label">{text("Tên hiển thị")}</span>
           <input
@@ -58,18 +69,22 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
         </label>
-        <label>
-          <span className="field-label">{text("Độ khó")}</span>
+        {lesson.hasDifficultyPresets && <label>
+          <span className="field-label">{text("Độ khó bắt đầu tối thiểu", "Minimum starting difficulty")}</span>
           <select
             className="field"
             value={form.difficulty}
+            aria-describedby="lesson-difficulty-note"
             onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
           >
             {["Easy", "Medium", "Hard"].map((v) => (
               <option key={v} value={v}>{text({ Easy: "Dễ", Medium: "Vừa", Hard: "Khó" }[v], v)}</option>
             ))}
           </select>
-        </label>
+          <span id="lesson-difficulty-note" className="mt-1 block text-sm text-portal-muted">
+            {text("Người chơi có thể tiếp tục ở mức cao hơn theo tiến độ.", "Players can continue at a higher difficulty based on their progress.")}
+          </span>
+        </label>}
         <label>
           <span className="field-label">{text("Trạng thái")}</span>
           <select
@@ -78,7 +93,7 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
             onChange={(e) => setForm({ ...form, status: e.target.value })}
           >
             {["Unpublished", "Publish"].map((v) => (
-              <option key={v} value={v}>{text(v === "Publish" ? text("Đã công bố") : text("Chưa công bố"), v)}</option>
+              <option key={v} value={v}>{v === "Publish" ? text("Đã công bố", "Published") : text("Chưa công bố", "Unpublished")}</option>
             ))}
           </select>
         </label>
@@ -93,10 +108,17 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
             value={form.config.timeLimit}
             onChange={(e) => config("timeLimit", Number(e.target.value))}
           />
+          <span className="mt-1 block text-sm text-portal-muted">
+            {text("Áp dụng cho thử thách. Giới hạn riêng của bài giao được ưu tiên khi có.", "Applies to challenges. An assignment-specific limit takes precedence when configured.")}
+          </span>
         </label>
       </div>
-      <fieldset>
+      {lesson.hasScoreThresholds && <fieldset>
         <legend className="field-label">{text("Ngưỡng điểm sao (tăng dần)")}</legend>
+        <p className="mb-3 text-sm text-portal-muted">
+          {text("Game dùng điểm trên màn kết quả để xét sao. Điểm dưới ngưỡng đầu tiên được 0 sao.",
+            "The game awards stars from the score shown on the results screen. Scores below the first threshold earn zero stars.")}
+        </p>
         <div className="grid gap-3 sm:grid-cols-3">
           {form.config.starThresholds.map((value, i) => (
             <label key={i}>
@@ -119,17 +141,21 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
             </label>
           ))}
         </div>
-      </fieldset>
-      <label className="flex items-center gap-3">
+      </fieldset>}
+      {lesson.hasHints && <label className="flex items-center gap-3">
         <input
           type="checkbox"
           checked={form.config.hintsAllowed}
           onChange={(e) => config("hintsAllowed", e.target.checked)}
         />
-        {text("Cho phép gợi ý")}
-      </label>
+        {text("Hiện gợi ý bước tiếp theo khi làm sai hoặc hết giờ", "Show a next-step hint after a mistake or timeout")}
+      </label>}
       <fieldset>
-        <legend className="field-label">{text("Bài tiên quyết")}</legend>
+        <legend className="field-label">{text("Bài tiên quyết bổ sung", "Additional prerequisites")}</legend>
+        {required.length > 0 && <p className="mb-3 text-sm text-portal-muted">
+          {text("Bắt buộc theo lộ trình", "Required by the learning path")}{" · "}
+          {required.map((id) => lessons.find((item) => item.id === id)?.name ?? id).join(", ")}
+        </p>}
         <div className="grid max-h-56 gap-2 overflow-auto sm:grid-cols-2">
           {prerequisites.items.map((a) => (
               <label className="flex items-center gap-2 text-sm" key={a.id}>
@@ -150,6 +176,7 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
             ))}
         </div>
         <Pagination pagination={prerequisites} />
+      </fieldset>
       </fieldset>
       <div className="flex gap-3">
         <button className="btn-primary" disabled={isSaving}>

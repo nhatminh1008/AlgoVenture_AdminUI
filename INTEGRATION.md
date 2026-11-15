@@ -23,7 +23,7 @@ Tất cả tài khoản nằm trong `app_users`. Portal dùng cookie phiên Http
 
 Unity/Learner dùng `POST /api/game/auth/login`, sau đó gửi `Authorization: Bearer <token>` cho `/api/game/**` và `/api/learner/**`. Token được quản lý riêng với cookie Portal. Backend kiểm tra vai trò, trạng thái tài khoản và `auth_version`; token/phiên cũ bị thu hồi theo quy tắc thay đổi tài khoản.
 
-Đăng ký email và đặt lại mật khẩu cần cấu hình SMTP/OTP theo README Backend. API đăng ký cũ `/api/game/auth/register` có thể bị khóa khi bật xác thực email; không giả định endpoint này luôn mở. Setup Windows mới bật seed và sinh mật khẩu Portal tại `AlgoVenture_Backend/.runtime/dev-secrets.json`, khóa `adminPassword`/`instructorPassword`; `databasePassword` chỉ dành cho PostgreSQL. Cách thiết lập thủ công dùng mật khẩu do người chạy chọn. Seed không đổi tài khoản đã tồn tại và có thể tắt sau bootstrap.
+Sau khi đăng nhập, người dùng có thể đổi mật khẩu trong hồ sơ. Luồng quên mật khẩu đang tắt mặc định. Đăng ký email cần cấu hình SMTP/OTP theo README Backend. API đăng ký cũ `/api/game/auth/register` có thể bị khóa khi bật xác thực email; không giả định endpoint này luôn mở. Setup Windows mới bật seed và sinh mật khẩu Portal tại `AlgoVenture_Backend/.runtime/dev-secrets.json`, khóa `adminPassword`/`instructorPassword`; `databasePassword` chỉ dành cho PostgreSQL. Cách thiết lập thủ công dùng mật khẩu do người chạy chọn. Seed không đổi tài khoản đã tồn tại và có thể tắt sau bootstrap.
 
 ## Luồng lớp học dùng chung
 

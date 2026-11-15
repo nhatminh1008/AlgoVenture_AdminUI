@@ -70,6 +70,7 @@ body:has(.profile-page) { min-width: 0; }
 .profile-email { color: var(--portal-yellow-soft); font-size: 14px; }
 
 .profile-card { min-width: 0; padding: clamp(16px, 3vw, 24px); }
+.profile-password-card { margin-top: 22px; }
 
 .profile-card-heading {
   display: flex;

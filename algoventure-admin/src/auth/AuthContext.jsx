@@ -2,6 +2,7 @@ import { useText } from "../preferences/preferencesContext";
 import { useEffect, useRef, useState } from "react";
 import { getCurrentUser, login as loginRequest, logout as logoutRequest } from "./authService";
 import BrandMark from "../shared/components/BrandMark";
+import { api } from "../api/apiClient";
 import { AuthSessionContext } from "./AuthSessionContext";
 
 const portalAccessDenied = "Tài khoản của bạn không có quyền truy cập trang này.";
@@ -103,12 +104,18 @@ export function AuthProvider({ children }) {
     setUser((current) => current?.id === profile.id ? profile : current);
     return true;
   }
+  async function changePassword(currentPassword, newPassword) {
+    await api("/auth/change-password", { method: "POST", body: { currentPassword, newPassword } });
+    setError("");
+    setSessionNotice("Đã đổi mật khẩu. Vui lòng đăng nhập lại bằng mật khẩu mới.");
+    setUser(null);
+  }
   if (loading)
     return (
       <div className="app-loading"><BrandMark /><p role="status"><span className="loading-dot" />{text("Đang kiểm tra đăng nhập…")}</p></div>
     );
   return (
-    <AuthSessionContext.Provider value={{ user, login, logout, updateSessionProfile, sessionNotice,
+    <AuthSessionContext.Provider value={{ user, login, logout, updateSessionProfile, changePassword, sessionNotice,
       clearSessionNotice: () => setSessionNotice("") }}>
       {error && (
         <p role="alert" className="bg-red-50 p-4 text-red-700">
