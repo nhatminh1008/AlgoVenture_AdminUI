@@ -1,5 +1,5 @@
 import { useText } from "../../../preferences/preferencesContext";
-import { Eye, Lock, Pencil } from "lucide-react";
+import { Eye, Lock, LockOpen, Pencil } from "lucide-react";
 import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import RecordBadge from "../RecordBadge";
@@ -66,29 +66,24 @@ export default function UserList({ rows, currentUserId, query, role, onQueryChan
                 <td><RecordBadge value={u.role} role /></td>
                 <td><RecordBadge value={u.status} /></td>
                 <td>
-<<<<<<< Updated upstream
                   <div className="table-actions">
                     <button type="button" className="btn-row-action" onClick={() => onOpen(u)}>
                       {u.id === currentUserId ? <Pencil aria-hidden="true" /> : <Eye aria-hidden="true" />}
-                      {u.id === currentUserId ? text("Sửa hồ sơ của tôi") : text("Xem", "View")}
+                      {u.id === currentUserId ? text("Sửa hồ sơ của tôi") : text("Xem và phân quyền", "View account and role")}
                     </button>
                     {u.id !== currentUserId && u.status === "Active" && (
                       <button type="button" className="btn-row-action btn-row-action-danger"
-                        onClick={() => onLock(u)} disabled={isSaving}>
+                        onClick={() => onLock(u, true)} disabled={isSaving}>
                         <Lock aria-hidden="true" />{text("Khóa", "Lock")}
                       </button>
                     )}
+                    {u.id !== currentUserId && u.status === "Suspended" && (
+                      <button type="button" className="btn-row-action"
+                        onClick={() => onLock(u, false)} disabled={isSaving}>
+                        <LockOpen aria-hidden="true" />{text("Mở khóa", "Unlock")}
+                      </button>
+                    )}
                   </div>
-=======
-                  <button
-                    type="button"
-                    className="btn-row-action"
-                    onClick={() => onEdit(u)}
-                  >
-                    <Pencil aria-hidden="true" />
-                    {u.id === currentUserId ? text("Sửa hồ sơ của tôi") : text("Chỉnh sửa và phân quyền", "Edit account and role")}
-                  </button>
->>>>>>> Stashed changes
                 </td>
               </tr>
             ))}

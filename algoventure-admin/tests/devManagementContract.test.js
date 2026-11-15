@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createUser, lockUser } from "../src/features/admin/users/userService.js";
+import { createUser, lockUser, setUserLocked } from "../src/features/admin/users/userService.js";
 import { listClassroomMembers, setClassroomLocked } from "../src/features/admin/classrooms/adminClassroomService.js";
 import { closeQuiz } from "../src/features/instructor/workspace/instructorWorkspaceService.js";
 
@@ -24,6 +24,7 @@ test("administration and quiz writes use the Backend dev routes and CSRF", async
   };
   await createUser(account);
   await lockUser("user/1");
+  await setUserLocked({ id: "user/1" }, false);
   await setClassroomLocked("class/1", true);
   await setClassroomLocked("class/1", false);
   await listClassroomMembers("class/1");
@@ -35,6 +36,8 @@ test("administration and quiz writes use the Backend dev routes and CSRF", async
       role: "instructor", status: "Active", profile: { dateOfBirth: null, phone: "123", address: null },
     }],
     ["PUT", "/api/admin/users/user%2F1/lock", undefined],
+    ["GET", "/api/admin/users/access-actions", undefined],
+    ["PUT", "/api/admin/users/user%2F1/unlock", undefined],
     ["PUT", "/api/admin/classes/class%2F1/lock", { locked: true }],
     ["PUT", "/api/admin/classes/class%2F1/lock", { locked: false }],
     ["GET", "/api/admin/classes/class%2F1/members", undefined],
@@ -42,4 +45,18 @@ test("administration and quiz writes use the Backend dev routes and CSRF", async
   ]);
   assert.ok(calls.every((call) => call.credentials === "include"));
   assert.ok(calls.filter((call) => call.method !== "GET").every((call) => call.csrf === "fixture"));
+});
+
+test("an older Admin backend can still unlock the selected account", async (t) => {
+  const updates = [];
+  t.mock.method(globalThis, "fetch", async (path, options) => {
+    if (path === "/api/admin/users/access-actions") return Response.json({}, { status: 403 });
+    if (path === "/api/auth/csrf") return Response.json({ headerName: "X-XSRF-TOKEN", token: "fixture" });
+    updates.push([path, options.method, JSON.parse(options.body)]);
+    return Response.json({ id: "user/1" });
+  });
+  await setUserLocked({ id: "user/1", name: "Fixture", role: "learner", status: "Suspended" }, false);
+  assert.deepEqual(updates, [
+    ["/api/admin/users/user%2F1", "PUT", { name: "Fixture", role: "learner", status: "Active" }],
+  ]);
 });

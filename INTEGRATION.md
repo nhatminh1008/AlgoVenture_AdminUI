@@ -54,7 +54,7 @@ Bộ thử thách hỗ trợ `lessonConfigs` cho `bubble`, `selection`, `inserti
 
 `timeLimitSeconds`: 30–3600; `difficulty`: easy/medium/hard; `input`: 2–8 số nguyên từ -99 đến 99. Chỉ cấu hình bài đã chọn; nội dung công bố được giữ cố định. Bài tùy chỉnh dùng phạm vi assignment riêng.
 
-Schema hiện hành là V31, gồm 27 bảng nghiệp vụ. Xem [DATABASE.md](../AlgoVenture_Backend/DATABASE.md) để đối chiếu migration và cấu trúc các bảng.
+Schema hiện hành là V33, gồm 27 bảng nghiệp vụ. Xem [DATABASE.md](../AlgoVenture_Backend/DATABASE.md) để đối chiếu migration và cấu trúc các bảng.
 
 AI là dịch vụ tùy chọn. Khi chưa có model phù hợp, hệ thống trả trạng thái chưa sẵn sàng; log hoặc fixture kiểm thử không chứng minh chất lượng mô hình. Xem [AI README](ai-service/README.md) cho môi trường Python, manifest và giới hạn hiện tại.
 
