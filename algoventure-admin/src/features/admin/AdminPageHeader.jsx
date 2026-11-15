@@ -1,7 +1,7 @@
 import { useText } from "../../preferences/preferencesContext";
 const pageCopy = {
-  "User Management": ["Quản lý tài khoản", "Tạo tài khoản, phân quyền và cập nhật trạng thái."],
-  "Classroom Management": ["Quản lý lớp học", "Theo dõi các lớp học, phân công giảng viên và quản lý thành viên."],
+  "User Management": ["Quản lý tài khoản", "Tạo tài khoản, xem hồ sơ và khóa quyền đăng nhập."],
+  "Classroom Management": ["Quản lý lớp học", "Xem lớp học và quản lý trạng thái khóa."],
   "Content & Levels": ["Thư viện bài học", "Danh sách bài học, chủ đề và độ khó."],
   "Level Configuration": ["Cấu hình bài học", "Điều chỉnh độ khó, mục tiêu và điều kiện mở khóa cho từng bài học."],
   "System Analytics": ["Phân tích hệ thống", "Theo dõi cơ cấu người dùng và các hoạt động quản trị gần đây."],

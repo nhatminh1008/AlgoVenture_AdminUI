@@ -1,5 +1,5 @@
 import { useText } from "../../../preferences/preferencesContext";
-import { Pencil } from "lucide-react";
+import { Eye, Lock, Pencil } from "lucide-react";
 import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import RecordBadge from "../RecordBadge";
@@ -11,7 +11,7 @@ const accountStatusDescriptions = {
   Deactive: "Đã vô hiệu hóa, lịch sử tài khoản vẫn được lưu.",
 };
 
-export default function UserList({ rows, currentUserId, query, role, onQueryChange, onRoleChange, onEdit }) {
+export default function UserList({ rows, currentUserId, query, role, onQueryChange, onRoleChange, isSaving, onOpen, onLock }) {
   const text = useText();
   const pagination = usePagination(rows, query + role);
   return (
@@ -66,14 +66,18 @@ export default function UserList({ rows, currentUserId, query, role, onQueryChan
                 <td><RecordBadge value={u.role} role /></td>
                 <td><RecordBadge value={u.status} /></td>
                 <td>
-                  <button
-                    type="button"
-                    className="btn-row-action"
-                    onClick={() => onEdit(u)}
-                  >
-                    <Pencil aria-hidden="true" />
-                    {u.id === currentUserId ? text("Sửa hồ sơ của tôi") : text("Chỉnh sửa")}
-                  </button>
+                  <div className="table-actions">
+                    <button type="button" className="btn-row-action" onClick={() => onOpen(u)}>
+                      {u.id === currentUserId ? <Pencil aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                      {u.id === currentUserId ? text("Sửa hồ sơ của tôi") : text("Xem", "View")}
+                    </button>
+                    {u.id !== currentUserId && u.status === "Active" && (
+                      <button type="button" className="btn-row-action btn-row-action-danger"
+                        onClick={() => onLock(u)} disabled={isSaving}>
+                        <Lock aria-hidden="true" />{text("Khóa", "Lock")}
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

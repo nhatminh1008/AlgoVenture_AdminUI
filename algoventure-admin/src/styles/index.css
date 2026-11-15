@@ -120,6 +120,9 @@ input, select, textarea { accent-color: var(--portal-purple); }
 .field:focus { outline: none; border-color: var(--portal-focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--portal-focus) 18%, transparent); }
 .field:disabled { background: var(--portal-subtle); color: var(--portal-muted); cursor: not-allowed; }
 .field-label { display: block; font-size: 13px; font-weight: 600; color: light-dark(#404857, var(--portal-ink)); margin-bottom: 8px; }
+[data-view-only] { cursor: not-allowed; }
+[data-view-only] > .field-label { color: var(--portal-muted); }
+[data-view-only] > .field:disabled { border-color: var(--portal-line); }
 .panel { background: var(--portal-surface); border: 1px solid var(--portal-line); border-radius: 15px; box-shadow: 0 3px 12px #20283703; }
 .data-table { width: 100%; text-align: left; font-size: 14px; border-collapse: collapse; }
 .data-table th { background: var(--portal-subtle); color: var(--portal-muted); font-size: 12px; font-weight: 600; white-space: nowrap; }

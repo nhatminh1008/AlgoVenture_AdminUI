@@ -1,5 +1,5 @@
 import { useText } from "../../preferences/preferencesContext";
-export function ApiFeedback({ state, message, actionError }) {
+export function ApiFeedback({ state = {}, message, actionError }) {
   const text = useText();
   return (
     <>

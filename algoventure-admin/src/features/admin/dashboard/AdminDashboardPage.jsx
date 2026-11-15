@@ -30,8 +30,8 @@ export default function AdminDashboardPage() {
           </div></section>
           <section className="panel dashboard-section"><div className="dashboard-section-heading"><h2>{text("Truy cập nhanh")}</h2></div><div className="quick-actions">
             {[
-              { to: "/admin/users", icon: <ShieldCheck />, title: text("Tài khoản & phân quyền"), note: text("Quản lý vai trò và quyền truy cập"), tone: "mint" },
-              { to: "/admin/classes", icon: <GraduationCap />, title: text("Quản lý lớp học"), note: text("Phân công giảng viên, quản lý thành viên"), tone: "peach" },
+              { to: "/admin/users", icon: <ShieldCheck />, title: text("Quản lý tài khoản"), note: text("Xem hồ sơ và khóa tài khoản"), tone: "mint" },
+              { to: "/admin/classes", icon: <GraduationCap />, title: text("Quản lý lớp học"), note: text("Xem lớp và thành viên, khóa hoặc mở khóa lớp"), tone: "peach" },
               { to: "/admin/levels", icon: <Settings2 />, title: text("Cấu hình bài học"), note: text("Thiết lập độ khó và mục tiêu học tập"), tone: "lilac" },
             ].map((item) => <Link className="quick-action" to={item.to} key={item.to}><span className={`tone-${item.tone}`}>{item.icon}</span><div><strong>{item.title}</strong><small>{item.note}</small></div><ArrowUpRight /></Link>)}
           </div></section>

@@ -1,7 +1,7 @@
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { listUsers, saveMyProfile, saveUser } from "./userService";
+import { createUser, listUsers, lockUser, saveMyProfile } from "./userService";
 import { useAuth } from "../../../auth/useAuth";
 import { useApiData } from "../../../shared/hooks/useApiData";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
@@ -27,6 +27,8 @@ export default function UserManagementPage() {
   const [actionError, setActionError] = useState("");
   const [message, setMessage] = useState("");
   const isOwnProfile = form?.id === user.id;
+  const viewing = !!form?.id && !isOwnProfile;
+  const displayedForm = viewing ? state.data.find((account) => account.id === form.id) ?? form : form;
   const rows = state.data.filter(
     (u) =>
       (role === "all" || u.role === role) &&
@@ -34,7 +36,7 @@ export default function UserManagementPage() {
   );
   async function save(event) {
     event.preventDefault();
-    if (isSaving) return;
+    if (isSaving || viewing) return;
     setIsSaving(true);
     setMessage("");
     setActionError("");
@@ -43,7 +45,7 @@ export default function UserManagementPage() {
         const updated = await saveMyProfile(form);
         if (!(await updateSessionProfile(updated))) return;
       } else {
-        await saveUser(form);
+        await createUser(form);
       }
       setForm((current) => (current === form ? null : current));
       await state.refresh();
@@ -54,6 +56,25 @@ export default function UserManagementPage() {
       setIsSaving(false);
     }
   }
+  async function lock(account) {
+    if (isSaving || !window.confirm(text(
+      `Khóa tài khoản “${account.email}”? Người dùng sẽ bị đăng xuất và không thể đăng nhập.`,
+      `Lock “${account.email}”? The user will be signed out and unable to sign in.`,
+    ))) return;
+    setIsSaving(true);
+    setActionError("");
+    setMessage("");
+    try {
+      await lockUser(account.id);
+      await state.refresh();
+      setMessage(text("Đã khóa tài khoản.", "Account locked."));
+    } catch (failure) {
+      setActionError(failure.message);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   const field = (name, value) =>
     setForm((previous) => ({ ...previous, [name]: value }));
   return (
@@ -65,20 +86,26 @@ export default function UserManagementPage() {
           onClick={() => {
             setForm({ ...INITIAL_USER_FORM });
             setMessage("");
+            setActionError("");
           }}
         >
           {text("+ Thêm tài khoản")}
         </button>
       </AdminPageHeader>
-      <ApiFeedback state={state} message={message} actionError={actionError} />
+      <ApiFeedback state={state} message={message} actionError={isOwnProfile ? undefined : actionError} />
       {form && (
         <UserForm
-          form={form}
+          form={displayedForm}
           isOwnProfile={isOwnProfile}
+          viewing={viewing}
           isSaving={isSaving}
+          actionError={actionError}
           onSubmit={save}
           onFieldChange={field}
-          onCancel={() => setForm(null)}
+          onCancel={() => {
+            setForm(null);
+            setActionError("");
+          }}
         />
       )}
       <UserList
@@ -88,7 +115,9 @@ export default function UserManagementPage() {
         role={role}
         onQueryChange={setQuery}
         onRoleChange={setRole}
-        onEdit={(account) => {
+        isSaving={isSaving}
+        onLock={lock}
+        onOpen={(account) => {
           setForm({ ...account });
           setActionError("");
           setMessage("");

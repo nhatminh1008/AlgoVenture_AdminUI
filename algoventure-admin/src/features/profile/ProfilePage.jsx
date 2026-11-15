@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CircleCheck, Info, KeyRound, Save, UserRound } from "lucide-react";
+import { saveMyProfile as saveAdminProfile } from "../admin/users/userService";
 import { api } from "../../api/apiClient";
 import { useAuth } from "../../auth/useAuth";
 import { resetPasswordErrors } from "../../auth/authValidation";
@@ -35,7 +36,8 @@ function ProfileForm({ user, onSaved, onPasswordChange }) {
   const fields = user.role === "learner" ? [...personalFields, displayNameField] : personalFields;
   const account = state.data ?? user;
   const initials = account.name?.trim().split(/\s+/).slice(-2).map((part) => [...part][0]).join("") || "AV";
-  const changed = form && fields.some(([key]) => (form[key]?.trim() || null) !== (state.data[key]?.trim() || null));
+  const readOnlyEmail = user.role === "admin";
+  const changed = form && fields.some(([key]) => (!readOnlyEmail || key !== "email") && (form[key]?.trim() || null) !== (state.data[key]?.trim() || null));
 
   async function save(event) {
     event.preventDefault();
@@ -45,7 +47,7 @@ function ProfileForm({ user, onSaved, onPasswordChange }) {
     setSaved(false);
     try {
       const body = Object.fromEntries(fields.map(([key]) => [key, form[key]?.trim() || null]));
-      const updated = await api("/profile", { method: "PUT", body });
+      const updated = await (readOnlyEmail ? saveAdminProfile(body) : api("/profile", { method: "PUT", body }));
       if (await onSaved(updated)) {
         state.setData(updated);
         setDraft({});
@@ -85,9 +87,11 @@ function ProfileForm({ user, onSaved, onPasswordChange }) {
           <form onSubmit={save} aria-busy={saving}>
             <fieldset disabled={saving} className="profile-fields">
               {fields.map(([key, vi, en, type, autoComplete, maxLength, required]) => (
-                <label key={key} className={key === "address" ? "profile-field-wide" : undefined}>
+                <label key={key} className={key === "address" ? "profile-field-wide" : undefined}
+                  data-view-only={(readOnlyEmail && key === "email") || undefined}>
                   <span className="field-label">{text(vi, en)}</span>
                   <input className="field" type={type} autoComplete={autoComplete} maxLength={maxLength} required={required}
+                    disabled={readOnlyEmail && key === "email"}
                     aria-describedby={key === "email" ? "profile-email-note" : undefined} value={form[key] ?? ""}
                     onChange={(event) => {
                       setDraft((current) => ({ ...current, [key]: event.target.value }));
@@ -99,7 +103,7 @@ function ProfileForm({ user, onSaved, onPasswordChange }) {
             </fieldset>
             <p id="profile-email-note" className="profile-note">
               <Info size={17} aria-hidden="true" />
-              <span>{text("Nếu đổi email, bạn cần đăng nhập lại bằng email mới.", "After changing your email, sign in again with the new address.")}</span>
+              <span>{readOnlyEmail ? text("Email chỉ để xem.", "Email is read-only.") : text("Nếu đổi email, bạn cần đăng nhập lại bằng email mới.", "After changing your email, sign in again with the new address.")}</span>
             </p>
             <div className="profile-card-footer">
               {saved && (
