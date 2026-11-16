@@ -3,7 +3,7 @@ import Pagination from "../../../shared/components/Pagination";
 import RecordTable from "../../../shared/components/RecordTable";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import ClassNavigation from "../classrooms/ClassNavigation";
-import { Download, Users, ChartNoAxesColumn, TrendingUp } from "lucide-react";
+import { Users, ChartNoAxesColumn, TrendingUp } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import InstructorLink from "../workspace/InstructorLink";
@@ -12,7 +12,6 @@ import { ProgressMeter } from "./ProgressMeter";
 import { WorkspaceStats } from "../../../shared/components/WorkspaceStats";
 import ClassroomFilter from "../classrooms/ClassroomFilter";
 import { useClassroomScope } from "../classrooms/useClassroomScope";
-import { exportStudentRows, downloadFile } from "./studentResultsExport";
 import { OverdueLink, StudentListControls, StudentProgressLink } from "./StudentProgressLinks";
 import { filterStudents } from "./filterStudents";
 import { useInstructorParams } from "../workspace/useInstructorParams";
@@ -62,23 +61,7 @@ export default function StudentProgressPage() {
   return (
     <div className="mx-auto max-w-6xl">
       <InstructorBackLink />
-      <PageHeader
-        title={text("Tiến độ học tập")}
-      >
-        <button
-          disabled={!rows.length}
-          className="btn-secondary"
-          onClick={() =>
-            downloadFile(
-              exportStudentRows(rows, scope.classes),
-              "class-progress.csv",
-            )
-          }
-        >
-          <Download size={16} />
-          {text("Xuất CSV")}
-        </button>
-      </PageHeader>
+      <PageHeader title={text("Tiến độ học tập")} />
       {scope.classroom && <ClassNavigation classId={scope.classroom.id} active="progress" />}
       <WorkspaceStats items={[
         { label: scope.classroom ? text("Sinh viên") : text("Lượt ghi danh theo lớp"), value: rows.length, icon: <Users /> },

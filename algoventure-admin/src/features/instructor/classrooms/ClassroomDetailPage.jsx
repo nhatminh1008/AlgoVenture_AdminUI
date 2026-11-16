@@ -3,7 +3,7 @@ import Pagination from "../../../shared/components/Pagination";
 import RecordTable from "../../../shared/components/RecordTable";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { useParams } from "react-router-dom";
-import { Plus, Pencil, Users, Layers, Download } from "lucide-react";
+import { Plus, Pencil, Users, Layers } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import InstructorLink from "../workspace/InstructorLink";
@@ -11,7 +11,6 @@ import { StudentIdentity } from "./StudentIdentity";
 import { useClassrooms } from "../workspace/ClassroomContext";
 import { getLevel } from "../../../shared/curriculum/curriculumCatalog";
 import ClassNavigation from "./ClassNavigation";
-import { downloadFile, exportStudentRows } from "../reports/studentResultsExport";
 import ClassQuizzes from "../quizzes/ClassQuizzes";
 import { OverdueLink, StudentListControls, StudentProgressLink } from "../reports/StudentProgressLinks";
 import { filterStudents } from "../reports/filterStudents";
@@ -72,7 +71,6 @@ export default function ClassroomDetailPage() {
             {text("Sửa thông tin")}
           </InstructorLink>
         )}
-        <button className="btn-secondary" disabled={!members.length} onClick={() => downloadFile(exportStudentRows(members, classes), "class-results.csv")}><Download size={16} />{text("Xuất CSV")}</button>
       </PageHeader>
       <div className="instructor-detail-summary">
         <div className="instructor-detail-tags"><span>{getLevel(classroom.level).label}</span><span><Users size={15} />{members.length} {text(" sinh viên")}</span></div>
