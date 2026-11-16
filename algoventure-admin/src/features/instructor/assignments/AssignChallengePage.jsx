@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Send } from "lucide-react";
+import { useAuth } from "../../../auth/useAuth";
 import { useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
 import RecordTable from "../../../shared/components/RecordTable";
@@ -9,6 +10,7 @@ import { PageHeader } from "../workspace/PageHeader";
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import { useClassrooms } from "../workspace/ClassroomContext";
+import { pendingDelivery } from "./deliveryIntent";
 
 export default function AssignChallengePage() {
   const { classId } = useParams();
@@ -19,6 +21,7 @@ function ChallengeDelivery({ classroomId }) {
   const text = useText();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const { classes, students, assignmentTemplates, lessonName, deliverAssignment } = useClassrooms();
   const classroom = classes.find((item) => item.id === classroomId);
   const roster = students.filter((student) => student.classId === classroomId);
@@ -32,7 +35,6 @@ function ChallengeDelivery({ classroomId }) {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitting = useRef(false);
-  const deliveryRequest = useRef(null);
   const stepStart = useRef(null);
   const errorNotice = useRef(null);
   const selected = assignmentTemplates.find((item) => item.id === assignmentTemplateId);
@@ -89,17 +91,15 @@ function ChallengeDelivery({ classroomId }) {
 
   async function deliver(event) {
     event.preventDefault();
-    if (!selected || !classroom || classroom.archivedAt || !due || !selectedUserIds.length || submitting.current) return;
+    if (!user?.id || !selected || !classroom || classroom.archivedAt || !due || !selectedUserIds.length || submitting.current) return;
     const values = { assignmentTemplateId, due, recipientUserIds: [...selectedUserIds].sort() };
-    const signature = JSON.stringify(values);
-    if (deliveryRequest.current?.signature !== signature) {
-      deliveryRequest.current = { signature, id: crypto.randomUUID() };
-    }
     submitting.current = true;
     setIsSubmitting(true);
     setError("");
     try {
-      const assignment = await deliverAssignment(classroomId, { ...values, deliveryRequestId: deliveryRequest.current.id });
+      const intent = pendingDelivery(window.sessionStorage, user.id, classroomId, values);
+      const assignment = await deliverAssignment(classroomId, { ...values, deliveryRequestId: intent.id });
+      intent.acknowledge();
       const message = text("Đã giao bộ thử thách cho", "Challenge set assigned to") + " "
         + assignment.recipientCount + " " + text("sinh viên", "students") + ".";
       navigate(back.to, { replace: true, state: { ...back.state, message } });
