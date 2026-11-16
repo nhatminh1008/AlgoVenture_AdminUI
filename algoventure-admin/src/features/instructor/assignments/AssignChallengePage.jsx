@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Send } from "lucide-react";
 import { useAuth } from "../../../auth/useAuth";
 import { useText } from "../../../preferences/preferencesContext";
@@ -10,6 +10,8 @@ import { PageHeader } from "../workspace/PageHeader";
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import { useClassrooms } from "../workspace/ClassroomContext";
+import InstructorLink from "../workspace/InstructorLink";
+import { useInstructorParams } from "../workspace/useInstructorParams";
 import { pendingDelivery } from "./deliveryIntent";
 
 export default function AssignChallengePage() {
@@ -19,19 +21,18 @@ export default function AssignChallengePage() {
 
 function ChallengeDelivery({ classroomId }) {
   const text = useText();
-  const navigate = useNavigate();
-  const location = useLocation();
   const { user } = useAuth();
   const { classes, students, assignmentTemplates, lessonName, deliverAssignment } = useClassrooms();
   const classroom = classes.find((item) => item.id === classroomId);
   const roster = students.filter((student) => student.classId === classroomId);
-  const classPath = "/instructor/classes/" + classroomId;
-  const { back, childState } = useInstructorNavigation(classPath);
-  const [assignmentTemplateId, setAssignmentTemplateId] = useState("");
-  const [selectingRecipients, setSelectingRecipients] = useState(false);
-  const [recipientUserIds, setRecipientUserIds] = useState(null);
+  const { open, finish } = useInstructorNavigation();
+  const controls = useInstructorParams("page");
+  const stepTemplate = controls.params.get("template");
+  const [selectedTemplate, setSelectedTemplate] = useState(stepTemplate ?? "");
+  const assignmentTemplateId = stepTemplate ?? selectedTemplate;
+  const [recipientUserIds, setRecipientUserIds] = useState(() => new Set(roster.map((student) => student.userId)));
   const [due, setDue] = useState("");
-  const [query, setQuery] = useState("");
+  const query = controls.params.get("q") ?? "";
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitting = useRef(false);
@@ -40,10 +41,14 @@ function ChallengeDelivery({ classroomId }) {
   const selected = assignmentTemplates.find((item) => item.id === assignmentTemplateId);
   const search = query.trim().toLocaleLowerCase("vi");
   const matchingTemplates = assignmentTemplates.filter((item) => item.title.toLocaleLowerCase("vi").includes(search));
-  const pagination = usePagination(matchingTemplates, search);
+  const pagination = usePagination(matchingTemplates, search, controls);
   const selectedUserIds = roster.filter((student) => recipientUserIds?.has(student.userId)).map((student) => student.userId);
   const allSelected = roster.length > 0 && selectedUserIds.length === roster.length;
-  const showRecipients = selectingRecipients && Boolean(selected);
+  const showRecipients = Boolean(stepTemplate && selected);
+
+  useEffect(() => {
+    stepStart.current?.focus({ preventScroll: true });
+  }, [stepTemplate]);
 
   useEffect(() => {
     if (error && window.matchMedia("(max-width: 600px)").matches) {
@@ -57,7 +62,7 @@ function ChallengeDelivery({ classroomId }) {
       render: (template) => (
         <label className="instructor-pick flex cursor-pointer items-center gap-3">
           <input type="radio" name="assignmentTemplateId" checked={assignmentTemplateId === template.id}
-            onChange={() => setAssignmentTemplateId(template.id)} />
+            onChange={() => setSelectedTemplate(template.id)} />
           <span className="wrap-anywhere">{template.title}</span>
         </label>
       ),
@@ -68,15 +73,10 @@ function ChallengeDelivery({ classroomId }) {
     },
   ];
 
-  function changeStep(show) {
-    setSelectingRecipients(show);
-    stepStart.current?.focus({ preventScroll: true });
-    stepStart.current?.scrollIntoView();
-  }
-
   function next() {
-    setRecipientUserIds((previous) => previous ?? new Set(roster.map((student) => student.userId)));
-    changeStep(true);
+    const params = new URLSearchParams(controls.params);
+    params.set("template", assignmentTemplateId);
+    open(`/instructor/classes/${classroomId}/assign?${params}`);
   }
 
   function toggleRecipient(userId) {
@@ -102,7 +102,7 @@ function ChallengeDelivery({ classroomId }) {
       intent.acknowledge();
       const message = text("Đã giao bộ thử thách cho", "Challenge set assigned to") + " "
         + assignment.recipientCount + " " + text("sinh viên", "students") + ".";
-      navigate(back.to, { replace: true, state: { ...back.state, message } });
+      finish({ message, levels: 2 });
     } catch (failure) {
       setError(failure.message);
     } finally {
@@ -114,7 +114,7 @@ function ChallengeDelivery({ classroomId }) {
   if (!classroom || classroom.archivedAt) {
     return (
       <div className="panel p-8">
-        <InstructorBackLink destination={back} />
+        <InstructorBackLink />
         <h1 className="text-xl font-bold">{text(classroom ? "Lớp học đã lưu trữ." : "Không tìm thấy lớp học")}</h1>
       </div>
     );
@@ -122,14 +122,11 @@ function ChallengeDelivery({ classroomId }) {
 
   return (
     <div className="instructor-authoring mx-auto max-w-6xl" ref={stepStart} tabIndex={-1}>
-      {showRecipients ? (
-        <InstructorBackLink onBack={() => { if (!isSubmitting) changeStep(false); }}>
-          {text("Quay lại chọn đề", "Back to template selection")}
-        </InstructorBackLink>
-      ) : <InstructorBackLink destination={back}>{classroom.name}</InstructorBackLink>}
+      <InstructorBackLink>{stepTemplate ? text("Quay lại chọn đề", "Back to template selection") : classroom.name}</InstructorBackLink>
       <PageHeader title={showRecipients ? text("Chọn sinh viên", "Select students") : text("Giao thử thách")} />
-      {location.state?.message && !showRecipients && <p role="status" className="mb-5 rounded-xl bg-portal-lavender p-4 text-sm text-portal-ink">{location.state.message}</p>}
-      {showRecipients ? (
+      {stepTemplate && !selected ? (
+        <p role="alert" className="panel p-5">{text("Không tìm thấy bộ thử thách")}</p>
+      ) : showRecipients ? (
         <form onSubmit={deliver}>
           <fieldset className="instructor-compact-panel panel space-y-5 p-5" disabled={isSubmitting}>
             <p className="font-semibold">{selected.title} · {classroom.name}</p>
@@ -165,6 +162,7 @@ function ChallengeDelivery({ classroomId }) {
             </label>
             {error && <p ref={errorNotice} role="alert" className="text-sm text-red-700">{error}</p>}
             <div className="instructor-action-bar">
+              <InstructorBackLink plain className="btn-secondary">{text("Hủy", "Cancel")}</InstructorBackLink>
               <button className="btn-primary" type="submit" disabled={!selectedUserIds.length}>
                 <Send size={16} aria-hidden="true" />{isSubmitting ? text("Đang lưu…") : text("Giao cho lớp")}
               </button>
@@ -177,18 +175,19 @@ function ChallengeDelivery({ classroomId }) {
             <h2 className="font-semibold">{text("Chọn bộ thử thách", "Select a challenge set")}</h2>
             <input className="field sm:max-w-xs" type="search" value={query}
               aria-label={text("Tìm bộ thử thách")} placeholder={text("Tìm bộ thử thách")}
-              onChange={(event) => setQuery(event.target.value)} />
+              onChange={(event) => controls.set("q", event.target.value, true)} />
           </div>
           {matchingTemplates.length ? (
             <RecordTable label={text("Chọn bộ thử thách", "Select a challenge set")} columns={columns} rows={pagination.items} />
           ) : (
             <div className="px-5 pb-5">
               <p className="text-sm text-portal-muted">{text(search ? "Không tìm thấy bộ thử thách phù hợp" : "Chưa có bộ thử thách")}</p>
-              {!assignmentTemplates.length && <Link to="/instructor/challenges" state={childState} className="btn-secondary mt-3">{text("Bộ thử thách")}</Link>}
+              {!assignmentTemplates.length && <InstructorLink to="/instructor/challenges" className="btn-secondary mt-3">{text("Bộ thử thách")}</InstructorLink>}
             </div>
           )}
           <Pagination pagination={pagination} />
           <div className="instructor-action-bar flex justify-end border-t border-slate-200 p-5">
+            <InstructorBackLink plain className="btn-secondary">{text("Hủy", "Cancel")}</InstructorBackLink>
             <button type="button" className="btn-primary" disabled={!selected} onClick={next}>{text("Chọn sinh viên", "Select students")}</button>
           </div>
         </section>

@@ -1,6 +1,7 @@
 import { useText } from "../../../preferences/preferencesContext";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useClassrooms } from "../workspace/ClassroomContext";
+import InstructorBackLink from "../workspace/InstructorBackLink";
 import QuizEditorForm from "./QuizEditorForm";
 import { canEditQuiz } from "./quizStatus";
 
@@ -18,9 +19,7 @@ export default function QuizEditorPage() {
         <h1 className="text-xl font-bold">
           {text("Không tìm thấy lớp hoặc bộ câu hỏi")}
         </h1>
-        <Link className="btn-secondary mt-4" to="/instructor/classes">
-          {text("Về lớp của tôi")}
-        </Link>
+        <InstructorBackLink />
       </div>
     );
   if (classroom.archivedAt || (existing && !canEditQuiz(existing, classroom.archivedAt))) {
@@ -39,12 +38,7 @@ export default function QuizEditorPage() {
             ? text("Bạn có thể xem lại nội dung đã lưu.")
             : text("Không thể chỉnh sửa nội dung đã công bố.")}
         </p>
-        <Link
-          className="btn-secondary mt-4"
-          to={existing ? `/instructor/classes/${classId}/quizzes/${quizId}` : `/instructor/classes/${classId}?tab=quizzes`}
-        >
-          {existing ? text("Xem bộ câu hỏi") : text("Về trắc nghiệm của lớp")}
-        </Link>
+        <InstructorBackLink />
       </div>
     );
   }

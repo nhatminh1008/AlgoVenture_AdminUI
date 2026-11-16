@@ -1,6 +1,6 @@
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import InstructorLink from "../workspace/InstructorLink";
 import { BookOpen, Check } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
 import InstructorBackLink from "../workspace/InstructorBackLink";
@@ -17,8 +17,7 @@ const lessonsWithStartingValues = new Set([
 export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, initialClassId, existing, templateMode = false }) {
   const text = useText();
   const { topics, lessonName, duplicateAssignmentTemplate } = useClassrooms();
-  const navigate = useNavigate();
-  const { back, childState } = useInstructorNavigation("/instructor/challenges");
+  const { finish } = useInstructorNavigation();
   const [form, setForm] = useState(
     () =>
       existing ?? {
@@ -72,7 +71,7 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
       }, existing?.id);
       const message = text("Đã lưu bản nháp.");
       setError("");
-      navigate(back.to, { replace: true, state: { ...back.state, message } });
+      finish({ message });
     } catch (failure) {
       setError(failure.message);
     } finally {
@@ -84,9 +83,7 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
     setError("");
     try {
       const template = await duplicateAssignmentTemplate(existing.id);
-      navigate(`/instructor/challenges?assignmentTemplateId=${encodeURIComponent(template.id)}`, {
-        replace: true, state: { back },
-      });
+      finish({ to: `/instructor/challenges?assignmentTemplateId=${encodeURIComponent(template.id)}` });
     } catch (failure) {
       setError(failure.message);
     } finally {
@@ -95,7 +92,7 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
   }
   return (
     <div className="mx-auto max-w-6xl">
-      <InstructorBackLink destination={back} />
+      <InstructorBackLink />
       <PageHeader
         title={
           readOnly && existing
@@ -114,13 +111,13 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
       {!templateMode && !classes.length && (
         <p className="panel mb-6 p-6 text-sm">
           {text("Bạn cần")}{" "}
-          <Link
+          <InstructorLink
             to="/instructor/classes/new"
-            state={childState}
+
             className="font-semibold text-portal-purple-strong"
           >
             {text("tạo lớp học")}
-          </Link>{" "}
+          </InstructorLink>{" "}
           {text("trước khi giao bài.")}
         </p>
       )}
@@ -222,6 +219,7 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
               <button type="submit" className="btn-primary" disabled={!form.lessonIds.length || isSubmitting}>
                 <Check size={17} />{isSubmitting ? text("Đang lưu…") : text("Lưu bộ thử thách", "Save challenge set")}
               </button>
+              <InstructorBackLink plain className="btn-secondary">{text("Hủy", "Cancel")}</InstructorBackLink>
             </div>
           )}
         </section>

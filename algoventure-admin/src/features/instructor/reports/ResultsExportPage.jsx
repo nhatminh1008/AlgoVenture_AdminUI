@@ -93,8 +93,9 @@ export default function ResultsExportPage() {
       <aside className="instructor-export-preview">
         <FileDown size={36} strokeWidth={1.5} />
         <h2>class-results.{format.toLowerCase()}</h2>
-        <dl><div><dt>{text("Sinh viên")}</dt><dd>{scope.rows.length}</dd></div><div><dt>{text("Lớp học")}</dt><dd>{scope.invalid ? 0 : scope.classroom ? 1 : scope.classes.length}</dd></div></dl>
-        <div className="instructor-export-columns">{["Họ tên", "Email", "Lớp học", "Điểm quiz", "Tiến độ"].map((label) => <span key={label}>{label}</span>)}</div>
+        <dl><div><dt>{text(scope.classroom ? "Sinh viên" : "Lượt ghi danh theo lớp")}</dt><dd>{scope.rows.length}</dd></div><div><dt>{text("Lớp học")}</dt><dd>{scope.invalid ? 0 : scope.classroom ? 1 : scope.classes.length}</dd></div></dl>
+        <div className="instructor-export-columns">{["Họ tên", "Email", "Lớp học", "Điểm quiz", "Quiz đã nộp", "Mục thực hành", "Tiến độ"].map((label) => <span key={label}>{text(label)}</span>)}</div>
+        <p className="mt-4 text-sm">{text("Điểm của mỗi sinh viên là trung bình điểm cao nhất của từng quiz đã nộp.")}</p>
       </aside>
       </div>
     </div>

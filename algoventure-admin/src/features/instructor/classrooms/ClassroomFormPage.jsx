@@ -1,6 +1,6 @@
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Check } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
 import InstructorBackLink from "../workspace/InstructorBackLink";
@@ -13,8 +13,7 @@ export default function ClassroomFormPage() {
   const { classId } = useParams();
   const { classes, saveClass } = useClassrooms();
   const existing = classes.find((item) => item.id === classId);
-  const navigate = useNavigate();
-  const { back } = useInstructorNavigation(classId ? `/instructor/classes/${classId}` : "/instructor/classes");
+  const { finish } = useInstructorNavigation();
   const [values, setValues] = useState(
     () =>
       existing ?? { name: "", description: "", level: "basic" },
@@ -25,18 +24,14 @@ export default function ClassroomFormPage() {
     return (
       <div className="panel p-8">
         <h1 className="text-xl font-bold">{text("Không tìm thấy lớp học")}</h1>
-        <Link className="btn-secondary mt-4" to="/instructor/classes">
-          {text("Về lớp của tôi")}
-        </Link>
+        <InstructorBackLink />
       </div>
     );
   if (existing?.archivedAt)
     return (
       <div className="panel p-8">
         <h1 className="text-xl font-bold">{text("Lớp học đã lưu trữ")}</h1>
-        <Link className="btn-secondary mt-4" to={`/instructor/classes/${classId}`}>
-          {text("Xem lớp học")}
-        </Link>
+        <InstructorBackLink />
       </div>
     );
   function field(name, value) {
@@ -50,14 +45,9 @@ export default function ClassroomFormPage() {
     try {
       const { name, description, level } = values;
       const item = await saveClass({ name, description, level }, classId);
-      navigate(existing ? back.to : `/instructor/classes/${item.id}`, {
-        replace: true,
-        state: {
-          ...(existing ? back.state : { back }),
-          message: classId
-            ? text("Đã cập nhật thông tin lớp.")
-            : text("Đã tạo lớp học."),
-        },
+      finish({
+        to: existing ? undefined : `/instructor/classes/${item.id}`,
+        message: existing ? text("Đã cập nhật thông tin lớp.") : text("Đã tạo lớp học."),
       });
     } catch (failure) {
       setError(failure.message);
@@ -67,7 +57,7 @@ export default function ClassroomFormPage() {
   }
   return (
     <div className="mx-auto max-w-3xl">
-      <InstructorBackLink destination={back} />
+      <InstructorBackLink />
       <PageHeader
         title={classId ? text("Chỉnh sửa lớp học") : text("Tạo lớp học mới")}
       />
@@ -145,14 +135,7 @@ export default function ClassroomFormPage() {
           </p>
         )}
         <div className="flex justify-end gap-3 border-t border-slate-100 pt-5">
-          <Link
-            className="btn-secondary"
-            to={back.to}
-            state={back.state}
-            replace
-          >
-            {text("Hủy")}
-          </Link>
+          <InstructorBackLink plain className="btn-secondary">{text("Hủy", "Cancel")}</InstructorBackLink>
           <button className="btn-primary" type="submit" disabled={isSubmitting}>
             <Check size={17} />
             {classId ? text("Lưu thay đổi") : text("Tạo lớp học")}

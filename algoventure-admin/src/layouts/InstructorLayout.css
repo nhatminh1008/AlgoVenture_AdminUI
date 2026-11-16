@@ -1,6 +1,9 @@
 .instructor-page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 18px; margin-bottom: 28px; }
 .instructor-shell textarea.field { resize: vertical; line-height: 1.7; }
 .instructor-shell label:has(> input[type="radio"]:checked) { border-color: var(--portal-line-strong); background: var(--portal-lavender); }
+.classes-page .workspace-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 760px) { .classes-page .workspace-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
 .instructor-tabs { display: flex; overflow-x: auto; gap: 7px; margin-bottom: 26px; padding: 5px; border: 1px solid var(--portal-line); border-radius: 11px; background: var(--portal-lavender); width: fit-content; max-width: 100%; }
 .instructor-tabs a { display: flex; flex-shrink: 0; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px; color: var(--portal-muted); font-size: 12px; font-weight: 500; white-space: nowrap; }
 .instructor-tabs a:hover { color: var(--portal-purple-strong); background: var(--portal-subtle); }.instructor-tabs a[aria-current="page"] { color: var(--portal-purple-strong); font-weight: 600; background: var(--portal-surface); box-shadow: 0 2px 5px #29344b10; }.instructor-tabs a svg { width: 15px; height: 15px; }
@@ -150,7 +153,10 @@
     gap: 12px;
   }
 
-  .instructor-tabs {
+  .classes-page .workspace-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 760px) { .classes-page .workspace-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.instructor-tabs {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;

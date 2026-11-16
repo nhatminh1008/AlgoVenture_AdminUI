@@ -1,27 +1,30 @@
 import { useText } from "../../../preferences/preferencesContext";
-import { Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { Layers, ClipboardList, Users } from "lucide-react";
+import InstructorLink from "../workspace/InstructorLink";
 
-const icons = { assignments: Layers, quizzes: ClipboardList, students: Users };
+const items = [
+  ["assignments", "Bộ thử thách", Layers],
+  ["quizzes", "Trắc nghiệm", ClipboardList],
+  ["students", "Sinh viên", Users],
+];
 
-export default function ClassNavigation({ classId, active, state }) {
+export default function ClassNavigation({ classId, active }) {
   const text = useText();
+  const location = useLocation();
   const base = `/instructor/classes/${classId}`;
-  const items = [
-    ["assignments", "Bộ thử thách", `${base}?tab=assignments`],
-    ["quizzes", "Trắc nghiệm", `${base}?tab=quizzes`],
-    ["students", "Sinh viên", `${base}?tab=students`],
-  ];
+  const sameClass = location.pathname.replace(/\/+$/, "") === base;
   return (
     <nav aria-label={text("Điều hướng lớp học")} className="instructor-tabs">
-      {items.map(([id, label, to]) => {
-        const Icon = icons[id];
+      {items.map(([id, label, Icon]) => {
+        const params = new URLSearchParams(sameClass ? location.search : "");
+        params.set("tab", id);
         return (
-        <Link key={id} to={to} state={state} aria-current={active === id ? "page" : undefined}
-        >
-          <Icon size={15} aria-hidden="true" />{label}
-        </Link>
-      );})}
+          <InstructorLink key={id} to={`${base}?${params}`} replace={sameClass} aria-current={active === id ? "page" : undefined}>
+            <Icon size={15} aria-hidden="true" />{text(label)}
+          </InstructorLink>
+        );
+      })}
     </nav>
   );
 }

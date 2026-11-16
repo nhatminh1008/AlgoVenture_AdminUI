@@ -1,6 +1,6 @@
 import { useText } from "../preferences/preferencesContext";
 import { useEffect, useId, useRef, useState } from "react";
-import { Link, NavLink, useLocation, useMatch } from "react-router-dom";
+import { Link, matchPath, NavLink, useLocation, useMatch } from "react-router-dom";
 import { ArrowUpRight, ChevronRight, Command, LogOut, Menu, Search, X } from "lucide-react";
 import LanguageToggle from "../preferences/LanguageToggle";
 import ThemeToggle from "../preferences/ThemeToggle";
@@ -10,7 +10,7 @@ import "./PortalMobile.css";
 
 const normalize = (value) => value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
 
-export default function PortalFrame({ user, logout, navItems, className = "", children }) {
+export default function PortalFrame({ user, logout, navItems, activePath, pageTitle, className = "", children }) {
   const text = useText();
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -25,9 +25,11 @@ export default function PortalFrame({ user, logout, navItems, className = "", ch
   const logoutDialog = useRef(null);
   const cancelLogout = useRef(null);
   const { pathname } = useLocation();
-  const current = [...navItems].reverse().find((item) => pathname === item.path || pathname.startsWith(`${item.path}/`)) || navItems[0];
+  const activeItem = navItems.find((item) => item.path === activePath)
+    ?? [...navItems].reverse().find((item) => matchPath({ path: item.path, end: item.path === "/admin" }, pathname));
+  const current = activeItem ?? navItems[0];
   const profileMatch = useMatch("/profile");
-  const pageName = profileMatch ? text("Hồ sơ của tôi") : current.name;
+  const pageName = profileMatch ? text("Hồ sơ của tôi") : pageTitle ?? current.name;
   const initials = user.name?.trim().split(/\s+/).map((part) => part[0]).slice(-2).join("") || "AV";
   const isAdmin = user.role === "admin";
   const results = navItems.filter((item) => normalize(item.name).includes(normalize(query.trim())));
@@ -95,9 +97,10 @@ export default function PortalFrame({ user, logout, navItems, className = "", ch
         <nav aria-label={text("Điều hướng chính")} className="portal-navigation">
           {navItems.map((item, index) => <div key={item.path}>
             {(index === 0 || item.group !== navItems[index - 1].group) && <p className="portal-nav-label">{item.group || "Không gian làm việc"}</p>}
-            <NavLink to={item.path} end={item.path === "/admin"} onClick={() => setMenuOpen(false)} className={({ isActive }) => `portal-nav-link${isActive ? " is-active" : ""}`}>
+            <Link to={item.path} onClick={closeMenu} aria-current={item === activeItem ? "page" : undefined}
+              className={`portal-nav-link${item === activeItem ? " is-active" : ""}`}>
               {item.icon}<span>{item.name}</span><ChevronRight className="nav-active-arrow" size={14} />
-            </NavLink>
+            </Link>
           </div>)}
         </nav>
         <div className="portal-sidebar-bottom">

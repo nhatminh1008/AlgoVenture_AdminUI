@@ -50,16 +50,23 @@ export default function ClassroomAnalyticsPage() {
       </PageHeader>
       {scope.classroom && <ClassNavigation classId={scope.classroom.id} active="analytics" />}
       {scope.invalid && <p role="alert" className="mb-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">{text("Lớp không khả dụng.")}</p>}
+      <div className="[&_.workspace-stats]:grid-cols-2 lg:[&_.workspace-stats]:grid-cols-4">
       <WorkspaceStats items={[
-        { label: text("Sinh viên"), value: scope.rows.length, icon: <Users /> },
+        { label: text(scope.classroom ? "Sinh viên" : "Lượt ghi danh theo lớp"), value: scope.rows.length, icon: <Users /> },
         {
-          label: text("Bộ bài đang giao"),
-          value: scope.sets.filter((item) => !item.archivedAt && !archivedClassIds.has(item.classId) && item.status === "Active").length
-            + scope.quizzes.filter((item) => !item.archivedAt && !archivedClassIds.has(item.classId) && item.status === "Published").length,
+          label: text("Bộ thử thách đang giao"),
+          value: scope.sets.filter((item) => !item.archivedAt && !archivedClassIds.has(item.classId) && item.status === "Active").length,
           icon: <Layers />,
         },
+        { label: text("Quiz đã công bố"), value: scope.quizzes.filter((item) =>
+          !item.archivedAt && !archivedClassIds.has(item.classId) && item.status === "Published").length, icon: <GraduationCap /> },
         { label: text("Điểm quiz trung bình / 100"), value: average ?? "—", icon: <ChartNoAxesColumn /> },
       ]} />
+      </div>
+      <p className="mb-4 text-sm text-portal-muted">
+        {text("Điểm của mỗi sinh viên là trung bình điểm cao nhất của từng quiz đã nộp.")}
+        {!scope.selected && ` ${text("Sinh viên học nhiều lớp được tính một lần trong mỗi lớp.")}`}
+      </p>
       <div className="analytics-layout">
         <section className="instructor-compact-panel panel min-w-0 p-6">
           <h2 className="instructor-chart-title"><GraduationCap size={19} />{text("Sinh viên theo lớp")}</h2>

@@ -2,7 +2,7 @@ import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { useText } from "../../../preferences/preferencesContext";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useInstructorParams } from "../workspace/useInstructorParams";
 import { Eye, Plus, Save, Send } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
 import InstructorBackLink from "../workspace/InstructorBackLink";
@@ -15,9 +15,9 @@ import QuizQuestionEditor from "./QuizQuestionEditor";
 export default function QuizEditorForm({ classroom, existing }) {
   const text = useText();
   const { saveQuiz } = useClassrooms();
-  const navigate = useNavigate();
   const classPath = `/instructor/classes/${classroom.id}`;
-  const { back } = useInstructorNavigation(existing ? `${classPath}/quizzes/${existing.id}` : `${classPath}?tab=quizzes`);
+  const { open, finish } = useInstructorNavigation();
+  const controls = useInstructorParams("editorPage");
   const [form, setForm] = useState(() =>
     existing
       ? structuredClone(existing)
@@ -31,11 +31,10 @@ export default function QuizEditorForm({ classroom, existing }) {
           questions: [createQuestion()],
         },
   );
-  const pagination = usePagination(form.questions, form.id);
+  const pagination = usePagination(form.questions, form.id, controls);
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [preview, setPreview] = useState(false);
-  const editorStart = useRef(null);
+  const preview = controls.params.get("preview") === "1" && !validateQuiz({ ...form, status: "Published" }, classroom);
   const errorNotice = useRef(null);
 
   useEffect(() => {
@@ -43,14 +42,6 @@ export default function QuizEditorForm({ classroom, existing }) {
       errorNotice.current?.scrollIntoView({ block: "center" });
     }
   }, [error]);
-
-  function changePreview(show) {
-    setPreview(show);
-    if (window.matchMedia("(max-width: 600px)").matches) {
-      editorStart.current?.focus({ preventScroll: true });
-      editorStart.current?.scrollIntoView();
-    }
-  }
 
   function update(field, value) {
     setForm((previous) => ({ ...previous, [field]: value }));
@@ -86,15 +77,9 @@ export default function QuizEditorForm({ classroom, existing }) {
     try {
       const quiz = await saveQuiz(values, existing?.id);
       const quizPath = `${classPath}/quizzes/${quiz.id}`;
-      navigate(quizPath, {
-        replace: true,
-        state: {
-          ...(back.to === quizPath ? back.state : { back }),
-          message:
-            status === "Published"
-              ? text("Đã giao bộ câu hỏi cho lớp.")
-              : text("Đã lưu bản nháp bộ câu hỏi."),
-        },
+      finish({
+        to: existing ? undefined : quizPath,
+        message: status === "Published" ? text("Đã giao bộ câu hỏi cho lớp.") : text("Đã lưu bản nháp bộ câu hỏi."),
       });
     } catch (failure) {
       setError(failure.message);
@@ -110,20 +95,20 @@ export default function QuizEditorForm({ classroom, existing }) {
     if (validation) setError(validation);
     else {
       setError("");
-      changePreview(true);
+      const params = new URLSearchParams(controls.params);
+      params.set("preview", "1");
+      open(`${classPath}/quizzes/${existing ? `${existing.id}/edit` : "new"}?${params}`);
     }
   }
+  if (controls.params.has("preview") && !preview) {
+    return <div className="panel p-8">
+      <InstructorBackLink>{text("Quay lại soạn câu hỏi")}</InstructorBackLink>
+      <p role="alert">{text("Cần bộ câu hỏi hoàn chỉnh để xem trước.", "Complete the quiz to preview it.")}</p>
+    </div>;
+  }
   return (
-    <div
-      className={`mx-auto max-w-6xl${preview ? "" : " instructor-authoring"}`}
-      ref={editorStart}
-      tabIndex={-1}
-    >
-      {preview ? (
-        <InstructorBackLink onBack={() => changePreview(false)}>{text("Quay lại soạn câu hỏi")}</InstructorBackLink>
-      ) : (
-        <InstructorBackLink destination={back} />
-      )}
+    <div className={`mx-auto max-w-6xl${preview ? "" : " instructor-authoring"}`}>
+      <InstructorBackLink>{controls.params.has("preview") ? text("Quay lại soạn câu hỏi") : undefined}</InstructorBackLink>
       <PageHeader
         title={
           preview
@@ -135,6 +120,7 @@ export default function QuizEditorForm({ classroom, existing }) {
       >
         {!preview && (
           <div className="instructor-action-bar quiz-editor-actions flex flex-wrap items-center gap-2">
+            <InstructorBackLink plain className="btn-secondary">{text("Hủy", "Cancel")}</InstructorBackLink>
             <button
               className="btn-secondary"
               disabled={isSaving}

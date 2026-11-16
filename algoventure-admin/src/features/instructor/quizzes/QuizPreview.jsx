@@ -1,4 +1,5 @@
 import Pagination from "../../../shared/components/Pagination";
+import { useInstructorParams } from "../workspace/useInstructorParams";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
@@ -6,20 +7,22 @@ import { CheckCircle2, RotateCcw, Eye } from "lucide-react";
 import { gradeQuiz } from "./quizPreviewScoring";
 import { validateQuiz } from "./quizValidation";
 
-export default function QuizPreview({ quiz }) {
+export default function QuizPreview({ quiz: savedQuiz }) {
   const text = useText();
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
   const [answerNotice, setAnswerNotice] = useState(false);
-  const pagination = usePagination(quiz.questions, quiz.id);
-  const error = validateQuiz(
-    { ...quiz, status: "Published" },
-    { id: quiz.classId },
-  );
+  const quiz = {
+    ...savedQuiz,
+    status: "Published",
+    questions: savedQuiz.questions.map((question) => ({ ...question, explanation: question.explanation ?? "" })),
+  };
+  const pagination = usePagination(quiz.questions, quiz.id, useInstructorParams("previewPage"));
+  const error = validateQuiz(quiz, { id: quiz.classId });
   if (error)
     return (
       <p className="panel p-6 text-sm text-amber-800">
-        {text("Bản nháp chưa đủ nội dung để làm thử: ")} {error}
+        {text("Bộ câu hỏi chưa đủ dữ liệu để làm thử.")} {error}
       </p>
     );
   return (

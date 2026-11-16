@@ -2,7 +2,6 @@ import { useText } from "../../../preferences/preferencesContext";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { useClassrooms } from "../workspace/ClassroomContext";
 import InstructorBackLink from "../workspace/InstructorBackLink";
-import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import ChallengeList from "./ChallengeList";
 import ChallengeEditor from "./ChallengeEditor";
 
@@ -11,7 +10,6 @@ export default function ChallengeSetsPage() {
   const { classes, assignments, assignmentTemplates, saveAssignmentTemplate } = useClassrooms();
   const [params] = useSearchParams();
   const location = useLocation();
-  const { back } = useInstructorNavigation("/instructor/challenges");
   const editingId = params.get("assignmentId");
   const assignmentTemplateId = params.get("assignmentTemplateId");
   const creating = location.pathname.endsWith("/new");
@@ -27,6 +25,6 @@ export default function ChallengeSetsPage() {
   const existing = assignments.find(item => item.id === editingId);
   const classId = existing?.classId ?? params.get("classId") ?? "";
   if (!existing || (params.has("classId") && params.get("classId") !== existing.classId))
-    return <div className="panel p-8"><InstructorBackLink destination={back} /><h1 className="text-xl font-bold">{text("Không tìm thấy bộ thử thách")}</h1></div>;
+    return <div className="panel p-8"><InstructorBackLink /><h1 className="text-xl font-bold">{text("Không tìm thấy bộ thử thách")}</h1></div>;
   return <ChallengeEditor key={editingId} classes={classes} initialClassId={classId} existing={existing} />;
 }

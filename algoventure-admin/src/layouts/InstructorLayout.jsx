@@ -1,6 +1,7 @@
 import { useText } from "../preferences/preferencesContext";
 import { useAuth } from "../auth/useAuth";
-import { Outlet } from "react-router-dom";
+import { useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import {
   GraduationCap,
   ClipboardList,
@@ -9,14 +10,21 @@ import {
   BarChart2,
   Download,
 } from "lucide-react";
-import { useClassrooms } from "../features/instructor/workspace/ClassroomContext";
+import { ClassroomProvider, useClassrooms } from "../features/instructor/workspace/ClassroomContext";
+import { instructorActivePath } from "../features/instructor/workspace/useInstructorNavigation";
+import { InstructorNoticeContext } from "../features/instructor/workspace/InstructorNoticeContext";
+import { useInstructorScroll } from "../features/instructor/workspace/useInstructorScroll";
 import PortalFrame from "./PortalFrame";
 import "./InstructorLayout.css";
 
 const InstructorLayout = () => {
   const text = useText();
   const { user, logout } = useAuth();
-  const stateLoadError = useClassrooms()?.stateLoadError;
+  const { pathname, search, key, state } = useLocation();
+  const [notice, setNotice] = useState(null);
+  const message = notice?.key === key ? notice.message : state?.message;
+  const activePath = instructorActivePath(pathname, search);
+  useInstructorScroll();
   const navItems = [
     {
       path: "/instructor/classes",
@@ -51,11 +59,24 @@ const InstructorLayout = () => {
   ];
 
   return (
-    <PortalFrame user={user} logout={logout} navItems={navItems} className="instructor-shell">
-      {stateLoadError && <p role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{stateLoadError}</p>}
-      <Outlet />
+    <PortalFrame user={user} logout={logout} navItems={navItems} activePath={activePath}
+      pageTitle={activePath ? undefined : text("Trang không tồn tại", "Page not found")} className="instructor-shell">
+      {message && <p role="status" className="mb-5 rounded-xl bg-portal-lavender p-4 text-sm text-portal-ink">{message}</p>}
+      <InstructorNoticeContext.Provider value={(key, message) => setNotice({ key, message })}>
+        <ClassroomProvider>
+          <InstructorContent />
+        </ClassroomProvider>
+      </InstructorNoticeContext.Provider>
     </PortalFrame>
   );
 };
+
+function InstructorContent() {
+  const { stateLoadError } = useClassrooms();
+  return <>
+    {stateLoadError && <p role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{stateLoadError}</p>}
+    <Outlet />
+  </>;
+}
 
 export default InstructorLayout;

@@ -52,6 +52,7 @@ export function ClassroomProvider({ children }) {
       ...previous,
       quizzes: previous.quizzes.map((quiz) => quiz.id === id ? { ...quiz, status: "Closed" } : quiz),
     }));
+    await refresh();
   }
   async function removeQuiz(id) {
     await deleteQuiz(id);
