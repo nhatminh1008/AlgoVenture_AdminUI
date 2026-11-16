@@ -72,9 +72,10 @@ const InstructorLayout = () => {
 };
 
 function InstructorContent() {
+  const text = useText();
   const { stateLoadError } = useClassrooms();
   return <>
-    {stateLoadError && <p role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{stateLoadError}</p>}
+    {stateLoadError && <p role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{text(stateLoadError)}</p>}
     <Outlet />
   </>;
 }

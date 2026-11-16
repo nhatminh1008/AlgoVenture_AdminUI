@@ -5,6 +5,7 @@ import InstructorLayout from "../layouts/InstructorLayout";
 import ChallengeSetsPage from "../features/instructor/assignments/ChallengeSetsPage";
 import AssignChallengePage from "../features/instructor/assignments/AssignChallengePage";
 import StudentProgressPage from "../features/instructor/reports/StudentProgressPage";
+import ProgressResultPage from "../features/instructor/reports/ProgressResultPage";
 import StudentProgressDetailPage, { StudentAssignmentPage } from "../features/instructor/reports/StudentProgressDetailPage";
 import StudentQuizHistoryPage from "../features/instructor/reports/StudentQuizHistoryPage";
 import { studentAssignmentPath } from "../features/instructor/reports/progressService";
@@ -51,6 +52,8 @@ function InstructorRoutes() {
         <Route path="challenges/new" element={<ChallengeSetsPage />} />
         <Route path="quizzes" element={<InstructorQuizzesPage />} />
         <Route path="progress" element={<StudentProgressPage />} />
+        <Route path="progress/classes/:classId/assignments/:workId" element={<ProgressResultPage kind="assignments" />} />
+        <Route path="progress/classes/:classId/quizzes/:workId" element={<ProgressResultPage kind="quizzes" />} />
         <Route
           path="analytics"
           element={

@@ -1,5 +1,5 @@
 import { useText } from "../../../preferences/preferencesContext";
-import { useParams, useSearchParams } from "react-router-dom";
+import { Navigate, useLocation, useParams } from "react-router-dom";
 import { useState } from "react";
 import { Lock, Pencil } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
@@ -8,11 +8,13 @@ import InstructorLink from "../workspace/InstructorLink";
 import { useClassrooms } from "../workspace/ClassroomContext";
 import QuizPreview from "./QuizPreview";
 import { canEditQuiz, getQuizStatusLabel } from "./quizStatus";
-import QuizResults from "./QuizResults";
+import { progressResultsPath } from "../workspace/useInstructorNavigation";
+import QuizQuestionResults from "./QuizResults";
 
 export default function QuizDetailPage() {
   const text = useText();
   const { classId, quizId } = useParams();
+  const location = useLocation();
   const { classes, quizzes } = useClassrooms();
   const classroom = classes.find((item) => item.id === classId);
   const quiz = quizzes.find(
@@ -27,20 +29,21 @@ export default function QuizDetailPage() {
         <InstructorBackLink />
       </div>
     );
-  return <QuizDetailContent key={quiz.id} classroom={classroom} quiz={quiz} />;
+  const params = new URLSearchParams(location.search);
+  if (quiz.status !== "Draft" && params.get("tab") === "results") {
+    return <Navigate to={progressResultsPath(classId, "quizzes", quizId, params)}
+      state={location.state} replace />;
+  }
+
+  return <QuizDetailContent key={quiz.id} classroom={classroom} quiz={quiz}
+    showQuestions={quiz.status !== "Draft" && params.get("tab") === "questions"} />;
 }
-function QuizDetailContent({ classroom, quiz }) {
+function QuizDetailContent({ classroom, quiz, showQuestions }) {
   const text = useText();
-  const [params] = useSearchParams();
   const { markQuizClosed } = useClassrooms();
   const [closing, setClosing] = useState(false);
   const [closeError, setCloseError] = useState("");
   const [closedHere, setClosedHere] = useState(false);
-  const showResults = quiz.status !== "Draft" && params.get("tab") !== "preview";
-  const previewParams = new URLSearchParams(params);
-  previewParams.set("tab", "preview");
-  const resultsParams = new URLSearchParams(params);
-  resultsParams.set("tab", "results");
 
   async function close() {
     if (closing || !window.confirm(text(
@@ -67,6 +70,13 @@ function QuizDetailContent({ classroom, quiz }) {
       <PageHeader
         title={quiz.title}
       >
+        {quiz.status !== "Draft" && (
+          <InstructorLink className="btn-secondary" to={progressResultsPath(classroom.id, "quizzes", quiz.id)}>
+            {text("Xem kết quả", "View results")}
+          </InstructorLink>
+        )}
+        {quiz.status !== "Draft" && <InstructorLink className="btn-secondary" to={showQuestions ? "?" : "?tab=questions"}
+          replace>{showQuestions ? text("Xem nội dung quiz", "View quiz content") : text("Kết quả theo câu hỏi", "Results by question")}</InstructorLink>}
         {canEditQuiz(quiz, classroom.archivedAt) && (
           <InstructorLink
             className="btn-primary"
@@ -83,7 +93,8 @@ function QuizDetailContent({ classroom, quiz }) {
           </button>
         )}
       </PageHeader>
-      {closeError && <p role="alert" className="mb-4 text-sm text-red-700">{closeError}</p>}
+      {showQuestions ? <QuizQuestionResults classId={classroom.id} quizId={quiz.id} /> : <>
+      {closeError && <p role="alert" className="mb-4 text-sm text-red-700">{text(closeError)}</p>}
       {closedHere && (
         <p
           role="status"
@@ -111,14 +122,8 @@ function QuizDetailContent({ classroom, quiz }) {
           </p>
         )}
       </section>
-      <nav aria-label={text("Chi tiết quiz")} className="mb-5 flex flex-wrap gap-3">
-        {quiz.status !== "Draft" && <InstructorLink className={showResults ? "btn-primary" : "btn-secondary"}
-          to={`?${resultsParams}`} replace aria-current={showResults ? "page" : undefined}>{text("Kết quả")}</InstructorLink>}
-        <InstructorLink className={!showResults ? "btn-primary" : "btn-secondary"} to={`?${previewParams}`}
-          replace aria-current={!showResults ? "page" : undefined}>{text("Xem và làm thử")}</InstructorLink>
-      </nav>
-      {showResults ? <QuizResults key={String(closedHere)} classId={classroom.id} quizId={quiz.id} />
-        : <QuizPreview quiz={quiz} />}
+      <QuizPreview quiz={quiz} />
+      </>}
     </div>
   );
 }

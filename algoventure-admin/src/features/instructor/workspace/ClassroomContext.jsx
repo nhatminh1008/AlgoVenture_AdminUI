@@ -75,7 +75,7 @@ export function ClassroomProvider({ children }) {
       <div className="p-8">
         {stateLoadError ? (
           <p role="alert">
-            {stateLoadError}{" "}
+            {text(stateLoadError)}{" "}
             <button className="btn-secondary" onClick={refresh}>
               {text("Thử lại")}
             </button>
@@ -90,6 +90,7 @@ export function ClassroomProvider({ children }) {
       value={{
         ...data,
         ...curriculum,
+        lessonName: (id) => text(curriculum.lessonName(id)),
         instructor: user,
         stateLoadError,
         refresh,

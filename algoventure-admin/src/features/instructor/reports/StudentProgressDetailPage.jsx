@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { ClipboardCheck, Layers, Timer } from "lucide-react";
+import { ClipboardCheck, Layers } from "lucide-react";
 import { useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
 import RecordTable from "../../../shared/components/RecordTable";
@@ -9,7 +9,7 @@ import { usePagination } from "../../../shared/hooks/usePagination";
 import { useClassrooms } from "../workspace/ClassroomContext";
 import InstructorLink from "../workspace/InstructorLink";
 import { DueDate, RecordStatus, ReportLoad, StudentReportCard, StudentReportHeader } from "./ProgressReporting";
-import { reportTime } from "./reportTime";
+import { useReportTime } from "./reportTime";
 import {
   getStudentAssignment, getStudentProgress, studentAssignmentPath, studentProgressPath,
 } from "./progressService";
@@ -21,7 +21,7 @@ function matches(record, filter) {
   if (filter === "overdue") return record.timing === "OVERDUE";
   if (filter === "soon") return record.timing === "DUE_SOON";
   if (filter === "missing") return record.statistics
-    ? record.statistics.submissions === 0 : record.completedItems < record.assignedItems;
+    ? record.applicabilityKnown && record.statistics.submissions === 0 : record.completedItems < record.assignedItems;
   return true;
 }
 
@@ -34,19 +34,24 @@ function StudentProgressDetail({ classId, enrollmentId }) {
   const text = useText();
   const { classes } = useClassrooms();
   const path = studentProgressPath(classId, enrollmentId);
-  const request = useApiData(useCallback(() => getStudentProgress(path), [path]), null);
+  const quizId = useInstructorParams().params.get("quizId");
+  const request = useApiData(useCallback(() => getStudentProgress(path, quizId), [path, quizId]), null);
   const report = request.data;
-  return <div className="mx-auto max-w-6xl">
+  return <div className="progress-detail mx-auto max-w-6xl">
     <StudentReportHeader classId={classId}
       className={report?.className ?? classes.find((item) => item.id === classId)?.name}
-      title={text("Chi tiết tiến độ sinh viên")} />
+      title={report?.student.name ?? text("Chi tiết tiến độ sinh viên")} />
     <ReportLoad request={request}>
-      {(data) => <StudentReport report={data} path={path} />}
+      {(data) => <>
+        <p className="-mt-3 mb-5 text-sm text-portal-muted wrap-anywhere">{data.student.email}</p>
+        <StudentReport report={data} path={path} />
+      </>}
     </ReportLoad>
   </div>;
 }
 
 function StudentReport({ report, path }) {
+  const reportTime = useReportTime();
   const text = useText();
   const controls = useInstructorParams("assignmentPage");
   const requestedFilter = controls.params.get("filter");
@@ -57,18 +62,26 @@ function StudentReport({ report, path }) {
   const tab = ["assignments", "quizzes"].includes(requestedTab) ? requestedTab : defaultTab;
   const showQuiz = tab === "quizzes";
   const quizControls = useInstructorParams("quizPage");
-  const assignmentPage = usePagination(report.assignments.filter((record) => matches(record, filter)), filter, controls);
-  const quizPage = usePagination(report.quizzes.filter((record) => matches(record, filter)), filter, quizControls);
+  const assignmentId = controls.params.get("assignmentId");
+  const quizId = controls.params.get("quizId");
+  const filtered = (records, selectedId) => {
+    const rows = records.filter((record) => matches(record, filter));
+    const index = rows.findIndex((row) => row.id === selectedId);
+    if (index > 0) rows.unshift(...rows.splice(index, 1));
+    return rows;
+  };
+  const assignmentPage = usePagination(filtered(report.assignments, assignmentId), filter, controls);
+  const quizPage = usePagination(filtered(report.quizzes, quizId), filter, quizControls);
   const baseColumns = (quiz) => [
     { key: "title", title: text(quiz ? "Quiz" : "Bộ thử thách"), layout: "primary", render: (record) => <strong>{record.title}</strong> },
-    { key: "due", title: text("Hạn (UTC+7)"), render: (record) => <DueDate record={record} /> },
-    { key: "status", title: text("Trạng thái"), render: (record) => <RecordStatus record={record} quiz={quiz} /> },
+    { key: "status", title: text("Trạng thái"), render: (record) => <RecordStatus record={record} quiz={quiz} compact /> },
   ];
+  const dueColumn = { key: "due", title: text("Hạn (UTC+7)"), render: (record) => <DueDate record={record} /> };
   const details = (quiz) => {
-    const label = quiz ? text("Xem kết quả bài nộp", "View submission results") : text("Xem mục thực hành", "View practice items");
+    const label = quiz ? text("Xem lượt nộp") : text("Xem mục thực hành", "View practice items");
     return {
       key: "open", title: text("Thao tác"), layout: "actions",
-      render: (record) => <InstructorLink className="btn-row-action"
+      render: (record) => (!quiz || record.statistics.submissions > 0) && <InstructorLink className="btn-row-action"
         to={`${path}/${quiz ? "quizzes" : "assignments"}/${encodeURIComponent(record.id)}`}
         aria-label={`${label} · ${record.title}`}>{label}</InstructorLink>,
     };
@@ -76,33 +89,21 @@ function StudentReport({ report, path }) {
   const assignmentColumns = [
     ...baseColumns(false),
     { key: "items", title: text("Mục đã hoàn thành"), render: (record) => `${record.completedItems} / ${record.assignedItems}` },
+    dueColumn,
     details(false),
   ];
   const quizColumns = [
     ...baseColumns(true),
     { key: "best", title: text("Điểm cao nhất / 100", "Best score / 100"), render: (record) => record.statistics.bestScore ?? "—" },
+    dueColumn,
     { key: "submitted", title: text("Nộp gần nhất (UTC+7)", "Latest submission (UTC+7)"), render: (record) => reportTime(record.statistics.latestSubmittedAt) },
     details(true),
   ];
   const pagination = showQuiz ? quizPage : assignmentPage;
+  const overdueCount = report.overdueAssignments + report.overdueQuizzes;
+  const overdueTab = (showQuiz ? report.overdueQuizzes : report.overdueAssignments) > 0 ? tab
+    : report.overdueAssignments > 0 ? "assignments" : "quizzes";
   return <>
-    <StudentReportCard student={report.student}>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-        {[
-          [text("Quiz đã nộp"), report.quizzesSubmitted, ClipboardCheck],
-          [text("Mục thực hành đã hoàn thành / được giao"), `${report.completedItems} / ${report.assignedItems}`, Layers],
-          [text("Bài quá hạn"), report.overdueAssignments + report.overdueQuizzes, Timer],
-        ].map(([label, value, Icon]) => <div key={label}>
-          <dt className="flex items-start gap-2 text-xs text-portal-muted"><Icon size={15} className="shrink-0" aria-hidden="true" />{label}</dt>
-          <dd className="mt-1 text-lg font-semibold tabular-nums">{Icon === Timer && value > 0 ? (
-            <InstructorLink to={`?${new URLSearchParams({ filter: "overdue", tab: report.overdueAssignments ? "assignments" : "quizzes" })}`}
-              replace className="text-portal-purple-strong hover:underline" aria-label={`${value} ${text("bài quá hạn")}`}>
-              {value}
-            </InstructorLink>
-          ) : value}</dd>
-        </div>)}
-      </dl>
-    </StudentReportCard>
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
       <nav className="instructor-tabs mb-0! grid-cols-2!" aria-label={text("Nội dung tiến độ", "Progress views")}>
         {[
@@ -116,19 +117,29 @@ function StudentReport({ report, path }) {
           </InstructorLink>;
         })}
       </nav>
-      <select className="field w-auto" aria-label={text("Lọc theo trạng thái", "Filter by status")} value={filter}
-        onChange={(event) => controls.set("filter", event.target.value, true, ["quizPage"])}>
-        <option value="">{text("Tất cả trạng thái", "All statuses")}</option>
-        <option value="missing">{text("Chưa hoàn thành")}</option>
-        <option value="soon">{text("Sắp đến hạn")}</option>
-        <option value="overdue">{text("Quá hạn")}</option>
-      </select>
+      <div className="flex flex-wrap items-center gap-2">
+        <select className="field w-auto" aria-label={text("Lọc theo trạng thái")} value={filter}
+          onChange={(event) => controls.set("filter", event.target.value, true, ["quizPage"])}>
+          <option value="">{text("Tất cả trạng thái", "All statuses")}</option>
+          <option value="missing">{text(showQuiz ? "Chưa nộp" : "Chưa hoàn thành")}</option>
+          <option value="soon">{text("Sắp đến hạn")}</option>
+          <option value="overdue">{text("Quá hạn")}</option>
+        </select>
+        {overdueCount > 0 && <button className="btn-secondary" type="button" aria-pressed={filter === "overdue"}
+          onClick={() => controls.update({
+            filter: filter === "overdue" ? "" : "overdue", tab: filter === "overdue" ? tab : overdueTab,
+          }, ["assignmentPage", "quizPage"])}>
+          {text("Bài quá hạn")} <span className="progress-overdue">{overdueCount}</span>
+        </button>}
+      </div>
     </div>
     <section className="panel overflow-hidden">
       {showQuiz
         ? <RecordTable label={text("Quiz của sinh viên")} columns={quizColumns} rows={pagination.items}
+          currentRowId={quizId}
           emptyMessage={text(filter ? "Không có quiz phù hợp." : "Chưa có quiz áp dụng hoặc lượt nộp trong lớp.")} />
         : <RecordTable label={text("Bộ thử thách được giao")} columns={assignmentColumns} rows={pagination.items}
+          currentRowId={assignmentId}
           emptyMessage={text(filter ? "Không có bộ thử thách phù hợp." : "Sinh viên chưa được giao bộ thử thách.")} />}
       <Pagination pagination={pagination} />
       {showQuiz && report.hasUnverifiedQuizHistory && <p className="border-t border-portal-line p-4 text-sm text-portal-muted">
@@ -145,6 +156,7 @@ export function StudentAssignmentPage() {
 }
 
 function StudentAssignment({ classId, enrollmentId, assignmentId }) {
+  const reportTime = useReportTime();
   const text = useText();
   const { classes, lessonName } = useClassrooms();
   const assignmentPath = studentAssignmentPath(classId, enrollmentId, assignmentId);

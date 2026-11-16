@@ -1,0 +1,112 @@
+.progress-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--portal-line);
+}
+
+.progress-search {
+  position: relative;
+  flex: 1 1 230px;
+  min-width: 0;
+}
+
+.progress-search svg {
+  position: absolute;
+  top: 50%;
+  left: 13px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--portal-muted);
+}
+
+.progress-search .field {
+  padding-inline-start: 40px;
+}
+
+.progress-kinds {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 4px;
+  gap: 2px;
+  background: var(--portal-lavender);
+  border: 1px solid var(--portal-line);
+  border-radius: 11px;
+}
+
+.progress-kinds button {
+  min-height: 36px;
+  padding: 5px 11px;
+  border-radius: 7px;
+  color: var(--portal-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.progress-kinds button:hover,
+.progress-kinds button[aria-pressed="true"] {
+  color: var(--portal-purple-strong);
+  background: var(--portal-surface);
+}
+
+.progress-kinds button[aria-pressed="true"] {
+  box-shadow: 0 0 0 1px var(--portal-line);
+}
+
+.progress-work {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.progress-student-link {
+  color: var(--portal-purple-strong);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+
+.progress-overdue {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: var(--portal-danger-bg);
+  color: var(--portal-danger-ink);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.progress-detail button[aria-pressed="true"] {
+  color: var(--portal-purple-strong);
+  background: var(--portal-lavender);
+}
+
+.progress-detail .record-table tbody tr[aria-current="true"] {
+  background: var(--portal-lavender);
+  box-shadow: inset 3px 0 var(--portal-purple-strong);
+}
+
+@media (max-width: 760px) {
+  .progress-detail .record-table-actions:empty {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .progress-filters > label {
+    flex-basis: 100%;
+  }
+
+  .progress-kinds {
+    width: 100%;
+  }
+
+  .progress-kinds button {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+}

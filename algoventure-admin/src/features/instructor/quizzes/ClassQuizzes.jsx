@@ -4,6 +4,7 @@ import { usePagination } from "../../../shared/hooks/usePagination";
 import { useText } from "../../../preferences/preferencesContext";
 import { useRef, useState } from "react";
 import InstructorLink from "../workspace/InstructorLink";
+import { progressResultsPath } from "../workspace/useInstructorNavigation";
 import { useInstructorParams } from "../workspace/useInstructorParams";
 import { ClipboardList, Eye, FilePenLine, Plus, Trash2 } from "lucide-react";
 import { useClassrooms } from "../workspace/ClassroomContext";
@@ -20,7 +21,7 @@ export default function ClassQuizzes({ classId }) {
   const archived = (quiz) => classes.find((item) => item.id === quiz.classId)?.archivedAt;
   async function remove(quiz) {
     if (!canEditQuiz(quiz, archived(quiz)) || pendingRemovals.current.has(quiz.id)) return;
-    if (!window.confirm(`Xóa bản nháp “${quiz.title}”?`)) return;
+    if (!window.confirm(text(`Xóa bản nháp “${quiz.title}”?`, `Delete draft “${quiz.title}”?`))) return;
     pendingRemovals.current.add(quiz.id);
     try {
       await removeQuiz(quiz.id);
@@ -59,8 +60,8 @@ export default function ClassQuizzes({ classId }) {
         const quizUrl = `/instructor/classes/${quiz.classId}/quizzes/${quiz.id}`;
         return (
           <div className="table-actions">
-            {quiz.status !== "Draft" && <InstructorLink className="btn-row-action" aria-label={`${text("Kết quả")} · ${quiz.title}`}
-              to={`${quizUrl}?tab=results`}>{text("Kết quả")}</InstructorLink>}
+            {quiz.status !== "Draft" && <InstructorLink className="btn-row-action" aria-label={`${text("Xem kết quả", "View results")} · ${quiz.title}`}
+              to={progressResultsPath(quiz.classId, "quizzes", quiz.id)}>{text("Xem kết quả", "View results")}</InstructorLink>}
             <InstructorLink className="btn-row-action" aria-label={`${text("Xem và làm thử")}: ${quiz.title}`} to={`${quizUrl}?tab=preview`}>
               <Eye aria-hidden="true" />{text("Xem và làm thử")}
             </InstructorLink>
@@ -96,7 +97,7 @@ export default function ClassQuizzes({ classId }) {
           role="alert"
           className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700"
         >
-          {error}
+          {text(error)}
         </p>
       )}
       {rows.length ? (

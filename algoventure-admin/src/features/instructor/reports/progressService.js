@@ -8,16 +8,26 @@ export function studentAssignmentPath(classId, enrollmentId, assignmentId) {
   return `${studentProgressPath(classId, enrollmentId)}/assignments/${encodeURIComponent(assignmentId)}`;
 }
 
-export function getStudentProgress(path) {
-  return api(`${path}/progress`);
+export function getStudentProgress(path, quizId) {
+  return api(`${path}/progress${quizId ? `?${new URLSearchParams({ quizId })}` : ""}`);
 }
 
 export function getStudentAssignment(path) {
   return api(path);
 }
 
-export function getQuizResults(classId, quizId, page) {
-  return api(`/instructor/classes/${encodeURIComponent(classId)}/quizzes/${encodeURIComponent(quizId)}/results?page=${page}`);
+export function getAssignmentResults(classId, assignmentId, page, q) {
+  return getWorkResults(classId, "assignments", assignmentId, page, q);
+}
+
+export function getQuizResults(classId, quizId, page, q) {
+  return getWorkResults(classId, "quizzes", quizId, page, q);
+}
+
+function getWorkResults(classId, kind, id, page, q) {
+  const params = new URLSearchParams({ page });
+  if (q) params.set("q", q);
+  return api(`/instructor/classes/${encodeURIComponent(classId)}/${kind}/${encodeURIComponent(id)}/results?${params}`);
 }
 
 export function getQuizQuestionResults(classId, quizId) {

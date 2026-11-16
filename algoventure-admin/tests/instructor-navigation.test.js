@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  instructorActivePath, instructorBack, instructorChildState, instructorDestination, instructorParent,
+  instructorActivePath, instructorBack, instructorChildState, instructorDestination, instructorParent, progressResultsPath,
 } from "../src/features/instructor/workspace/useInstructorNavigation.js";
 
 const classroom = "/instructor/classes/class-1";
@@ -10,6 +10,32 @@ const assignment = `${student}/assignments/assignment-1`;
 const quiz = `${student}/quizzes/quiz-1`;
 const progress = "/instructor/progress";
 const classes = "/instructor/classes";
+
+test("class and quiz management links open results in learning progress with a scoped route fallback", () => {
+  const assignmentResults = progressResultsPath("class-1", "assignments", "delivery-1");
+  const quizResults = progressResultsPath("class-1", "quizzes", "quiz-1");
+  assert.equal(instructorDestination(assignmentResults, classes), assignmentResults);
+  assert.equal(instructorDestination(quizResults, "/instructor/quizzes"), quizResults);
+  assert.equal(assignmentResults, `${progress}?classId=class-1&tab=assignments&workId=delivery-1`);
+  assert.equal(quizResults, `${progress}?classId=class-1&tab=quizzes&workId=quiz-1`);
+  const quizSearch = new URL(quizResults, "http://test.local").search;
+  assert.equal(instructorActivePath(progress, quizSearch + "&from=quizzes"), progress);
+  assert.equal(instructorParent(`${progress}/classes/class-1/assignments/delivery-1`), `${progress}?tab=assignments&classId=class-1`);
+  assert.equal(progressResultsPath("class-1", "quizzes", "quiz-1", "?resultsPage=2&q=student%40"),
+    `${quizResults}&studentPage=2&q=student%40`);
+
+  const roster = { pathname: classroom, search: "?tab=quizzes&quizPage=1", hash: "", key: "list" };
+  const report = { pathname: progress, search: quizSearch, state: instructorChildState(roster, 2) };
+  assert.deepEqual(instructorBack(report, 3), { to: classroom + roster.search, delta: -1, key: "list" });
+});
+
+test("a student detail link can restore the board filters without browser state", () => {
+  const query = "tab=quizzes&workId=quiz-1&q=hoa%40&studentPage=1";
+  const to = `${student}?${new URLSearchParams({ progressSearch: query, tab: "quizzes", quizId: "quiz-1" })}`;
+  const url = new URL(instructorDestination(to, classes), "http://test.local");
+  assert.equal(instructorActivePath(url.pathname, url.search), progress);
+  assert.equal(instructorParent(url.pathname, url.search), `${progress}?${query}`);
+});
 
 test("detail links preserve the section in the URL and derive it without browser state", () => {
   assert.equal(instructorDestination(`${student}?filter=overdue`, progress), `${student}?filter=overdue&from=progress`);

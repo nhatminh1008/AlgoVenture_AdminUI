@@ -4,6 +4,16 @@ import { InstructorNoticeContext } from "./InstructorNoticeContext.js";
 
 const sections = new Set(["classes", "challenges", "quizzes", "progress", "analytics", "export"]);
 const root = "/instructor";
+const progressResultsBase = `${root}/progress/classes/`;
+
+export function progressResultsPath(classId, kind, id, previousSearch = "") {
+  const previous = new URLSearchParams(previousSearch);
+  const params = new URLSearchParams({ classId, tab: kind, workId: id });
+  const page = previous.get("studentPage") ?? previous.get("resultsPage");
+  if (page) params.set("studentPage", page);
+  if (previous.get("q")) params.set("q", previous.get("q"));
+  return `${root}/progress?${params}`;
+}
 
 export function instructorSection(pathname) {
   if (!pathname.startsWith(`${root}/`)) return null;
@@ -12,14 +22,22 @@ export function instructorSection(pathname) {
 }
 
 export function instructorActivePath(pathname, search = "") {
-  const from = new URLSearchParams(search).get("from");
+  const params = new URLSearchParams(search);
+  if (pathname.startsWith(progressResultsBase) || (pathname === `${root}/progress` && params.has("workId"))) {
+    return `${root}/progress`;
+  }
+  const from = params.get("from");
   const section = sections.has(from) ? from : instructorSection(pathname);
   return section ? `${root}/${section}` : null;
 }
 
 export function instructorDestination(to, activePath) {
   const url = new URL(to, "http://instructor.local");
-  if (activePath && instructorSection(url.pathname)) {
+  if (url.pathname.startsWith(progressResultsBase) || (url.pathname === `${root}/progress` && url.searchParams.has("workId"))) {
+    url.searchParams.delete("from");
+  } else if (url.searchParams.has("progressSearch") && instructorSection(url.pathname) === "classes") {
+    url.searchParams.set("from", "progress");
+  } else if (activePath && instructorSection(url.pathname)) {
     const origin = instructorSection(activePath);
     if (origin !== instructorSection(url.pathname)) url.searchParams.set("from", origin);
     else url.searchParams.delete("from");
@@ -60,9 +78,14 @@ export function instructorParent(pathname, search = "") {
           : withOrigin(`${student}?tab=quizzes`);
       }
       if (kind === "assignments") return withOrigin(`${student}?tab=assignments`);
-      return activePath === `${root}/progress`
-        ? `${activePath}?classId=${classId}`
-        : withOrigin(`${classPath}?tab=students`);
+      if (activePath === `${root}/progress`) {
+        if (params.has("progressSearch")) {
+          const query = new URLSearchParams(params.get("progressSearch"));
+          return activePath + (query.size ? `?${query}` : "");
+        }
+        return `${activePath}?classId=${classId}`;
+      }
+      return withOrigin(`${classPath}?tab=students`);
     }
   }
   if (section === "challenges") {
@@ -73,6 +96,9 @@ export function instructorParent(pathname, search = "") {
     if (classId === "new" || params.has("assignmentTemplateId") || params.has("assignmentId")) {
       return withOrigin(`${root}/challenges`);
     }
+  }
+  if (section === "progress" && classId === "classes" && kind && ["assignments", "quizzes"].includes(resourceId)) {
+    return `${root}/progress?tab=${resourceId}&classId=${area}`;
   }
   if (section === "progress" && activePath === `${root}/classes` && params.get("classId")) {
     return withOrigin(`${root}/classes/${encodeURIComponent(params.get("classId"))}?tab=students`);

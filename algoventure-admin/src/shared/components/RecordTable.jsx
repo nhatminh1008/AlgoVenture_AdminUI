@@ -1,6 +1,6 @@
 import "./RecordTable.css";
 
-export default function RecordTable({ label, columns, rows, emptyMessage }) {
+export default function RecordTable({ label, columns, rows, emptyMessage, currentRowId }) {
   return (
     <div className="record-table-scroll">
       <table className="data-table record-table" role="table" aria-label={label}>
@@ -13,7 +13,7 @@ export default function RecordTable({ label, columns, rows, emptyMessage }) {
         </thead>
         <tbody role="rowgroup">
           {rows.map((row, index) => (
-            <tr key={row.id ?? index} role="row">
+            <tr key={row.id ?? index} role="row" aria-current={currentRowId && row.id === currentRowId ? "true" : undefined}>
               {columns.map(({ key, title, layout, className, render }) => (
                 <td key={key} role="cell" className={[layout && `record-table-${layout}`, className].filter(Boolean).join(" ") || undefined}>
                   {(!layout || layout === "wide") && <span className="record-table-label" aria-hidden="true">{title}</span>}

@@ -6,8 +6,9 @@ import RecordTable from "../../../shared/components/RecordTable";
 import { useApiData } from "../../../shared/hooks/useApiData";
 import { useClassrooms } from "../workspace/ClassroomContext";
 import InstructorLink from "../workspace/InstructorLink";
+import { progressResultsPath } from "../workspace/useInstructorNavigation";
 import { DueDate, RecordStatus, ReportLoad, StudentReportCard, StudentReportHeader } from "./ProgressReporting";
-import { reportTime } from "./reportTime";
+import { useReportTime } from "./reportTime";
 import { getQuizAttempt, getStudentQuiz, studentProgressPath } from "./progressService";
 import { useInstructorParams } from "../workspace/useInstructorParams";
 
@@ -20,6 +21,7 @@ export default function StudentQuizHistoryPage() {
 }
 
 function StudentQuizHistory({ classId, enrollmentId, quizId }) {
+  const reportTime = useReportTime();
   const text = useText();
   const { classes } = useClassrooms();
   const studentPath = studentProgressPath(classId, enrollmentId);
@@ -45,7 +47,7 @@ function StudentQuizHistory({ classId, enrollmentId, quizId }) {
       className={data?.className ?? classes.find((item) => item.id === classId)?.name}
       title={data?.quiz.title ?? text("Lịch sử lượt nộp quiz")}>
       {data && <InstructorLink className="btn-secondary"
-        to={`/instructor/classes/${classId}/quizzes/${quizId}?tab=results`}>{text("Kết quả của lớp")}</InstructorLink>}
+        to={progressResultsPath(classId, "quizzes", quizId)}>{text("Kết quả của lớp")}</InstructorLink>}
     </StudentReportHeader>
     <ReportLoad request={request}>{({ student, quiz, attempts }) => <>
       <StudentReportCard student={student}>
@@ -71,6 +73,7 @@ function StudentQuizHistory({ classId, enrollmentId, quizId }) {
 }
 
 function QuizAttemptReview({ path, attemptId }) {
+  const reportTime = useReportTime();
   const text = useText();
   const controls = useInstructorParams("attemptPage");
   const needsReview = controls.params.get("answers") === "review";
@@ -94,7 +97,7 @@ function QuizAttemptReview({ path, attemptId }) {
           {rows.map((answer) => <li key={answer.number} className="space-y-2 p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h3 className="font-semibold wrap-anywhere">{answer.number}. {answer.prompt ?? answer.questionId}</h3>
-              <span className={`instructor-badge ${answer.outcome === "INCORRECT" ? "text-red-700" : ""}`}>{text(answerLabels[answer.outcome])}</span>
+              <span className={`instructor-badge ${answer.outcome === "INCORRECT" ? "text-red-700" : ""}`}>{text(answerLabels[answer.outcome] ?? "Không đủ dữ liệu")}</span>
             </div>
             {answer.selectedOption != null && <p className="text-sm text-portal-muted wrap-anywhere">
               {text("Đã chọn")} · {answer.selectedOption}

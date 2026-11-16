@@ -3,18 +3,20 @@ import { useText } from "../../../preferences/preferencesContext";
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import { PageHeader } from "../workspace/PageHeader";
 import { StudentIdentity } from "../classrooms/StudentIdentity";
-import { reportTime } from "./reportTime";
+import { useReportDate, useReportTime } from "./reportTime";
 
 export function DueDate({ record }) {
+  const reportTime = useReportTime();
+  const reportDate = useReportDate();
   const text = useText();
   if (!record.due) return text("Chưa đặt hạn");
   return <time dateTime={record.cutoff ?? record.due}
     title={`${text("Hết hạn lúc")} ${reportTime(record.cutoff)} (UTC+7)`}>
-    {record.due.split("-").reverse().join("/")}
+    {reportDate(record.due)}
   </time>;
 }
 
-export function RecordStatus({ record, quiz = false }) {
+export function RecordStatus({ record, quiz = false, compact = false }) {
   const text = useText();
   const reception = {
     EXPIRED: "Hết thời gian tiếp nhận",
@@ -26,23 +28,24 @@ export function RecordStatus({ record, quiz = false }) {
     progress = record.statistics.submissions ? "Đã nộp"
       : record.applicabilityKnown ? "Chưa nộp" : "Thiếu dữ liệu lịch sử";
   } else {
-    progress = record.completedItems === record.assignedItems ? "Đã hoàn thành"
+    progress = !record.assignedItems ? "Không có mục thực hành"
+      : record.completedItems === record.assignedItems ? "Đã hoàn thành"
       : record.completedItems > 0 ? "Hoàn thành một phần" : "Chưa hoàn thành";
   }
   return <div className="space-y-1">
     <div className="flex flex-wrap items-center gap-2">
       <span className="font-medium">{text(progress)}</span>
-      {record.timing === "OVERDUE" && <span className="instructor-badge text-red-700">{text("Quá hạn")}</span>}
-      {record.timing === "DUE_SOON" && <span className="instructor-badge text-amber-800">{text("Sắp đến hạn")}</span>}
+      {record.timing === "OVERDUE" && <span className="progress-overdue">{text("Quá hạn")}</span>}
+      {record.timing === "DUE_SOON" && <span className="instructor-badge instructor-badge-draft">{text("Sắp đến hạn")}</span>}
     </div>
-    {reception && <div className="text-xs text-portal-muted">{text(reception)}</div>}
+    {reception && !(compact && record.timing === "OVERDUE") && <div className="text-xs text-portal-muted">{text(reception)}</div>}
   </div>;
 }
 
 export function ReportLoad({ request, children }) {
   const text = useText();
   if (request.error && !request.loading) return <div className="panel flex flex-wrap items-center gap-3 p-5" role="alert">
-    <span>{request.error}</span>
+    <span>{text(request.error)}</span>
     <button className="btn-secondary" type="button" onClick={request.refresh}>{text("Thử lại")}</button>
   </div>;
   if (!request.data || request.loading) return <p role="status" className="panel p-5">{text("Đang tải kết quả…")}</p>;
