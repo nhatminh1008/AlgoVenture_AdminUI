@@ -1,6 +1,6 @@
 # AlgoVenture Portal
 
-Frontend React cho Admin và Instructor nằm trong `algoventure-admin`. Portal và Unity dùng chung REST API trong repo [AlgoVenture_Backend](../AlgoVenture_Backend/README.md). AI service tùy chọn nằm trong `ai-service`.
+Frontend React cho Admin và Instructor nằm trong `algoventure-admin`. Portal và Unity dùng chung REST API trong repo [AlgoVenture_Backend](../AlgoVenture_Backend/README.md). Dịch vụ AI tùy chọn nằm trong repo [AlgoVenture_AI](../AlgoVenture_AI/README.md).
 
 ## Chuẩn bị máy mới
 
@@ -66,7 +66,7 @@ Nếu tự cấu hình Backend với database ngoài thay vì dùng script Windo
 
 Mở repo Unity bằng đúng Editor và làm theo [README Unity](../AlgoVenture_Unity/README.md), dùng API local `http://127.0.0.1:8081`. [INTEGRATION.md](INTEGRATION.md) mô tả cookie/CSRF của Portal, JWT của Unity và luồng lớp học dùng chung.
 
-AI không bắt buộc để chạy Portal và các API cơ bản. Nếu dùng, xem [ai-service/README.md](ai-service/README.md), chạy service và đặt `AI_SERVICE_URL` trong file `.env` của Backend. Clone mới không có sẵn trọng số model đã đánh giá.
+AI không bắt buộc để chạy Portal và các API cơ bản. Nếu dùng, đặt repo [AlgoVenture_AI](../AlgoVenture_AI/README.md) cùng cấp, chạy dịch vụ và đặt `AI_SERVICE_URL` trong file `.env` của Backend. Clone mới không có sẵn trọng số model đã đánh giá.
 
 ## Dữ liệu và chức năng
 
