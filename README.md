@@ -56,7 +56,7 @@ npm ci
 npm run dev
 ```
 
-Mở [Portal](http://127.0.0.1:5174). Vite lấy `PORTAL_HOST`, `PORTAL_PORT`, `BACKEND_URL` và `PORT` từ `AlgoVenture_Backend/.env` ở repo cùng cấp. Mặc định `/api` được proxy tới `127.0.0.1:8081`. Giữ cùng hostname trong suốt phiên đăng nhập. Xem [cấu hình chung](../AlgoVenture_Backend/README.md#cấu-hình-chung-cho-backend-portal-và-unity).
+Mở [Portal](http://127.0.0.1:5174). Vite lấy `PORTAL_HOST`, `PORTAL_PORT`, `BACKEND_URL` và `PORT` từ `AlgoVenture_Backend/.env` hoặc `Backend/.env` ở repo cùng cấp. Mặc định `/api` được proxy tới `127.0.0.1:8081`. Giữ cùng hostname trong suốt phiên đăng nhập. Xem [cấu hình chung](../AlgoVenture_Backend/README.md#cấu-hình-chung-cho-backend-portal-và-unity).
 
 Với setup Windows tự động khi Run hoặc qua script, tài khoản ban đầu là `admin@algoventure.edu` và `instructor@algoventure.edu`. Mở `AlgoVenture_Backend/.runtime/dev-secrets.json` trên máy của bạn để xem mật khẩu đã sinh tại khóa `adminPassword` và `instructorPassword`; `databasePassword` là mật khẩu PostgreSQL, không phải mật khẩu Portal. Nếu dùng runtime tùy chỉnh, tìm file trong thư mục runtime đó. Seed không đổi mật khẩu tài khoản đã tồn tại; sau lần khởi tạo đầu có thể đặt `app.seed.enabled=false` trong cấu hình local.
 

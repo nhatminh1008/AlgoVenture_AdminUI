@@ -9,6 +9,8 @@ import { AdminPageHeader } from "../AdminPageHeader";
 import UserForm from "./UserForm";
 import UserList from "./UserList";
 
+const EDITABLE_ROLES = ["instructor", "learner"];
+
 const INITIAL_USER_FORM = {
   email: "",
   name: "",
@@ -29,7 +31,8 @@ export default function UserManagementPage() {
   const isOwnProfile = form?.id === user.id;
   const viewing = !!form?.id && !isOwnProfile;
   const savedAccount = viewing ? state.data.find((account) => account.id === form.id) : null;
-  const roleChanged = !!savedAccount && form.role !== savedAccount.role;
+  const canEditRole = EDITABLE_ROLES.includes(savedAccount?.role);
+  const roleChanged = canEditRole && EDITABLE_ROLES.includes(form.role) && form.role !== savedAccount.role;
   const rows = state.data.filter(
     (u) =>
       (role === "all" || u.role === role) &&
@@ -101,6 +104,7 @@ export default function UserManagementPage() {
           form={form}
           isOwnProfile={isOwnProfile}
           viewing={viewing}
+          editableRoles={canEditRole ? EDITABLE_ROLES : []}
           roleChanged={roleChanged}
           isSaving={isSaving}
           actionError={actionError}

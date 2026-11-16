@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createUser, lockUser, setUserLocked } from "../src/features/admin/users/userService.js";
+import { changeUserRole, createUser, lockUser, setUserLocked } from "../src/features/admin/users/userService.js";
 import { listClassroomMembers, setClassroomLocked } from "../src/features/admin/classrooms/adminClassroomService.js";
 import { closeQuiz } from "../src/features/instructor/workspace/instructorWorkspaceService.js";
 
@@ -33,7 +33,7 @@ test("administration and quiz writes use the Backend dev routes and CSRF", async
   assert.deepEqual(calls.map(({ path, method, body }) => [method, path, body]), [
     ["POST", "/api/admin/users", {
       email: "staff@example.test", name: "Staff", password: "fixture-password",
-      role: "instructor", status: "Active", profile: { dateOfBirth: null, phone: "123", address: null },
+      role: "instructor", profile: { dateOfBirth: null, phone: "123", address: null },
     }],
     ["PUT", "/api/admin/users/user%2F1/lock", undefined],
     ["GET", "/api/admin/users/access-actions", undefined],
@@ -45,6 +45,46 @@ test("administration and quiz writes use the Backend dev routes and CSRF", async
   ]);
   assert.ok(calls.every((call) => call.credentials === "include"));
   assert.ok(calls.filter((call) => call.method !== "GET").every((call) => call.csrf === "fixture"));
+});
+
+test("only Admin creation sends the selected status", async (t) => {
+  const requests = [];
+  t.mock.method(globalThis, "fetch", async (path, options) => {
+    if (path === "/api/auth/csrf") {
+      return Response.json({ headerName: "X-XSRF-TOKEN", token: "fixture" });
+    }
+    assert.equal(path, "/api/admin/users");
+    assert.equal(options.method, "POST");
+    requests.push(JSON.parse(options.body));
+    return Response.json({ id: "fixture" }, { status: 201 });
+  });
+
+  for (const role of ["instructor", "learner", "admin"]) {
+    await createUser({ role, name: "Fixture", email: "fixture@example.test",
+      password: "fixture-password", status: "Suspended" });
+  }
+
+  assert.deepEqual(requests.map(({ role, status }) => [role, status]), [
+    ["instructor", undefined],
+    ["learner", undefined],
+    ["admin", "Suspended"],
+  ]);
+});
+
+test("role changes use only the dedicated endpoint even when it rejects the request", async (t) => {
+  const calls = [];
+  t.mock.method(globalThis, "fetch", async (path, options) => {
+    if (path === "/api/auth/csrf") {
+      return Response.json({ headerName: "X-XSRF-TOKEN", token: "fixture" });
+    }
+    calls.push([options.method, path, options.body && JSON.parse(options.body)]);
+    return Response.json({ message: "Access denied" }, { status: 403 });
+  });
+
+  await assert.rejects(changeUserRole({ id: "user/1", role: "instructor", status: "Suspended" }), { status: 403 });
+  assert.deepEqual(calls, [
+    ["PUT", "/api/admin/users/user%2F1/role", { role: "instructor" }],
+  ]);
 });
 
 test("an older Admin backend can still unlock the selected account", async (t) => {

@@ -26,7 +26,9 @@ export default function UserList({ rows, currentUserId, query, role, onQueryChan
         <div className="table-actions">
           <button type="button" className="btn-row-action" onClick={() => onOpen(user)}>
             {user.id === currentUserId ? <Pencil aria-hidden="true" /> : <Eye aria-hidden="true" />}
-            {user.id === currentUserId ? text("Sửa hồ sơ của tôi") : text("Xem và phân quyền", "View account and role")}
+            {user.id === currentUserId
+              ? text("Sửa hồ sơ của tôi")
+              : user.role === "admin" ? text("Xem tài khoản", "View account") : text("Xem và phân quyền", "View account and role")}
           </button>
           {user.id !== currentUserId && user.status === "Active" && (
             <button type="button" className="btn-row-action btn-row-action-danger"

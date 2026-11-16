@@ -15,6 +15,38 @@ const fieldLabels = {
   dateOfBirth: "Ngày sinh", phone: "Số điện thoại", address: "Địa chỉ",
 };
 
+const outcomeLabels = {
+  SUCCESS: ["Thành công", "Success"],
+  REJECTED: ["Bị từ chối", "Rejected"],
+};
+
+function AuditAction({ row, text }) {
+  const { action, previousRole, requestedRole, source, outcome } = row;
+  if (action !== "user.role_change" || !outcome) return text(actionLabel(action));
+
+  const outcomeLabel = outcomeLabels[outcome];
+  const details = [
+    [text("Vai trò cũ", "Previous role"), text(roleLabels[previousRole] ?? previousRole ?? "—")],
+    [text("Vai trò yêu cầu", "Requested role"), text(roleLabels[requestedRole] ?? requestedRole ?? "—")],
+    [text("Nguồn", "Source"), source === "PORTAL_API" ? text("API Portal", "Portal API") : source || "—"],
+    [text("Kết quả", "Outcome"), outcomeLabel ? text(...outcomeLabel) : outcome],
+  ];
+
+  return (
+    <>
+      {text("Đổi vai trò", "Role change")}
+      <dl className="mt-2 space-y-1 text-sm">
+        {details.map(([label, value]) => (
+          <div key={label} className="flex flex-wrap gap-x-2">
+            <dt className="font-medium">{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </>
+  );
+}
+
 export default function SystemAnalyticsPage() {
   const text = useText();
   const state = useApiData(getAdminAnalytics, null);
@@ -37,7 +69,7 @@ export default function SystemAnalyticsPage() {
         {row.actor && row.actorEmail && <small className="block text-slate-500">{row.actorEmail}</small>}
       </>,
     },
-    { key: "action", title: text("Thao tác"), render: (row) => text(actionLabel(row.action)) },
+    { key: "action", title: text("Thao tác"), render: (row) => <AuditAction row={row} text={text} /> },
     {
       key: "target", title: text("Tài khoản đích"),
       render: (row) => <>

@@ -4,19 +4,22 @@ import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import AdminDetailsDialog from "../AdminDetailsDialog";
 import { roleLabels, statusLabels } from "../recordLabels.js";
 
-export default function UserForm({ form, isOwnProfile, viewing, roleChanged, isSaving, actionError, onSubmit, onFieldChange, onCancel }) {
+export default function UserForm({ form, isOwnProfile, viewing, editableRoles, roleChanged, isSaving, actionError, onSubmit, onFieldChange, onCancel }) {
   const text = useText();
   const formId = useId();
   const title = isOwnProfile ? text("Hồ sơ của tôi") : viewing ? text("Thông tin tài khoản", "Account details") : text("Tạo tài khoản");
   const creating = !form.id;
   const fieldsDisabled = viewing || (isOwnProfile && isSaving);
   const saveLabel = isOwnProfile ? text("Lưu hồ sơ") : viewing ? text("Lưu vai trò", "Save role") : text("Lưu tài khoản");
+  const roleOptions = creating ? ["admin", "instructor", "learner"] : editableRoles;
   const joined = form.joined && new Date(form.joined).toLocaleDateString("vi-VN");
   const actions = (
     <div className="admin-form-actions flex gap-3">
-      <button type="submit" form={formId} className="btn-primary" disabled={isSaving || (viewing && !roleChanged)}>
-        {isSaving ? text("Đang lưu…") : saveLabel}
-      </button>
+      {(!viewing || roleOptions.length > 0) && (
+        <button type="submit" form={formId} className="btn-primary" disabled={isSaving || (viewing && !roleChanged)}>
+          {isSaving ? text("Đang lưu…") : saveLabel}
+        </button>
+      )}
       <button type="button" className="btn-secondary" disabled={isSaving} onClick={onCancel}>
         {text("Hủy")}
       </button>
@@ -72,7 +75,7 @@ export default function UserForm({ form, isOwnProfile, viewing, roleChanged, isS
             />
           </label>
         )}
-        {!isOwnProfile && (
+        {!isOwnProfile && roleOptions.length > 0 && (
             <label>
               <span id="user-role-label" className="field-label">{text("Vai trò")}{creating && <span aria-hidden="true"> *</span>}</span>
               <select
@@ -84,7 +87,7 @@ export default function UserForm({ form, isOwnProfile, viewing, roleChanged, isS
                 aria-describedby={form.id ? "user-role-note" : undefined}
                 onChange={(e) => onFieldChange("role", e.target.value)}
               >
-                {["admin", "instructor", "learner"].map((v) => (
+                {roleOptions.map((v) => (
                   <option key={v} value={v}>{text(roleLabels[v])}</option>
                 ))}
               </select>
@@ -94,12 +97,17 @@ export default function UserForm({ form, isOwnProfile, viewing, roleChanged, isS
               </span>}
             </label>
         )}
+        {viewing && roleOptions.length === 0 && (
+          <div className="text-slate-600">
+            <span className="field-label">{text("Vai trò")}</span>{text(roleLabels[form.role] ?? form.role)}
+          </div>
+        )}
         {viewing && (
           <div className="text-slate-600"><span className="field-label">{text("Trạng thái")}</span>{text(statusLabels[form.status])}</div>
         )}
-        {creating && (
+        {creating && form.role === "admin" && (
             <label>
-              <span className="field-label">{text("Trạng thái")}{creating && <span aria-hidden="true"> *</span>}</span>
+              <span className="field-label">{text("Trạng thái")}<span aria-hidden="true"> *</span></span>
               <select
                 className="field"
                 required
