@@ -8,6 +8,7 @@ export const english = {
   "Mật khẩu phải có ít nhất 6 ký tự.": "Password must contain at least 6 characters.",
   "Mật khẩu phải có ít nhất một chữ hoa và một ký tự đặc biệt.": "Password must contain an uppercase letter and a special character.",
   "Mật khẩu tối đa 72 byte UTF-8.": "Password must be at most 72 UTF-8 bytes.",
+  "Mật khẩu phải có ít nhất một chữ hoa, một chữ thường, một chữ số và một ký tự đặc biệt.": "Include at least one uppercase letter, one lowercase letter, one digit, and one special character.",
   "Mật khẩu không được vượt quá 72 byte UTF-8.": "Password must be at most 72 UTF-8 bytes.",
   "Mật khẩu xác nhận không khớp.": "The passwords do not match.",
   "Mật khẩu hiện tại không đúng.": "The current password is incorrect.",

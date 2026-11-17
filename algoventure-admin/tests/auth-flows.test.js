@@ -12,12 +12,16 @@ test("registration only accepts the Backend's link format", () => {
 });
 
 test("new password validation uses the Backend's minimum and UTF-8 byte limit", () => {
-  assert.equal(passwordErrors("a".repeat(10), "a".repeat(10)), null);
-  assert.equal(passwordErrors("é".repeat(36), "é".repeat(36)), null);
+  assert.equal(passwordErrors("Abcdefgh1!", "Abcdefgh1!"), null);
+  const atLimit = "A1!a" + "é".repeat(34);
+  assert.equal(passwordErrors(atLimit, atLimit), null);
   assert.ok(passwordErrors("é".repeat(37), "é".repeat(37)).fields.password);
   assert.ok(passwordErrors(" ".repeat(10), " ".repeat(10)).fields.password);
   assert.ok(passwordErrors("too short", "mismatch").fields.password);
-  assert.ok(passwordErrors("LongPassword", "mismatch").fields.confirmation);
+  assert.ok(passwordErrors("LongPassword1!", "mismatch").fields.confirmation);
+  for (const password of ["secret1234!", "SECRET1234!", "Secretwords!", "Secret1234"]) {
+    assert.match(passwordErrors(password, password).fields.password, /chữ hoa.*chữ thường.*chữ số.*ký tự đặc biệt/);
+  }
 });
 
 
