@@ -1,5 +1,5 @@
 import { useText } from "../../../preferences/preferencesContext";
-import { useState } from "react";
+import { useId, useState } from "react";
 import InstructorLink from "../workspace/InstructorLink";
 import { BookOpen, Check } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
@@ -30,6 +30,8 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
       },
   );
   const [error, setError] = useState("");
+  const [titleError, setTitleError] = useState("");
+  const titleErrorId = useId();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [topicIds, setTopicIds] = useState(() => topics
     .filter((topic) => topic.lessons.some(([id]) => existing?.lessonIds.includes(id)))
@@ -44,6 +46,7 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
   const canEnterContent = templateMode || Boolean(classroom);
   function update(field, value) {
     setForm((previous) => ({ ...previous, [field]: value }));
+    if (field === "title") setTitleError("");
     setError("");
   }
   function selectTopics(ids) {
@@ -56,6 +59,13 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
   async function save(event) {
     event.preventDefault();
     if (readOnly || isSubmitting || !form.lessonIds.length) return;
+    const title = form.title.trim();
+    setError("");
+    setTitleError("");
+    if (!title) {
+      setTitleError("Hãy nhập tên bộ thử thách.");
+      return;
+    }
     setIsSubmitting(true);
     try {
       const lessonConfigs = structuredClone(Object.fromEntries(Object.entries(form.lessonConfigs ?? {}).filter(([id]) => form.lessonIds.includes(id))));
@@ -67,13 +77,14 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
         if (config.input && (config.input.length < 2 || config.input.length > 8 || config.input.some(n => !Number.isInteger(n) || n < -99 || n > 99))) throw new Error("Chuỗi gồm 2–8 số nguyên từ -99 đến 99.");
       }
       await saveAssignmentTemplate({
-        title: form.title, description: form.description, algorithmIds: form.lessonIds, algorithmConfigs: lessonConfigs,
+        title, description: form.description, algorithmIds: form.lessonIds, algorithmConfigs: lessonConfigs,
       }, existing?.id);
       const message = text("Đã lưu bản nháp.");
       setError("");
       finish({ message });
     } catch (failure) {
-      setError(failure.message);
+      if (failure.fields?.title) setTitleError(failure.fields.title);
+      else setError(failure.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -160,7 +171,7 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
           </label>}
           {classroom && (
             <p className="rounded-lg bg-portal-lavender p-3 text-xs text-portal-ink">
-              {getLevel(classroom.level).label}
+              {text(getLevel(classroom.level)?.label ?? classroom.level)}
             </p>
           )}
           <fieldset disabled={readOnly || isSubmitting} className="space-y-5">
@@ -171,9 +182,12 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
                 required
                 maxLength={100}
                 value={form.title}
+                aria-invalid={Boolean(titleError)}
+                aria-describedby={titleError ? titleErrorId : undefined}
                 onChange={(e) => update("title", e.target.value)}
                 placeholder={text("VD: Luyện tập Sorting — Tuần 1")}
               />
+              {titleError && <span id={titleErrorId} role="alert" className="mt-1 block text-sm text-red-700">{text(titleError)}</span>}
             </label>
             <label className="block">
               <span className="field-label">{text("Hướng dẫn cho sinh viên")}</span>
@@ -211,7 +225,7 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
               role="alert"
               className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
             >
-              {error}
+              {text(error)}
             </p>
           )}
           {!readOnly && (
@@ -244,7 +258,7 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
           <fieldset disabled={readOnly || isSubmitting} className="space-y-4">
             {lessonGroups.map((topic) => (
               <fieldset key={topic.id} className="space-y-2">
-                <legend className="mb-2 text-sm font-bold">{topic.label}</legend>
+                <legend className="mb-2 text-sm font-bold">{text(topic.label)}</legend>
                 {topic.lessons.map(([id, name]) => (
                   <label
                     key={id}
@@ -260,7 +274,7 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
                         selectedLessonIds.has(id) ? form.lessonIds.filter((value) => value !== id) : [...form.lessonIds, id],
                       )}
                     />
-                    {name}
+                    {text(name)}
                   </label>
                 ))}
               </fieldset>

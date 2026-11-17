@@ -9,21 +9,22 @@ import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import { AdminPageHeader } from "../AdminPageHeader";
 import RecordTable from "../../../shared/components/RecordTable";
 import RecordBadge from "../RecordBadge";
+import { difficultyLabels } from "../recordLabels.js";
 import { listLessons } from "./lessonService";
 export default function LessonLibraryPage() {
   const text = useText();
   const state = useApiData(listLessons, []);
   const [query, setQuery] = useState("");
   const rows = state.data.filter((a) =>
-    `${a.name} ${a.topicId}`.toLowerCase().includes(query.toLowerCase()),
+    `${a.name} ${text(a.name)} ${a.topicId}`.toLowerCase().includes(query.toLowerCase()),
   );
   const pagination = usePagination(rows, query);
   const columns = [
-    { key: "name", title: text("Bài học"), layout: "primary", render: (lesson) => lesson.name },
+    { key: "name", title: text("Bài học"), layout: "primary", render: (lesson) => text(lesson.name) },
     { key: "topic", title: text("Chủ đề"), render: (lesson) => lesson.topicId },
     {
       key: "difficulty", title: text("Độ khó"),
-      render: (lesson) => lesson.hasDifficultyPresets ? lesson.difficulty : text("Theo chặng", "By stage"),
+      render: (lesson) => lesson.hasDifficultyPresets ? text(difficultyLabels[lesson.difficulty] ?? lesson.difficulty) : text("Theo chặng", "By stage"),
     },
     { key: "status", title: text("Trạng thái"), render: (lesson) => <RecordBadge value={lesson.status} /> },
     {

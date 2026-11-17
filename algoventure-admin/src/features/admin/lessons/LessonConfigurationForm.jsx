@@ -1,6 +1,7 @@
 import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { useText } from "../../../preferences/preferencesContext";
+import { difficultyLabels } from "../recordLabels.js";
 import { useState } from "react";
 import { updateLesson } from "./lessonService";
 
@@ -44,7 +45,7 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
   }
   return (
     <form onSubmit={save} className="admin-form panel space-y-6 p-6">
-      <h2 className="text-xl font-bold">{lesson.name}</h2>
+      <h2 className="text-xl font-bold">{text(lesson.name)}</h2>
       {error && (
         <p role="alert" className="text-red-700">
           {error}
@@ -79,7 +80,7 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
             onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
           >
             {["Easy", "Medium", "Hard"].map((v) => (
-              <option key={v} value={v}>{text({ Easy: "Dễ", Medium: "Vừa", Hard: "Khó" }[v], v)}</option>
+              <option key={v} value={v}>{text(difficultyLabels[v], v)}</option>
             ))}
           </select>
           <span id="lesson-difficulty-note" className="mt-1 block text-sm text-portal-muted">
@@ -125,7 +126,7 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
         <div className="grid gap-3 sm:grid-cols-3">
           {form.config.starThresholds.map((value, i) => (
             <label key={i}>
-              <span className="field-label">{i + 1} sao</span>
+              <span className="field-label">{text(`${i + 1} sao`, i === 0 ? "1 star" : `${i + 1} stars`)}</span>
               <input
                 className="field"
                 type="number"
@@ -157,7 +158,7 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
         <legend className="field-label">{text("Bài tiên quyết bổ sung", "Additional prerequisites")}</legend>
         {required.length > 0 && <p className="mb-3 text-sm text-portal-muted">
           {text("Bắt buộc theo lộ trình", "Required by the learning path")}{" · "}
-          {required.map((id) => lessons.find((item) => item.id === id)?.name ?? id).join(", ")}
+          {required.map((id) => text(lessons.find((item) => item.id === id)?.name ?? id)).join(", ")}
         </p>}
         <div className="grid max-h-56 gap-2 overflow-auto sm:grid-cols-2">
           {prerequisites.items.map((a) => (
@@ -174,7 +175,7 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
                     )
                   }
                 />
-                {a.name}
+                {text(a.name)}
               </label>
             ))}
         </div>

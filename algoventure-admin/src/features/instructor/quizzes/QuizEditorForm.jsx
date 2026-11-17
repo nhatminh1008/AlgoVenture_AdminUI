@@ -8,7 +8,7 @@ import { PageHeader } from "../workspace/PageHeader";
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import { useClassrooms } from "../workspace/ClassroomContext";
-import { createQuestion, validateQuiz, MAX_QUESTIONS } from "./quizValidation";
+import { createQuestion, translateQuizError, validateQuiz, MAX_QUESTIONS } from "./quizValidation";
 import QuizPreview from "./QuizPreview";
 import QuizQuestionEditor from "./QuizQuestionEditor";
 
@@ -154,7 +154,7 @@ export default function QuizEditorForm({ classroom, existing }) {
           role="alert"
           className="mb-5 rounded-xl bg-red-50 p-4 text-sm text-red-700"
         >
-          {error}
+          {translateQuizError(error, text)}
         </p>
       )}
       {preview ? (

@@ -18,6 +18,7 @@ import { useInstructorParams } from "../workspace/useInstructorParams";
 const reportFilters = new Set(["missing", "soon", "overdue"]);
 
 function matches(record, filter) {
+  if (filter === "submitted") return record.statistics?.submissions > 0;
   if (filter === "overdue") return record.timing === "OVERDUE";
   if (filter === "soon") return record.timing === "DUE_SOON";
   if (filter === "missing") return record.statistics
@@ -55,12 +56,12 @@ function StudentReport({ report, path }) {
   const text = useText();
   const controls = useInstructorParams("assignmentPage");
   const requestedFilter = controls.params.get("filter");
-  const filter = reportFilters.has(requestedFilter) ? requestedFilter : "";
-  const defaultTab = filter === "overdue" && !report.overdueAssignments && report.overdueQuizzes > 0
+  const defaultTab = requestedFilter === "overdue" && !report.overdueAssignments && report.overdueQuizzes > 0
     ? "quizzes" : "assignments";
   const requestedTab = controls.params.get("tab");
   const tab = ["assignments", "quizzes"].includes(requestedTab) ? requestedTab : defaultTab;
   const showQuiz = tab === "quizzes";
+  const filter = reportFilters.has(requestedFilter) || (showQuiz && requestedFilter === "submitted") ? requestedFilter : "";
   const quizControls = useInstructorParams("quizPage");
   const assignmentId = controls.params.get("assignmentId");
   const quizId = controls.params.get("quizId");
@@ -72,32 +73,19 @@ function StudentReport({ report, path }) {
   };
   const assignmentPage = usePagination(filtered(report.assignments, assignmentId), filter, controls);
   const quizPage = usePagination(filtered(report.quizzes, quizId), filter, quizControls);
-  const baseColumns = (quiz) => [
-    { key: "title", title: text(quiz ? "Quiz" : "Bộ thử thách"), layout: "primary", render: (record) => <strong>{record.title}</strong> },
-    { key: "status", title: text("Trạng thái"), render: (record) => <RecordStatus record={record} quiz={quiz} compact /> },
-  ];
-  const dueColumn = { key: "due", title: text("Hạn (UTC+7)"), render: (record) => <DueDate record={record} /> };
-  const details = (quiz) => {
-    const label = quiz ? text("Xem lượt nộp") : text("Xem mục thực hành", "View practice items");
-    return {
-      key: "open", title: text("Thao tác"), layout: "actions",
-      render: (record) => (!quiz || record.statistics.submissions > 0) && <InstructorLink className="btn-row-action"
-        to={`${path}/${quiz ? "quizzes" : "assignments"}/${encodeURIComponent(record.id)}`}
-        aria-label={`${label} · ${record.title}`}>{label}</InstructorLink>,
-    };
-  };
-  const assignmentColumns = [
-    ...baseColumns(false),
-    { key: "items", title: text("Mục đã hoàn thành"), render: (record) => `${record.completedItems} / ${record.assignedItems}` },
-    dueColumn,
-    details(false),
-  ];
   const quizColumns = [
-    ...baseColumns(true),
-    { key: "best", title: text("Điểm cao nhất / 100", "Best score / 100"), render: (record) => record.statistics.bestScore ?? "—" },
-    dueColumn,
+    {
+      key: "title", title: text("Quiz"), layout: "primary",
+      render: (record) => record.statistics.submissions > 0 ? (
+        <InstructorLink className="instructor-touch-link font-semibold underline underline-offset-2"
+          to={`${path}/quizzes/${encodeURIComponent(record.id)}`}
+          aria-label={`${text("Xem lượt nộp")} · ${record.title}`}>{record.title}</InstructorLink>
+      ) : <strong>{record.title}</strong>,
+    },
+    { key: "status", title: text("Trạng thái"), render: (record) => <RecordStatus record={record} quiz compact /> },
+    { key: "best", title: text("Điểm", "Score"), render: (record) => record.statistics.bestScore ?? "—" },
+    { key: "due", title: text("Hạn (UTC+7)"), render: (record) => <DueDate record={record} /> },
     { key: "submitted", title: text("Nộp gần nhất (UTC+7)", "Latest submission (UTC+7)"), render: (record) => reportTime(record.statistics.latestSubmittedAt) },
-    details(true),
   ];
   const pagination = showQuiz ? quizPage : assignmentPage;
   const overdueCount = report.overdueAssignments + report.overdueQuizzes;
@@ -112,6 +100,7 @@ function StudentReport({ report, path }) {
         ].map(([id, label, Icon]) => {
           const next = new URLSearchParams(controls.params);
           next.set("tab", id);
+          if (id !== "quizzes" && requestedFilter === "submitted") next.delete("filter");
           return <InstructorLink key={id} to={`?${next}`} replace aria-current={tab === id ? "page" : undefined}>
             <Icon aria-hidden="true" />{label}
           </InstructorLink>;
@@ -121,6 +110,7 @@ function StudentReport({ report, path }) {
         <select className="field w-auto" aria-label={text("Lọc theo trạng thái")} value={filter}
           onChange={(event) => controls.set("filter", event.target.value, true, ["quizPage"])}>
           <option value="">{text("Tất cả trạng thái", "All statuses")}</option>
+          {showQuiz && <option value="submitted">{text("Đã nộp")}</option>}
           <option value="missing">{text(showQuiz ? "Chưa nộp" : "Chưa hoàn thành")}</option>
           <option value="soon">{text("Sắp đến hạn")}</option>
           <option value="overdue">{text("Quá hạn")}</option>
@@ -137,16 +127,57 @@ function StudentReport({ report, path }) {
       {showQuiz
         ? <RecordTable label={text("Quiz của sinh viên")} columns={quizColumns} rows={pagination.items}
           currentRowId={quizId}
-          emptyMessage={text(filter ? "Không có quiz phù hợp." : "Chưa có quiz áp dụng hoặc lượt nộp trong lớp.")} />
-        : <RecordTable label={text("Bộ thử thách được giao")} columns={assignmentColumns} rows={pagination.items}
-          currentRowId={assignmentId}
-          emptyMessage={text(filter ? "Không có bộ thử thách phù hợp." : "Sinh viên chưa được giao bộ thử thách.")} />}
+          emptyMessage={filter === "submitted"
+            ? text("Sinh viên chưa nộp quiz nào.", "This student has not submitted any quizzes.")
+            : text(filter ? "Không có quiz phù hợp." : "Chưa có quiz áp dụng hoặc lượt nộp trong lớp.")} />
+        : <AssignmentPracticeTable assignments={pagination.items} assignmentItems={report.assignmentItems}
+          path={path} filter={filter} assignmentId={assignmentId} />}
       <Pagination pagination={pagination} />
       {showQuiz && report.hasUnverifiedQuizHistory && <p className="border-t border-portal-line p-4 text-sm text-portal-muted">
         {text("Một số quiz đã đóng hoặc lưu trữ thiếu dữ liệu để xác định sinh viên này từng phải làm.")}
       </p>}
     </section>
   </>;
+}
+
+function AssignmentPracticeTable({ assignments, assignmentItems, path, filter, assignmentId }) {
+  const text = useText();
+  const reportTime = useReportTime();
+  const { lessonName } = useClassrooms();
+  const needsPracticeDetails = !assignmentItems && assignments.length > 0;
+  const request = useApiData(useCallback(async () => {
+    if (!needsPracticeDetails) return null;
+    const details = await Promise.all(assignments.map(({ id }) =>
+      getStudentAssignment(`${path}/assignments/${encodeURIComponent(id)}`)));
+    return Object.fromEntries(details.map(({ assignment, items }) => [assignment.id, items]));
+  }, [assignments, needsPracticeDetails, path]), null);
+
+  const columns = [
+    { key: "assignment", title: text("Bộ thử thách"), layout: "primary", render: ({ assignment }) => <strong>{assignment.title}</strong> },
+    { key: "item", title: text("Mục thực hành"), layout: "wide",
+      render: ({ item }) => item ? lessonName(item.lessonId) : text("Bộ thử thách chưa có mục thực hành.") },
+    { key: "status", title: text("Trạng thái"), render: ({ item }) => item ? text(item.completedAt ? "Đã hoàn thành" : "Chưa hoàn thành") : "—" },
+    { key: "score", title: text("Điểm", "Score"), render: ({ item }) => <span className="tabular-nums">{item?.score ?? "—"}</span> },
+    { key: "completedAt", title: text("Hoàn thành (UTC+7)"), render: ({ item }) => reportTime(item?.completedAt) },
+    { key: "due", title: text("Hạn (UTC+7)"), render: ({ assignment }) => <DueDate record={assignment} /> },
+  ];
+
+  function renderTable(itemsByAssignment) {
+    const rows = assignments.flatMap((assignment) => {
+      const items = itemsByAssignment[assignment.id] ?? [];
+      if (!items.length) return [{ id: assignment.id, assignment }];
+      return items.filter((item) => filter !== "missing" || !item.completedAt)
+        .map((item) => ({ id: `${assignment.id}/${item.lessonId}`, assignment, item }));
+    });
+    const currentRow = rows.find(({ assignment }) => assignment.id === assignmentId);
+    return <RecordTable label={text("Bộ thử thách được giao")} columns={columns} rows={rows}
+      currentRowId={currentRow?.id}
+      emptyMessage={text(filter ? "Không có bộ thử thách phù hợp." : "Sinh viên chưa được giao bộ thử thách.")} />;
+  }
+
+  return needsPracticeDetails
+    ? <ReportLoad request={request}>{renderTable}</ReportLoad>
+    : renderTable(assignmentItems ?? {});
 }
 
 export function StudentAssignmentPage() {

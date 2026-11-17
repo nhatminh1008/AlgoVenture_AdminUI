@@ -96,7 +96,7 @@ export default function PortalFrame({ user, logout, navItems, activePath, pageTi
         <button className="portal-drawer-close" onClick={closeMenu} aria-label={text("Đóng menu")}><X size={20} /></button>
         <nav aria-label={text("Điều hướng chính")} className="portal-navigation">
           {navItems.map((item, index) => <div key={item.path}>
-            {(index === 0 || item.group !== navItems[index - 1].group) && <p className="portal-nav-label">{item.group || "Không gian làm việc"}</p>}
+            {(index === 0 || item.group !== navItems[index - 1].group) && <p className="portal-nav-label">{item.group || text("Không gian làm việc")}</p>}
             <Link to={item.path} onClick={closeMenu} aria-current={item === activeItem ? "page" : undefined}
               className={`portal-nav-link${item === activeItem ? " is-active" : ""}`}>
               {item.icon}<span>{item.name}</span><ChevronRight className="nav-active-arrow" size={14} />

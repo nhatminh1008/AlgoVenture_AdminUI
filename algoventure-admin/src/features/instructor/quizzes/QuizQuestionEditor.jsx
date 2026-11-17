@@ -15,7 +15,7 @@ export default function QuizQuestionEditor({
     <section
       id={`question-${question.id}`}
       className="instructor-compact-panel panel quiz-question-editor p-5 sm:p-6"
-      aria-label={`Soạn câu ${index + 1}`}
+      aria-label={text(`Soạn câu ${index + 1}`, `Edit question ${index + 1}`)}
     >
       <div className="mb-5 flex items-center justify-between gap-3">
         <h2 className="quiz-question-title"><span>{String(index + 1).padStart(2, "0")}</span>{text("Câu hỏi ")} {index + 1}</h2>
@@ -23,7 +23,7 @@ export default function QuizQuestionEditor({
           <button
             className="rounded-lg p-2 hover:bg-slate-50"
             disabled={isSaving || index === 0}
-            aria-label={`Đưa câu ${index + 1} lên`}
+            aria-label={text(`Đưa câu ${index + 1} lên`, `Move question ${index + 1} up`)}
             onClick={() => onMove(-1)}
           >
             <ArrowUp size={16} />
@@ -31,7 +31,7 @@ export default function QuizQuestionEditor({
           <button
             className="rounded-lg p-2 hover:bg-slate-50"
             disabled={isSaving || isLast}
-            aria-label={`Đưa câu ${index + 1} xuống`}
+            aria-label={text(`Đưa câu ${index + 1} xuống`, `Move question ${index + 1} down`)}
             onClick={() => onMove(1)}
           >
             <ArrowDown size={16} />
@@ -39,11 +39,11 @@ export default function QuizQuestionEditor({
           <button
             className="rounded-lg p-2 text-red-500 hover:bg-red-50"
             disabled={isSaving}
-            aria-label={`Xóa câu ${index + 1}`}
+            aria-label={text(`Xóa câu ${index + 1}`, `Delete question ${index + 1}`)}
             onClick={() => {
               if (
                 question.prompt.trim() &&
-                !window.confirm(`Xóa câu ${index + 1}?`)
+                !window.confirm(text(`Xóa câu ${index + 1}?`, `Delete question ${index + 1}?`))
               )
                 return;
               onRemove();

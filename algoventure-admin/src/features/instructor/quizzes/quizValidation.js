@@ -1,4 +1,16 @@
 export const MAX_QUESTIONS = 50;
+
+export function translateQuizError(message, text) {
+  const question = /^Câu (\d+): (.+)$/.exec(message);
+  if (question) {
+    const [, number, details] = question;
+    return `${text(`Câu ${number}`, `Question ${number}`)}: ${text(details)}`;
+  }
+  const maxQuestions = `Mỗi bộ có tối đa ${MAX_QUESTIONS} câu hỏi.`;
+  return message === maxQuestions
+    ? text(maxQuestions, `Each quiz can have up to ${MAX_QUESTIONS} questions.`)
+    : text(message);
+}
 export function createQuestion() {
   return {
     id: crypto.randomUUID(),

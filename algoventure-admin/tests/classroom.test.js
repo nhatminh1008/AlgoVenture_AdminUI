@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createCurriculum } from "../src/shared/curriculum/curriculumCatalog.js";
+import { english } from "../src/preferences/english.js";
 import {
   csvCell,
   exportStudentRows,
@@ -52,4 +53,12 @@ test("CSV escapes Unicode and quotes, neutralizes formulas and keeps missing sco
   assert(csv.includes('"Nguyễn, ""An"""'));
   assert(!csv.includes("undefined"));
   assert(csv.includes("Sorting"));
+});
+
+test("CSV translates the headers and retains the original student and class data", () => {
+  const rows = [{ name: "Nguyễn An", email: "an@example.com", classId: "c", score: 0 }];
+  const classes = [{ id: "c", name: "Lớp thử nghiệm" }];
+  const [header, row] = exportStudentRows(rows, classes, (label) => english[label] ?? label).split("\r\n");
+  assert.equal(header, '\uFEFF"Full name","Email","Class","Quiz score / 100","Quizzes submitted","Practice items completed","Practice items assigned","Progress (%)"');
+  assert.equal(row, exportStudentRows(rows, classes).split("\r\n")[1]);
 });

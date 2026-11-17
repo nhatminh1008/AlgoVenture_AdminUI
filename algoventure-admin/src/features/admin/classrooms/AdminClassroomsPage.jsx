@@ -53,7 +53,7 @@ export default function AdminClassroomsPage() {
         {classroom.archivedAt && <small className="block text-slate-500">{text("Đã khóa", "Locked")}</small>}
       </>,
     },
-    { key: "level", title: text("Cấp độ"), render: (classroom) => getLevel(classroom.level)?.label ?? classroom.level },
+    { key: "level", title: text("Cấp độ"), render: (classroom) => text(getLevel(classroom.level)?.label ?? classroom.level) },
     {
       key: "instructor", title: text("Giảng viên"),
       render: (classroom) => usersById.get(classroom.instructorId)?.name ?? text("Giảng viên chưa xác định", "Unknown instructor"),

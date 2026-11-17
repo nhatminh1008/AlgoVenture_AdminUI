@@ -1,4 +1,4 @@
-import { useText } from "../../../preferences/preferencesContext";
+import { useLocale, useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { useEffect, useRef } from "react";
@@ -48,6 +48,7 @@ function AuditAction({ row, text }) {
 }
 
 export default function SystemAnalyticsPage() {
+  const locale = useLocale();
   const text = useText();
   const state = useApiData(getAdminAnalytics, null);
   const { hash } = useLocation();
@@ -60,7 +61,7 @@ export default function SystemAnalyticsPage() {
   const columns = [
     {
       key: "time", title: text("Thời điểm"), layout: "primary",
-      render: (row) => <time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString("vi-VN")}</time>,
+      render: (row) => <time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString(locale)}</time>,
     },
     {
       key: "actor", title: text("Người thực hiện"),

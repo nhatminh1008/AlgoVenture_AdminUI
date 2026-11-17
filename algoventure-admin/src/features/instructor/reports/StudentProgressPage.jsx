@@ -19,7 +19,6 @@ import { useReportDate, useReportTime } from "./reportTime";
 import "./StudentProgress.css";
 
 const kinds = [
-  ["", "Tất cả", "All"],
   ["assignments", "Bộ thử thách", "Challenge sets"],
   ["quizzes", "Quiz", "Quizzes"],
 ];
@@ -29,7 +28,7 @@ export default function StudentProgressPage() {
   const scope = useClassroomScope();
   const controls = useInstructorParams();
   const { params, page, setPage, update } = controls;
-  const kind = kinds.find(([value]) => value === params.get("tab"))?.[0] ?? "";
+  const kind = kinds.find(([value]) => value === params.get("tab"))?.[0] ?? "assignments";
   const query = params.get("q") ?? "";
   const workId = params.get("workId") ?? "";
   const works = (kind === "assignments" ? scope.sets : scope.quizzes).filter((work) => work.status !== "Draft");
@@ -57,9 +56,11 @@ export default function StudentProgressPage() {
           <input type="search" className="field" value={query} placeholder={text("Tìm tên hoặc email...")}
             onChange={(event) => controls.set("q", event.target.value, true)} />
         </label>
-        <ClassroomFilter scope={{ ...scope, select: (classId) => update({
-          classId, workId: selected && (!classId || classId === selected.classId) ? selected.id : "",
-        }, ["studentPage"]) }} />
+        <ClassroomFilter scope={{
+          ...scope, select: (classId) => update({
+            classId, workId: selected && (!classId || classId === selected.classId) ? selected.id : "",
+          }, ["studentPage"])
+        }} />
         <div className="progress-kinds" role="group" aria-label={text("Loại bài", "Work type")}>
           {kinds.map(([value, vi, en]) => <button type="button" key={value} aria-pressed={kind === value}
             onClick={() => { if (kind !== value) update({ tab: value, workId: "" }, ["studentPage"]); }}>
@@ -73,7 +74,7 @@ export default function StudentProgressPage() {
             {options.map(({ work, classroom, occurrence }) => (
               <option key={work.id} value={work.id}>
                 {[work.title, classroom, work.due ? reportDate(work.due) : text("Chưa đặt hạn"),
-                  occurrence && text(`Lần giao ${occurrence}`, `Delivery ${occurrence}`)].filter(Boolean).join(" · ")}
+                occurrence && text(`Lần giao ${occurrence}`, `Delivery ${occurrence}`)].filter(Boolean).join(" · ")}
               </option>
             ))}
           </select>
@@ -128,20 +129,23 @@ function ProgressTable({ rows, kind, workId, pagination, tableSearch }) {
   const reportDate = useReportDate();
   const { classes } = useClassrooms();
   const classNames = new Map(classes.map((item) => [item.id, item.name]));
+
+  function studentDetailsPath(student, submittedOnly = false) {
+    const params = new URLSearchParams({ progressSearch: tableSearch, tab: kind });
+    if (workId) params.set(kind === "quizzes" ? "quizId" : "assignmentId", workId);
+    if (submittedOnly) params.set("filter", "submitted");
+    return `${studentProgressPath(student.classId, student.id)}?${params}`;
+  }
+
   const columns = [
     {
       key: "student", title: text("Sinh viên"), layout: "primary",
-      render: (student) => {
-        const params = new URLSearchParams({ progressSearch: tableSearch });
-        if (kind) params.set("tab", kind);
-        if (workId) params.set(kind === "quizzes" ? "quizId" : "assignmentId", workId);
-        return <div>
-          <InstructorLink className="progress-student-link"
-            aria-label={[student.name, student.email, classNames.get(student.classId)].filter(Boolean).join(" · ")}
-            to={`${studentProgressPath(student.classId, student.id)}?${params}`}>{student.name}</InstructorLink>
-          <p className="instructor-student-email">{student.email}</p>
-        </div>;
-      },
+      render: (student) => <div>
+        <InstructorLink className="progress-student-link"
+          aria-label={[student.name, student.email, classNames.get(student.classId)].filter(Boolean).join(" · ")}
+          to={studentDetailsPath(student)}>{student.name}</InstructorLink>
+        <p className="instructor-student-email">{student.email}</p>
+      </div>,
     },
     { key: "class", title: text("Lớp học"), layout: "secondary", render: (student) => classNames.get(student.classId) },
   ];
@@ -153,22 +157,19 @@ function ProgressTable({ rows, kind, workId, pagination, tableSearch }) {
   );
   else if (workId && kind === "quizzes") columns.push(
     { key: "status", title: text("Trạng thái nộp", "Submission status"), render: ({ quiz }) => <RecordStatus record={quiz} quiz compact /> },
-    { key: "score", title: text("Điểm cao nhất / 100", "Best score / 100"), render: ({ quiz }) => <Score value={quiz.statistics.bestScore} /> },
+    { key: "score", title: text("Điểm", "Score"), render: ({ quiz }) => <Score value={quiz.statistics.bestScore} /> },
     { key: "due", title: text("Hạn (UTC+7)"), render: ({ quiz }) => <DueDate record={quiz} /> },
     { key: "submitted", title: text("Nộp gần nhất (UTC+7)", "Latest submission (UTC+7)"), render: ({ quiz }) => reportTime(quiz.statistics.latestSubmittedAt) },
   );
   else {
-    if (kind !== "quizzes") columns.push({
-      key: "practice", title: text("Mục thực hành đã xong", "Practice items completed"),
+    if (kind === "assignments") columns.push({
+      key: "practice", title: text("Mục hoàn thành", "Items completed"),
       render: (student) => <span className="tabular-nums">{student.completedLessons} / {student.assignedLessons}</span>,
     });
-    if (kind !== "assignments") columns.push(
-      { key: "quizzes", title: text("Quiz đã nộp"), render: (student) => student.quizzesSubmitted },
-      { key: "score", title: text("Điểm quiz tổng hợp / 100", "Overall quiz score / 100"),
-        hint: text("Trung bình điểm cao nhất của từng quiz đã nộp", "Average of the best score on each submitted quiz"),
-        render: (student) => <Score value={student.score} /> },
-    );
-    if (!kind) columns.push({
+    if (kind === "quizzes") columns.push({
+      key: "quizzes", title: text("Quiz đã nộp"), render: (student) => student.quizzesSubmitted,
+    });
+    columns.push({
       key: "due", title: text("Hạn sắp tới (UTC+7)", "Next due date (UTC+7)"),
       render: (student) => student.nextDue ? <time dateTime={student.nextDue}>{reportDate(student.nextDue)}</time> : "—",
     });
@@ -180,12 +181,20 @@ function ProgressTable({ rows, kind, workId, pagination, tableSearch }) {
       key: "overdue", title: overdueTitles[kind] ?? text("Bài quá hạn"),
       render: ({ overdueAssignments, overdueQuizzes }) => {
         let count = 0;
-        if (kind !== "quizzes") count += overdueAssignments;
-        if (kind !== "assignments") count += overdueQuizzes;
+        if (kind === "assignments") count += overdueAssignments;
+        if (kind === "quizzes") count += overdueQuizzes;
         return count > 0 ? <span className="progress-overdue"><AlertCircle size={15} aria-hidden="true" />{count}</span> : 0;
       },
     });
   }
+
+  const detailsLabel = text("Chi tiết", "Details");
+  columns.push({
+    key: "details", title: "", layout: "actions",
+    render: (student) => <InstructorLink className="btn-row-action"
+      to={studentDetailsPath(student, kind === "quizzes")}
+      aria-label={`${detailsLabel} · ${student.name}`}>{detailsLabel}</InstructorLink>,
+  });
 
   return <>
     <RecordTable label={text("Tiến độ sinh viên", "Student progress")} columns={columns} rows={rows}

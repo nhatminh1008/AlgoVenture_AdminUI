@@ -10,6 +10,7 @@ import { createCurriculum } from "../../../shared/curriculum/curriculumCatalog";
 import { useApiData } from "../../../shared/hooks/useApiData";
 import {
   closeQuiz,
+  deleteAssignmentTemplate,
   deleteQuiz,
   deliverAssignment,
   duplicateAssignmentTemplate,
@@ -54,11 +55,11 @@ export function ClassroomProvider({ children }) {
     }));
     await refresh();
   }
-  async function removeQuiz(id) {
-    await deleteQuiz(id);
+  async function remove(collection, deleteRecord, id) {
+    await deleteRecord(id);
     setData((previous) => ({
       ...previous,
-      quizzes: previous.quizzes.filter((item) => item.id !== id),
+      [collection]: previous[collection].filter((item) => item.id !== id),
     }));
   }
   async function deliver(classroomId, values) {
@@ -98,10 +99,11 @@ export function ClassroomProvider({ children }) {
         saveAssignment: (v, id) => save("assignments", saveAssignment, v, id),
         saveAssignmentTemplate: (v, id) => save("assignmentTemplates", saveAssignmentTemplate, v, id),
         duplicateAssignmentTemplate: (id) => save("assignmentTemplates", duplicateAssignmentTemplate, id),
+        removeAssignmentTemplate: (id) => remove("assignmentTemplates", deleteAssignmentTemplate, id),
         deliverAssignment: deliver,
         saveQuiz: (v, id) => save("quizzes", saveQuiz, v, id),
         markQuizClosed,
-        removeQuiz,
+        removeQuiz: (id) => remove("quizzes", deleteQuiz, id),
       }}
     >
       {children}

@@ -5,7 +5,7 @@ import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { CheckCircle2, RotateCcw, Eye } from "lucide-react";
 import { gradeQuiz } from "./quizPreviewScoring";
-import { validateQuiz } from "./quizValidation";
+import { translateQuizError, validateQuiz } from "./quizValidation";
 
 export default function QuizPreview({ quiz: savedQuiz }) {
   const text = useText();
@@ -22,7 +22,7 @@ export default function QuizPreview({ quiz: savedQuiz }) {
   if (error)
     return (
       <p className="panel p-6 text-sm text-amber-800">
-        {text("Bộ câu hỏi chưa đủ dữ liệu để làm thử.")} {error}
+        {text("Bộ câu hỏi chưa đủ dữ liệu để làm thử.")} {translateQuizError(error, text)}
       </p>
     );
   return (

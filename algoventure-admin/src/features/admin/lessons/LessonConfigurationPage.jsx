@@ -25,7 +25,7 @@ export default function LessonConfigurationPage() {
         >
           {state.data.map((a) => (
             <option key={a.id} value={a.id}>
-              {a.name} ({a.topicId})
+              {text(a.name)} ({a.topicId})
             </option>
           ))}
         </select>

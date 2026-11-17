@@ -20,8 +20,16 @@ export function duplicateAssignmentTemplate(assignmentTemplateId) {
   return api(`/instructor/assignment-templates/${encodeURIComponent(assignmentTemplateId)}/duplicate`, { method: "POST" });
 }
 
+export function deleteAssignmentTemplate(id) {
+  return api(`/instructor/assignment-templates/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
 export function deliverAssignment(classroomId, values) {
   return api(`/instructor/classes/${encodeURIComponent(classroomId)}/assignment-deliveries`, { method: "POST", body: values });
+}
+
+export function getDeliveredRecipientIds(classroomId, templateId) {
+  return api(`/instructor/classes/${encodeURIComponent(classroomId)}/assignment-deliveries/${encodeURIComponent(templateId)}/recipients`);
 }
 
 function saveInstructorRecord(resource, values, id) {

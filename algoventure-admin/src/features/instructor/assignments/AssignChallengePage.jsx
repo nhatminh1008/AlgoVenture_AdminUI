@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Send } from "lucide-react";
 import { useAuth } from "../../../auth/useAuth";
 import { useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
 import RecordTable from "../../../shared/components/RecordTable";
+import { useApiData } from "../../../shared/hooks/useApiData";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { PageHeader } from "../workspace/PageHeader";
 import InstructorBackLink from "../workspace/InstructorBackLink";
@@ -12,6 +13,7 @@ import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import { useClassrooms } from "../workspace/ClassroomContext";
 import InstructorLink from "../workspace/InstructorLink";
 import { useInstructorParams } from "../workspace/useInstructorParams";
+import { getDeliveredRecipientIds } from "../workspace/instructorWorkspaceService";
 import { pendingDelivery } from "./deliveryIntent";
 
 export default function AssignChallengePage() {
@@ -30,7 +32,7 @@ function ChallengeDelivery({ classroomId }) {
   const stepTemplate = controls.params.get("template");
   const [selectedTemplate, setSelectedTemplate] = useState(stepTemplate ?? "");
   const assignmentTemplateId = stepTemplate ?? selectedTemplate;
-  const [recipientUserIds, setRecipientUserIds] = useState(() => new Set(roster.map((student) => student.userId)));
+  const [recipientUserIds, setRecipientUserIds] = useState(null);
   const [due, setDue] = useState("");
   const query = controls.params.get("q") ?? "";
   const [error, setError] = useState("");
@@ -42,9 +44,18 @@ function ChallengeDelivery({ classroomId }) {
   const search = query.trim().toLocaleLowerCase("vi");
   const matchingTemplates = assignmentTemplates.filter((item) => item.title.toLocaleLowerCase("vi").includes(search));
   const pagination = usePagination(matchingTemplates, search, controls);
-  const selectedUserIds = roster.filter((student) => recipientUserIds?.has(student.userId)).map((student) => student.userId);
-  const allSelected = roster.length > 0 && selectedUserIds.length === roster.length;
   const showRecipients = Boolean(stepTemplate && selected);
+  const loadRecipients = useCallback(async () => {
+    if (!showRecipients) return null;
+    return { templateId: stepTemplate, userIds: await getDeliveredRecipientIds(classroomId, stepTemplate) };
+  }, [classroomId, showRecipients, stepTemplate]);
+  const recipients = useApiData(loadRecipients, null);
+  const recipientsReady = !recipients.loading && !recipients.error && recipients.data?.templateId === stepTemplate;
+  const deliveredIds = new Set(recipientsReady ? recipients.data.userIds : []);
+  const eligibleIds = recipientsReady ? roster.map((student) => student.userId).filter((id) => !deliveredIds.has(id)) : [];
+  const selectedUserIds = eligibleIds.filter((id) => !recipientUserIds || recipientUserIds.has(id));
+  const selectedIds = new Set(selectedUserIds);
+  const allSelected = eligibleIds.length > 0 && selectedUserIds.length === eligibleIds.length;
 
   useEffect(() => {
     stepStart.current?.focus({ preventScroll: true });
@@ -74,6 +85,8 @@ function ChallengeDelivery({ classroomId }) {
   ];
 
   function next() {
+    setRecipientUserIds(null);
+    setError("");
     const params = new URLSearchParams(controls.params);
     params.set("template", assignmentTemplateId);
     open(`/instructor/classes/${classroomId}/assign?${params}`);
@@ -81,7 +94,7 @@ function ChallengeDelivery({ classroomId }) {
 
   function toggleRecipient(userId) {
     setRecipientUserIds((previous) => {
-      const next = new Set(previous);
+      const next = new Set(previous ?? eligibleIds);
       if (next.has(userId)) next.delete(userId);
       else next.add(userId);
       return next;
@@ -105,6 +118,7 @@ function ChallengeDelivery({ classroomId }) {
       finish({ message, levels: 2 });
     } catch (failure) {
       setError(failure.message);
+      if (failure.status === 409) await recipients.refresh();
     } finally {
       submitting.current = false;
       setIsSubmitting(false);
@@ -130,37 +144,52 @@ function ChallengeDelivery({ classroomId }) {
         <form onSubmit={deliver}>
           <fieldset className="instructor-compact-panel panel space-y-5 p-5" disabled={isSubmitting}>
             <p className="font-semibold">{selected.title} · {classroom.name}</p>
-            {roster.length ? (
+            {recipients.loading && <p role="status">{text("Đang tải danh sách người đã nhận…", "Loading delivery recipients…")}</p>}
+            {recipients.error && !recipients.loading && (
+              <div role="alert" className="space-y-2">
+                <p>{text(recipients.error)}</p>
+                <button type="button" className="btn-secondary" onClick={recipients.refresh}>{text("Thử lại")}</button>
+              </div>
+            )}
+            {recipientsReady && (roster.length ? (
               <div className="space-y-3">
                 <label className="instructor-pick flex items-center gap-3 font-semibold">
-                  <input type="checkbox" checked={allSelected} onChange={(event) => {
-                    setRecipientUserIds(new Set(event.target.checked ? roster.map((student) => student.userId) : []));
+                  <input type="checkbox" checked={allSelected} disabled={!eligibleIds.length} onChange={(event) => {
+                    setRecipientUserIds(new Set(event.target.checked ? eligibleIds : []));
                     setError("");
                   }} />
-                  {text("Chọn cả lớp", "Select the whole class")}
-                  <span className="text-sm font-normal text-portal-muted">{selectedUserIds.length}/{roster.length}</span>
+                  {text("Chọn tất cả sinh viên chưa nhận", "Select all students who have not received this set")}
+                  <span className="text-sm font-normal text-portal-muted">{selectedUserIds.length}/{eligibleIds.length}</span>
                 </label>
+                {!eligibleIds.length && (
+                  <p className="text-sm text-portal-muted">
+                    {text("Tất cả sinh viên trong lớp đã nhận bộ này.", "All students in this class have received this set.")}
+                  </p>
+                )}
                 <ul className="instructor-roster max-h-96 overflow-auto rounded-lg border">
                   {roster.map((student) => (
                     <li key={student.id}>
                       <label className="instructor-pick flex cursor-pointer items-center gap-3 p-3">
-                        <input type="checkbox" checked={recipientUserIds.has(student.userId)}
+                        <input type="checkbox" checked={selectedIds.has(student.userId)} disabled={deliveredIds.has(student.userId)}
                           onChange={() => toggleRecipient(student.userId)} />
                         <span className="instructor-recipient inline-flex min-w-0 flex-wrap gap-x-3 wrap-anywhere">
                           <span>{student.name}</span>
                           <span className="text-sm text-portal-muted">{student.email}</span>
+                          {deliveredIds.has(student.userId) && (
+                            <span className="text-sm text-portal-muted">{text("Đã nhận bộ này", "Already received this set")}</span>
+                          )}
                         </span>
                       </label>
                     </li>
                   ))}
                 </ul>
               </div>
-            ) : <p className="text-sm text-portal-muted">{text("Chưa có sinh viên tham gia")}</p>}
+            ) : <p className="text-sm text-portal-muted">{text("Chưa có sinh viên tham gia")}</p>)}
             <label className="block max-w-xs">
               <span className="field-label">{text("Hạn hoàn thành")}</span>
               <input type="date" className="field" value={due} required onChange={(event) => setDue(event.target.value)} />
             </label>
-            {error && <p ref={errorNotice} role="alert" className="text-sm text-red-700">{error}</p>}
+            {error && <p ref={errorNotice} role="alert" className="text-sm text-red-700">{text(error)}</p>}
             <div className="instructor-action-bar">
               <InstructorBackLink plain className="btn-secondary">{text("Hủy", "Cancel")}</InstructorBackLink>
               <button className="btn-primary" type="submit" disabled={!selectedUserIds.length}>

@@ -80,7 +80,7 @@ export default function ClassroomAnalyticsPage() {
                   <Tooltip cursor={tooltipCursor} contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} />
                   <Bar
                     dataKey="students"
-                    name="Sinh viên"
+                    name={text("Sinh viên")}
                     fill="var(--portal-purple)"
                     radius={[0, 5, 5, 0]}
                     maxBarSize={18}
@@ -105,7 +105,7 @@ export default function ClassroomAnalyticsPage() {
                   <XAxis dataKey="name" stroke={axisColor} tick={{ fill: axisColor, fontSize: 14 }} />
                   <YAxis allowDecimals={false} width={25} stroke={axisColor} tick={{ fill: axisColor }} />
                   <Tooltip cursor={tooltipCursor} contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} />
-                  <Bar dataKey="students" name="Sinh viên" fill="var(--portal-purple)" radius={[7, 7, 0, 0]} maxBarSize={55} isAnimationActive={false} />
+                  <Bar dataKey="students" name={text("Sinh viên")} fill="var(--portal-purple)" radius={[7, 7, 0, 0]} maxBarSize={55} isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

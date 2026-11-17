@@ -1,6 +1,7 @@
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import { useInstructorParams } from "../workspace/useInstructorParams";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
 import RecordTable from "../../../shared/components/RecordTable";
@@ -11,12 +12,28 @@ import InstructorLink from "../workspace/InstructorLink";
 
 export default function ChallengeList() {
   const text = useText();
-  const { assignmentTemplates, lessonName } = useClassrooms();
+  const { assignmentTemplates, lessonName, removeAssignmentTemplate } = useClassrooms();
+  const [deletingId, setDeletingId] = useState(null);
+  const [error, setError] = useState("");
   const controls = useInstructorParams("page");
   const query = controls.params.get("q") ?? "";
   const search = query.trim().toLocaleLowerCase("vi");
   const matchingTemplates = assignmentTemplates.filter((template) => template.title.toLocaleLowerCase("vi").includes(search));
   const pagination = usePagination(matchingTemplates, search, controls);
+
+  async function remove(item) {
+    if (deletingId || !window.confirm(text(`Xóa bản nháp “${item.title}”?`, `Delete draft “${item.title}”?`))) return;
+    setDeletingId(item.id);
+    setError("");
+    try {
+      await removeAssignmentTemplate(item.id);
+    } catch (failure) {
+      setError(failure.message);
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   const columns = [
     { key: "title", title: text("Tên bộ thử thách"), layout: "primary", render: (item) => item.title },
     {
@@ -30,10 +47,20 @@ export default function ChallengeList() {
     {
       key: "actions", title: text("Thao tác"), layout: "actions",
       render: (item) => (
-        <InstructorLink className="btn-row-action"
-          to={"/instructor/challenges?assignmentTemplateId=" + encodeURIComponent(item.id)}>
-          {item.locked ? text("Xem chi tiết") : text("Chỉnh sửa")}
-        </InstructorLink>
+        <div className="table-actions">
+          <InstructorLink className="btn-row-action"
+            to={"/instructor/challenges?assignmentTemplateId=" + encodeURIComponent(item.id)}>
+            {item.locked ? text("Xem chi tiết") : text("Chỉnh sửa")}
+          </InstructorLink>
+          {!item.locked && (
+            <button type="button" className="btn-row-action btn-row-action-danger"
+              aria-label={`${text("Xóa bản nháp", "Delete draft")} · ${item.title}`}
+              disabled={deletingId !== null} onClick={() => remove(item)}>
+              <Trash2 aria-hidden="true" />
+              {deletingId === item.id ? text("Đang xóa…", "Deleting…") : text("Xóa bản nháp", "Delete draft")}
+            </button>
+          )}
+        </div>
       ),
     },
   ];
@@ -46,6 +73,7 @@ export default function ChallengeList() {
           <Plus size={17} aria-hidden="true" />{text("Tạo bộ thử thách")}
         </InstructorLink>
       </PageHeader>
+      {error && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">{text(error)}</p>}
       <section className="panel overflow-hidden" aria-label={text("Danh sách bộ thử thách")}>
         <div className="instructor-compact-panel border-b border-portal-line p-5">
           <input className="field sm:max-w-sm" type="search" value={query} onChange={(event) => controls.set("q", event.target.value, true)}

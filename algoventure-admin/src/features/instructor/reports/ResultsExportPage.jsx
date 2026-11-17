@@ -10,18 +10,18 @@ export default function ResultsExportPage() {
   const text = useText();
   const scope = useClassroomScope();
   const [format, setFormat] = useState("CSV");
-  const [message, setMessage] = useState("");
+  const [downloaded, setDownloaded] = useState(false);
 
   function selectClass(classId) {
     scope.select(classId);
-    setMessage("");
+    setDownloaded(false);
   }
 
   function handleExport() {
     if (!scope.rows.length) return;
     if (format === "CSV")
       downloadFile(
-        exportStudentRows(scope.rows, scope.classes),
+        exportStudentRows(scope.rows, scope.classes, text),
         "class-results.csv",
       );
     else
@@ -42,7 +42,7 @@ export default function ResultsExportPage() {
         "class-results.json",
         "application/json",
       );
-    setMessage(text("Đã tải báo cáo."));
+    setDownloaded(true);
   }
   return (
     <div className="mx-auto max-w-6xl">
@@ -68,7 +68,7 @@ export default function ResultsExportPage() {
                     checked={format === value}
                     onChange={() => {
                       setFormat(value);
-                      setMessage("");
+                      setDownloaded(false);
                     }}
                   />
                   {value === "CSV" ? <FileSpreadsheet size={21} /> : <Braces size={21} />}{value}
@@ -86,9 +86,9 @@ export default function ResultsExportPage() {
             <Download size={17} />
             {text("Tải báo cáo ")} {format}
           </button>
-          {message && (
+          {downloaded && (
             <p role="status" className="text-sm text-portal-purple-strong">
-              {message}
+              {text("Đã tải báo cáo.")}
             </p>
           )}
         </section>

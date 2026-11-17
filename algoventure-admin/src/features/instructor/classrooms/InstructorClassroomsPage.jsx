@@ -38,7 +38,7 @@ export default function InstructorClassroomsPage() {
     },
     {
       key: "level", title: text("Mức độ"),
-      render: (item) => <span className="class-level" data-level={item.level}>{getLevel(item.level)?.label ?? item.level}</span>,
+      render: (item) => <span className="class-level" data-level={item.level}>{text(getLevel(item.level)?.label ?? item.level)}</span>,
     },
     { key: "members", title: text("Sinh viên"), render: (item) => students.filter((student) => student.classId === item.id).length },
     { key: "sets", title: text("Bộ bài"), render: (item) => [...assignments, ...quizzes].filter((set) => set.classId === item.id).length },
@@ -68,7 +68,7 @@ export default function InstructorClassroomsPage() {
         <div className="classes-toolbar">
           <label className="classes-search"><span className="sr-only">{text("Tìm lớp học")}</span><Search size={17} aria-hidden="true" /><input className="field" value={query} onChange={(event) => set("q", event.target.value, true)} placeholder={text("Tìm tên lớp hoặc mô tả…")} />{query && <button type="button" aria-label={text("Xóa tìm kiếm")} onClick={() => set("q", "", true)}><X size={15} /></button>}</label>
           <span className="classes-filter-icon" aria-hidden="true"><SlidersHorizontal size={16} /></span>
-          <select aria-label={text("Lọc theo mức độ")} className="field classes-filter" value={level} onChange={(event) => set("level", event.target.value === "all" ? "" : event.target.value, true)}><option value="all">{text("Tất cả mức độ")}</option>{levels.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
+          <select aria-label={text("Lọc theo mức độ")} className="field classes-filter" value={level} onChange={(event) => set("level", event.target.value === "all" ? "" : event.target.value, true)}><option value="all">{text("Tất cả mức độ")}</option>{levels.map((item) => <option key={item.id} value={item.id}>{text(item.label)}</option>)}</select>
         </div>
         <div className="classes-filter-summary"><span role="status">{text("Hiển thị ")} {filtered.length} {text(" lớp học")}{hasFilters ? text(" phù hợp") : ""}</span>{hasFilters && <button onClick={clearFilters}>{text("Xóa bộ lọc")}<X size={12} /></button>}</div>
         {filtered.length > 0 ? (

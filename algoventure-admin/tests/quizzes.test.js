@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createQuestion, validateQuiz } from "../src/features/instructor/quizzes/quizValidation.js";
+import { createQuestion, translateQuizError, validateQuiz } from "../src/features/instructor/quizzes/quizValidation.js";
+import { english } from "../src/preferences/english.js";
 import { gradeQuiz } from "../src/features/instructor/quizzes/quizPreviewScoring.js";
 import {
   validateMaterialFile,
@@ -8,6 +9,16 @@ import {
 } from "../src/features/instructor/classrooms/materials.js";
 
 const classroom = { id: "sorting-basic" };
+
+test("quiz validation localizes the question number and message", () => {
+  const message = validateQuiz({ ...fixture(), questions: [createQuestion()] }, classroom);
+  assert.equal(message, "Câu 1: nhập nội dung câu hỏi.");
+  assert.equal(
+    translateQuizError(message, (vi, en = english[vi]) => en ?? vi),
+    "Question 1: enter a question prompt.",
+  );
+});
+
 function fixture() {
   return {
     id: "quiz-1",

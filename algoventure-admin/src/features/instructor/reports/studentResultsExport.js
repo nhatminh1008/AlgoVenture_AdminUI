@@ -11,7 +11,8 @@ export function downloadFile(content, name, type = "text/csv;charset=utf-8;") {
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-export function exportStudentRows(rows, classes) {
+export function exportStudentRows(rows, classes, translate = (label) => label) {
+  const headers = ["Họ tên", "Email", "Lớp", "Điểm quiz / 100", "Quiz đã nộp", "Bài thực hành đã xong", "Bài thực hành được giao", "Tiến độ (%)"];
   const records = rows.map((row) => [
     row.name,
     row.email,
@@ -24,7 +25,7 @@ export function exportStudentRows(rows, classes) {
   ]);
   return (
     "\uFEFF" +
-    [["Họ tên", "Email", "Lớp", "Điểm quiz / 100", "Quiz đã nộp", "Bài thực hành đã xong", "Bài thực hành được giao", "Tiến độ (%)"], ...records]
+    [headers.map((header) => translate(header)), ...records]
       .map((row) => row.map(csvCell).join(","))
       .join("\r\n")
   );

@@ -1,4 +1,4 @@
-import { useText } from "../../../preferences/preferencesContext";
+import { useLocale, useText } from "../../../preferences/preferencesContext";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, BookOpen, ClipboardList, GraduationCap, Library, Settings2, ShieldCheck, UserPlus, Users } from "lucide-react";
 import { useApiData } from "../../../shared/hooks/useApiData";
@@ -9,6 +9,7 @@ import { actionLabel } from "../recordLabels.js";
 import { getAdminAnalytics } from "../analytics/adminAnalyticsService";
 
 export default function AdminDashboardPage() {
+  const locale = useLocale();
   const text = useText();
   const state = useApiData(getAdminAnalytics, null);
   const counts = state.data?.counts;
@@ -26,7 +27,7 @@ export default function AdminDashboardPage() {
         ]} />
         <div className="dashboard-columns">
           <section className="panel dashboard-section"><div className="dashboard-section-heading"><h2>{text("Nội dung học tập")}</h2><Link to="/admin/content">{text("Xem thư viện")}<ArrowUpRight size={14} /></Link></div><div className="resource-grid">
-            {[["Bài học thuật toán", counts.algorithms, <BookOpen />], ["Bộ thử thách", counts.assignments, <ClipboardList />], ["Bộ trắc nghiệm", counts.quizzes, <Library />]].map(([label, value, icon]) => <div className="resource-tile" key={label}><div>{icon}<strong>{value.toLocaleString("vi-VN")}</strong></div><span>{text(label)}</span></div>)}
+            {[["Bài học thuật toán", counts.algorithms, <BookOpen />], ["Bộ thử thách", counts.assignments, <ClipboardList />], ["Bộ trắc nghiệm", counts.quizzes, <Library />]].map(([label, value, icon]) => <div className="resource-tile" key={label}><div>{icon}<strong>{value.toLocaleString(locale)}</strong></div><span>{text(label)}</span></div>)}
           </div></section>
           <section className="panel dashboard-section"><div className="dashboard-section-heading"><h2>{text("Truy cập nhanh")}</h2></div><div className="quick-actions">
             {[
@@ -37,7 +38,7 @@ export default function AdminDashboardPage() {
           </div></section>
         </div>
         <section className="panel dashboard-activity"><div className="dashboard-section-heading"><h2>{text("Hoạt động gần đây")}</h2><Link to="/admin/analytics">{text("Xem tất cả")}<ArrowUpRight size={14} /></Link></div>
-          {state.data.logs.length ? <div className="activity-list">{state.data.logs.slice(0, 4).map((row, i) => <div className="activity-row" key={i}><span className="activity-dot" /><div><strong>{text(actionLabel(row.action))}</strong><small>{row.actor}</small></div><time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString("vi-VN")}</time></div>)}</div> : <p className="dashboard-empty">{text("Chưa có hoạt động.")}</p>}
+          {state.data.logs.length ? <div className="activity-list">{state.data.logs.slice(0, 4).map((row, i) => <div className="activity-row" key={i}><span className="activity-dot" /><div><strong>{text(actionLabel(row.action))}</strong><small>{row.actor}</small></div><time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString(locale)}</time></div>)}</div> : <p className="dashboard-empty">{text("Chưa có hoạt động.")}</p>}
         </section>
       </>}
     </div>

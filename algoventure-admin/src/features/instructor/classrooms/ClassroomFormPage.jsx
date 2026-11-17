@@ -102,7 +102,7 @@ export default function ClassroomFormPage() {
                     className="accent-portal-purple"
                   />
                   <strong className="text-sm text-slate-800">
-                    {item.label}
+                    {text(item.label)}
                   </strong>
                 </span>
               </label>
@@ -131,7 +131,7 @@ export default function ClassroomFormPage() {
             role="alert"
             className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
           >
-            {error}
+            {text(error)}
           </p>
         )}
         <div className="flex justify-end gap-3 border-t border-slate-100 pt-5">

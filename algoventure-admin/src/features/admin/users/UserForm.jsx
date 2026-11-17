@@ -1,18 +1,19 @@
 import { useId } from "react";
-import { useText } from "../../../preferences/preferencesContext";
+import { useLocale, useText } from "../../../preferences/preferencesContext";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import AdminDetailsDialog from "../AdminDetailsDialog";
 import { roleLabels, statusLabels } from "../recordLabels.js";
 
 export default function UserForm({ form, isOwnProfile, viewing, editableRoles, roleChanged, isSaving, actionError, onSubmit, onFieldChange, onCancel }) {
   const text = useText();
+  const locale = useLocale();
   const formId = useId();
   const title = isOwnProfile ? text("Hồ sơ của tôi") : viewing ? text("Thông tin tài khoản", "Account details") : text("Tạo tài khoản");
   const creating = !form.id;
   const fieldsDisabled = viewing || (isOwnProfile && isSaving);
   const saveLabel = isOwnProfile ? text("Lưu hồ sơ") : viewing ? text("Lưu vai trò", "Save role") : text("Lưu tài khoản");
   const roleOptions = creating ? ["admin", "instructor", "learner"] : editableRoles;
-  const joined = form.joined && new Date(form.joined).toLocaleDateString("vi-VN");
+  const joined = form.joined && new Date(form.joined).toLocaleDateString(locale);
   const actions = (
     <div className="admin-form-actions flex gap-3">
       {(!viewing || roleOptions.length > 0) && (
