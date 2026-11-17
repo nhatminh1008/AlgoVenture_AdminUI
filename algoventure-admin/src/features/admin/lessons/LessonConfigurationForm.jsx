@@ -1,5 +1,6 @@
 import { useText } from "../../../preferences/preferencesContext";
 import { difficultyLabels } from "../recordLabels.js";
+import { sortingLessons } from "../../../shared/curriculum/sortOrder.js";
 import { useState } from "react";
 import { updateLesson } from "./lessonService";
 import { validateInsertionScoring } from "./scoringConfiguration.js";
@@ -78,6 +79,15 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
         </label>
+        {(lesson.hasSortOrder ?? sortingLessons.has(lesson.id)) && <label>
+          <span className="field-label">{text("Chiều sắp xếp", "Sort order")}</span>
+          <select className="field" value={form.config.sortOrder ?? "random"} onChange={e => config("sortOrder", e.target.value)}>
+            <option value="random">{text("Ngẫu nhiên 50/50", "Random 50/50")}</option>
+            <option value="ascending">{text("Tăng dần (nhỏ đến lớn)", "Ascending (small to large)")}</option>
+            <option value="descending">{text("Giảm dần (lớn đến nhỏ)", "Descending (large to small)")}</option>
+          </select>
+          <span className="mt-1 block text-sm text-portal-muted">{text("Ngẫu nhiên chọn chiều một lần khi bắt đầu mỗi lượt chơi.", "Random chooses the order once at the start of each attempt.")}</span>
+        </label>}
         {lesson.hasDifficultyPresets && <label>
           <span id="lesson-difficulty-label" className="field-label">{text("Độ khó bắt đầu tối thiểu", "Minimum starting difficulty")}</span>
           <select

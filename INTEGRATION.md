@@ -63,3 +63,8 @@ AI là dịch vụ tùy chọn trong repo [AlgoVenture_AI](../AlgoVenture_AI/REA
 Chạy frontend `npm ci`, `npm test`, `npm run lint`, `npm run build`; chạy Backend và Unity tests theo README riêng, dùng database test tách biệt. Kiểm tra thật trên môi trường test cần theo hết luồng tạo lớp → giao bài → learner tham gia/làm bài → Instructor đọc kết quả, kèm thay đổi cấu hình Admin → Unity đồng bộ. Test frontend giả lập HTTP hoặc build thành công chưa đủ xác nhận luồng này.
 
 [Swagger](http://127.0.0.1:8081/swagger-ui/index.html) hỗ trợ thử API sau khi Backend chạy. Production cần HTTPS, reverse proxy `/api` cùng origin với Portal và SPA fallback. Dev proxy không có trong bundle production.
+# Chiều sắp xếp
+
+Bubble, Selection, Insertion, Merge và Quick Sort dùng `config.sortOrder`: `random` (mặc định, xác suất 50/50 cho mỗi lượt), `ascending` hoặc `descending`. Admin chỉ thấy tùy chọn này ở năm bài sắp xếp. Khi tùy chỉnh bài giao, giảng viên có thể đặt `lessonConfigs[lessonId].sortOrder`; bỏ trống để theo cấu hình bài học. Cấu hình được lưu cùng bộ thử thách và được dùng khi sinh viên mở bài đã giao.
+
+API cấp đề trả `sortOrder` đã chọn (`ascending` hoặc `descending`), lưu cùng đề và dùng chính giá trị đó để kiểm tra thao tác, nhật ký và hoàn thành. Unity hiển thị yêu cầu theo chiều đã cấp. `random` được chọn một lần cho mỗi lượt mới, không đổi giữa các thao tác. Đề cũ chưa có trường này tiếp tục được chấm tăng dần. Bubble luyện bổ trợ dùng artifact tăng dần vẫn giữ chiều tăng dần; log giảm dần không được đưa vào model chỉ hỗ trợ tăng dần.

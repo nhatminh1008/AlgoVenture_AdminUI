@@ -9,6 +9,8 @@ import { getLevel } from "../../../shared/curriculum/curriculumCatalog";
 import { TopicPicker } from "../../../shared/components/TopicPicker";
 import { useClassrooms } from "../workspace/useClassrooms";
 
+import { sortingLessons } from "../../../shared/curriculum/sortOrder.js";
+
 const MAX_LESSONS = 25;
 const lessonsWithStartingValues = new Set([
   "bubble", "selection", "insertion", "merge", "quick", "stack-push", "stack-pop", "stack-peek",
@@ -296,6 +298,20 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
               {config && <>
                 <label className="block"><span className="field-label">{text("Thời gian làm bài (giây)")}</span><input className="field" type="number" min="30" max="3600" required value={config.timeLimitSeconds} onChange={e => configure("timeLimitSeconds", Number(e.target.value))} /></label>
                 <label className="block"><span className="field-label">{text("Độ khó")}</span><select className="field" value={config.difficulty} onChange={e => configure("difficulty", e.target.value)}><option value="easy">{text("Dễ")}</option><option value="medium">{text("Vừa")}</option><option value="hard">{text("Khó")}</option></select></label>
+                {sortingLessons.has(id) && <label className="block">
+                  <span className="field-label">{text("Chiều sắp xếp", "Sort order")}</span>
+                  <select className="field" value={config.sortOrder ?? ""} onChange={e => {
+                    const next = { ...config };
+                    if (e.target.value) next.sortOrder = e.target.value;
+                    else delete next.sortOrder;
+                    update("lessonConfigs", { ...form.lessonConfigs, [id]: next });
+                  }}>
+                    <option value="">{text("Theo cấu hình bài học", "Use lesson settings")}</option>
+                    <option value="random">{text("Ngẫu nhiên 50/50", "Random 50/50")}</option>
+                    <option value="ascending">{text("Tăng dần (nhỏ đến lớn)", "Ascending (small to large)")}</option>
+                    <option value="descending">{text("Giảm dần (lớn đến nhỏ)", "Descending (large to small)")}</option>
+                  </select>
+                </label>}
                 {hasStartingValues ? <label className="block"><span className="field-label">{text("Chuỗi số ban đầu")}</span><input className="field" value={Array.isArray(config.input) ? config.input.join(", ") : config.input ?? ""} placeholder="VD: 8, 3, 6, 2, 5" onChange={e => {
                   const next = { ...config };
                   if (e.target.value.trim()) next.input = e.target.value;
