@@ -6,7 +6,7 @@ import Pagination from "../../../shared/components/Pagination";
 import RecordTable from "../../../shared/components/RecordTable";
 import { useApiData } from "../../../shared/hooks/useApiData";
 import { usePagination } from "../../../shared/hooks/usePagination";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import InstructorLink from "../workspace/InstructorLink";
 import { DueDate, RecordStatus, ReportLoad, StudentReportCard, StudentReportHeader } from "./ProgressReporting";
 import { useReportTime } from "./reportTime";

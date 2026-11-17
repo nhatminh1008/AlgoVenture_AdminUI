@@ -4,7 +4,7 @@ import { useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
 import RecordTable from "../../../shared/components/RecordTable";
 import { useApiData } from "../../../shared/hooks/useApiData";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import InstructorLink from "../workspace/InstructorLink";
 import { progressResultsPath } from "../workspace/useInstructorNavigation";
 import { DueDate, RecordStatus, ReportLoad, StudentReportCard, StudentReportHeader } from "./ProgressReporting";

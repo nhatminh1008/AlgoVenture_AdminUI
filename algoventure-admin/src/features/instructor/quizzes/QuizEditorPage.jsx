@@ -1,6 +1,6 @@
 import { useText } from "../../../preferences/preferencesContext";
 import { useParams } from "react-router-dom";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import QuizEditorForm from "./QuizEditorForm";
 import { canEditQuiz } from "./quizStatus";

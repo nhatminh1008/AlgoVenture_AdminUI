@@ -8,7 +8,7 @@ import { PageHeader } from "../workspace/PageHeader";
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import InstructorLink from "../workspace/InstructorLink";
 import { StudentIdentity } from "./StudentIdentity";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import { getLevel } from "../../../shared/curriculum/curriculumCatalog";
 import AssignmentDeliveryTable from "../assignments/AssignmentDeliveryTable";
 import ClassNavigation from "./ClassNavigation";

@@ -1,5 +1,5 @@
 import { useText } from "../../../preferences/preferencesContext";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import { PageHeader } from "../workspace/PageHeader";
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import InstructorLink from "../workspace/InstructorLink";

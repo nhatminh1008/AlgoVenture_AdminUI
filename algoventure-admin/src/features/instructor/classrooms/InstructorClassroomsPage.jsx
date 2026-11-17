@@ -5,7 +5,7 @@ import { usePagination } from "../../../shared/hooks/usePagination";
 import InstructorLink from "../workspace/InstructorLink";
 import { useInstructorParams } from "../workspace/useInstructorParams";
 import { Plus, Search, GraduationCap, X, Users, BookOpen, ListChecks, SlidersHorizontal } from "lucide-react";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import { levels, getLevel } from "../../../shared/curriculum/curriculumCatalog";
 import { WorkspaceStats } from "../../../shared/components/WorkspaceStats";
 import { PageHeader } from "../workspace/PageHeader";
