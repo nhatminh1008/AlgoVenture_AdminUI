@@ -5,6 +5,7 @@ import { useApiData } from "../../../shared/hooks/useApiData";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import { AdminPageHeader } from "../AdminPageHeader";
 import LessonConfigurationForm from "./LessonConfigurationForm";
+import LessonResultCapabilitiesTable from "./LessonResultCapabilitiesTable";
 
 export default function LessonConfigurationPage() {
   const text = useText();
@@ -38,6 +39,7 @@ export default function LessonConfigurationPage() {
           onSaved={state.setData}
         />
       )}
+      <LessonResultCapabilitiesTable lessons={state.data} />
     </div>
   );
 }

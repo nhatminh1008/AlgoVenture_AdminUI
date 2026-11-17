@@ -10,7 +10,7 @@ import { usePagination } from "../../../shared/hooks/usePagination";
 import { PageHeader } from "../workspace/PageHeader";
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import InstructorLink from "../workspace/InstructorLink";
 import { useInstructorParams } from "../workspace/useInstructorParams";
 import { getDeliveredRecipientIds } from "../workspace/instructorWorkspaceService";

@@ -5,7 +5,7 @@ import { Lock, Pencil } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import InstructorLink from "../workspace/InstructorLink";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import QuizPreview from "./QuizPreview";
 import { canEditQuiz, getQuizStatusLabel } from "./quizStatus";
 import { progressResultsPath } from "../workspace/useInstructorNavigation";

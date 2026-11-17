@@ -7,7 +7,7 @@ import { useApiData } from "../../../shared/hooks/useApiData";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import ClassroomFilter from "../classrooms/ClassroomFilter";
 import { useClassroomScope } from "../classrooms/useClassroomScope";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import InstructorLink from "../workspace/InstructorLink";
 import { PageHeader } from "../workspace/PageHeader";

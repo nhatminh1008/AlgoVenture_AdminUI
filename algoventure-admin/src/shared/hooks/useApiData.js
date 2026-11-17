@@ -35,8 +35,15 @@ export function useApiData(loadData, initial) {
   }, []);
 
   useEffect(() => {
-    refresh();
-    return invalidateRequest;
+    let active = true;
+    // Strict Mode cleanup cancels the first scheduled request before it starts.
+    queueMicrotask(() => {
+      if (active) refresh();
+    });
+    return () => {
+      active = false;
+      invalidateRequest();
+    };
   }, [refresh, invalidateRequest]);
 
   return { data, setData, error, loading, refresh };

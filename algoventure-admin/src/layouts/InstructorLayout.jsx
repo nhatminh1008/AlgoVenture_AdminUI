@@ -10,7 +10,8 @@ import {
   BarChart2,
   Download,
 } from "lucide-react";
-import { ClassroomProvider, useClassrooms } from "../features/instructor/workspace/ClassroomContext";
+import { ClassroomProvider } from "../features/instructor/workspace/ClassroomContext";
+import { useClassrooms } from "../features/instructor/workspace/useClassrooms";
 import { instructorActivePath } from "../features/instructor/workspace/useInstructorNavigation";
 import { InstructorNoticeContext } from "../features/instructor/workspace/InstructorNoticeContext";
 import { useInstructorScroll } from "../features/instructor/workspace/useInstructorScroll";

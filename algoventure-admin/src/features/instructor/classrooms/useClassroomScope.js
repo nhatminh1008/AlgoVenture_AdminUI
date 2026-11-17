@@ -1,5 +1,5 @@
 import { useInstructorParams } from "../workspace/useInstructorParams";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 
 export function useClassroomScope() {
   const { params, set } = useInstructorParams();

@@ -7,7 +7,7 @@ import Pagination from "../../../shared/components/Pagination";
 import RecordTable from "../../../shared/components/RecordTable";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { PageHeader } from "../workspace/PageHeader";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import InstructorLink from "../workspace/InstructorLink";
 
 export default function ChallengeList() {

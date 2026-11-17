@@ -7,7 +7,7 @@ import InstructorLink from "../workspace/InstructorLink";
 import { progressResultsPath } from "../workspace/useInstructorNavigation";
 import { useInstructorParams } from "../workspace/useInstructorParams";
 import { ClipboardList, Eye, FilePenLine, Plus, Trash2 } from "lucide-react";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import { canEditQuiz, getQuizStatusLabel } from "./quizStatus";
 
 export default function ClassQuizzes({ classId }) {

@@ -7,7 +7,7 @@ import InstructorBackLink from "../workspace/InstructorBackLink";
 import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import { getLevel } from "../../../shared/curriculum/curriculumCatalog";
 import { TopicPicker } from "../../../shared/components/TopicPicker";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 
 const MAX_LESSONS = 25;
 const lessonsWithStartingValues = new Set([

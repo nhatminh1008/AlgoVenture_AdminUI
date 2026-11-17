@@ -11,6 +11,7 @@ import {
   BarChart2,
   ToggleLeft,
   Settings,
+  Trophy,
 } from "lucide-react";
 
 const AdminLayout = () => {
@@ -37,6 +38,11 @@ const AdminLayout = () => {
       path: "/admin/levels",
       name: text("Cấu hình bài học"), group: text("Nội dung học tập"),
       icon: <Sliders size={20} />,
+    },
+    {
+      path: "/admin/achievements",
+      name: text("Thành tựu", "Achievements"), group: text("Nội dung học tập"),
+      icon: <Trophy size={20} />,
     },
     {
       path: "/admin/analytics",
