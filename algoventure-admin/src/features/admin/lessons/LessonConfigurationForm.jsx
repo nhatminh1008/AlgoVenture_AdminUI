@@ -1,20 +1,15 @@
-import Pagination from "../../../shared/components/Pagination";
-import { usePagination } from "../../../shared/hooks/usePagination";
 import { useText } from "../../../preferences/preferencesContext";
 import { difficultyLabels } from "../recordLabels.js";
 import { useState } from "react";
 import { updateLesson } from "./lessonService";
 
-export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
+export default function LessonConfigurationForm({ lesson, onSaved }) {
   const text = useText();
   const [form, setForm] = useState(() => structuredClone(lesson));
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const required = lesson.requiredPrerequisites ?? [];
-  const prerequisites = usePagination(
-    lessons.filter((item) => item.id !== lesson.id && !required.includes(item.id)), lesson.id,
-  );
   function config(key, value) {
     setForm((previous) => ({
       ...previous,
@@ -154,33 +149,6 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
         />
         {text("Hiện gợi ý bước tiếp theo khi làm sai hoặc hết giờ", "Show a next-step hint after a mistake or timeout")}
       </label>}
-      <fieldset>
-        <legend className="field-label">{text("Bài tiên quyết bổ sung", "Additional prerequisites")}</legend>
-        {required.length > 0 && <p className="mb-3 text-sm text-portal-muted">
-          {text("Bắt buộc theo lộ trình", "Required by the learning path")}{" · "}
-          {required.map((id) => text(lessons.find((item) => item.id === id)?.name ?? id)).join(", ")}
-        </p>}
-        <div className="grid max-h-56 gap-2 overflow-auto sm:grid-cols-2">
-          {prerequisites.items.map((a) => (
-              <label className="admin-check-option flex items-center gap-2 text-sm" key={a.id}>
-                <input
-                  type="checkbox"
-                  checked={form.config.prerequisites.includes(a.id)}
-                  onChange={(e) =>
-                    config(
-                      "prerequisites",
-                      e.target.checked
-                        ? [...form.config.prerequisites, a.id]
-                        : form.config.prerequisites.filter((id) => id !== a.id),
-                    )
-                  }
-                />
-                {text(a.name)}
-              </label>
-            ))}
-        </div>
-        <Pagination pagination={prerequisites} />
-      </fieldset>
       </fieldset>
       <div className="admin-form-actions flex gap-3">
         <button className="btn-primary" disabled={isSaving}>

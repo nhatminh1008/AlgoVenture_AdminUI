@@ -34,7 +34,6 @@ export default function LessonConfigurationPage() {
         <LessonConfigurationForm
           key={selected.id}
           lesson={selected}
-          lessons={state.data}
           onSaved={state.setData}
         />
       )}
