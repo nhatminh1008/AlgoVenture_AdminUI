@@ -5,7 +5,7 @@ import { usePagination } from "../../../shared/hooks/usePagination";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Search, GraduationCap, X, Users, BookOpen, SlidersHorizontal } from "lucide-react";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import { levels, getLevel } from "../../../shared/curriculum/curriculumCatalog";
 import { WorkspaceStats } from "../../../shared/components/WorkspaceStats";
 import { PageHeader } from "../workspace/PageHeader";

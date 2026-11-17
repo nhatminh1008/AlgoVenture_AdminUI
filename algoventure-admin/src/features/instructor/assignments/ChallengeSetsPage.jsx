@@ -1,6 +1,6 @@
 import { useText } from "../../../preferences/preferencesContext";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import ChallengeList from "./ChallengeList";

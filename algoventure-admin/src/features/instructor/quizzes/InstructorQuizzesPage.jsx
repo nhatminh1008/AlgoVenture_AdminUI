@@ -1,6 +1,6 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { useText } from "../../../preferences/preferencesContext";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import { PageHeader } from "../workspace/PageHeader";
 import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import ClassQuizzes from "./ClassQuizzes";

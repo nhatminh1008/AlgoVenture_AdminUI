@@ -7,7 +7,7 @@ import { Eye, Plus, Save, Send } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import { createQuestion, validateQuiz, MAX_QUESTIONS } from "./quizValidation";
 import QuizPreview from "./QuizPreview";
 import QuizQuestionEditor from "./QuizQuestionEditor";

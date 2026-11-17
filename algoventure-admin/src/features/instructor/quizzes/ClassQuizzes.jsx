@@ -5,7 +5,7 @@ import { useText } from "../../../preferences/preferencesContext";
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ClipboardList, Eye, FilePenLine, Plus, Trash2 } from "lucide-react";
-import { useClassrooms } from "../workspace/ClassroomContext";
+import { useClassrooms } from "../workspace/useClassrooms";
 import { useInstructorNavigation } from "../workspace/useInstructorNavigation";
 import { canEditQuiz, getQuizStatusLabel } from "./quizStatus";
 

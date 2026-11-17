@@ -1,10 +1,6 @@
 import { useText } from "../../../preferences/preferencesContext";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-} from "react";
+import { useEffect, useMemo } from "react";
+import { ClassroomContext } from "./useClassrooms";
 import { useAuth } from "../../../auth/useAuth";
 import { createCurriculum } from "../../../shared/curriculum/curriculumCatalog";
 import { useApiData } from "../../../shared/hooks/useApiData";
@@ -20,7 +16,7 @@ import {
   saveQuiz,
 } from "./instructorWorkspaceService";
 
-const ClassroomContext = createContext(null);
+
 export function ClassroomProvider({ children }) {
   const text = useText();
   const { user } = useAuth();
@@ -105,7 +101,4 @@ export function ClassroomProvider({ children }) {
       {children}
     </ClassroomContext.Provider>
   );
-}
-export function useClassrooms() {
-  return useContext(ClassroomContext);
 }

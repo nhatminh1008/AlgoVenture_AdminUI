@@ -9,7 +9,7 @@ import {
   BarChart2,
   Download,
 } from "lucide-react";
-import { useClassrooms } from "../features/instructor/workspace/ClassroomContext";
+import { useClassrooms } from "../features/instructor/workspace/useClassrooms";
 import PortalFrame from "./PortalFrame";
 import "./InstructorLayout.css";
 

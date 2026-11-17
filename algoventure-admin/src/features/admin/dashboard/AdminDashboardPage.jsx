@@ -26,7 +26,7 @@ export default function AdminDashboardPage() {
         ]} />
         <div className="dashboard-columns">
           <section className="panel dashboard-section"><div className="dashboard-section-heading"><h2>{text("Nội dung học tập")}</h2><Link to="/admin/content">{text("Xem thư viện")}<ArrowUpRight size={14} /></Link></div><div className="resource-grid">
-            {[["Bài học thuật toán", counts.algorithms, <BookOpen />], ["Bộ thử thách", counts.assignments, <ClipboardList />], ["Bộ trắc nghiệm", counts.quizzes, <Library />]].map(([label, value, icon]) => <div className="resource-tile" key={label}><div>{icon}<strong>{value.toLocaleString("vi-VN")}</strong></div><span>{text(label)}</span></div>)}
+            {[["Bài học thuật toán", counts.algorithms, BookOpen], ["Bộ thử thách", counts.assignments, ClipboardList], ["Bộ trắc nghiệm", counts.quizzes, Library]].map(([label, value, Icon]) => <div className="resource-tile" key={label}><div><Icon /><strong>{value.toLocaleString("vi-VN")}</strong></div><span>{text(label)}</span></div>)}
           </div></section>
           <section className="panel dashboard-section"><div className="dashboard-section-heading"><h2>{text("Truy cập nhanh")}</h2></div><div className="quick-actions">
             {[
