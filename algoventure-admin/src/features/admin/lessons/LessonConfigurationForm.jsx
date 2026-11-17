@@ -3,6 +3,7 @@ import { usePagination } from "../../../shared/hooks/usePagination";
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { updateLesson } from "./lessonService";
+import { validateInsertionScoring } from "./scoringConfiguration.js";
 
 export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
   const text = useText();
@@ -23,6 +24,14 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
   async function save(e) {
     e.preventDefault();
     if (isSaving) return;
+    const validation = validateInsertionScoring(form.scoring, form.config.starThresholds);
+    if (validation) {
+      setMessage("");
+      setError(validation === "coefficients"
+        ? text("Hệ số điểm hoặc điểm phạt nằm ngoài giới hạn.", "Scoring coefficients are outside the allowed range.")
+        : text("Cần ba ngưỡng sao tăng dần từ 1 đến 1.280.000.", "Use three strictly increasing star thresholds between 1 and 1,280,000."));
+      return;
+    }
     setIsSaving(true);
     setMessage("");
     setError("");
@@ -30,6 +39,10 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
       const { name, difficulty, status } = form;
       const rows = await updateLesson(lesson.id, {
         name, difficulty, status,
+        ...(form.scoring && { scoring: {
+          pointsPerStep: form.scoring.pointsPerStep,
+          penaltyPerError: form.scoring.penaltyPerError,
+        } }),
         config: { ...form.config, prerequisites: form.config.prerequisites.filter((id) => !required.includes(id)) },
       });
       onSaved(rows);
@@ -116,6 +129,39 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
           </span>
         </label>
       </div>
+      {form.scoring && <fieldset className="space-y-3">
+        <legend className="field-label">{text("Hệ số điểm Insertion Sort", "Insertion Sort scoring coefficients")}</legend>
+        <p className="text-sm text-portal-muted">
+          {text("Unity hiển thị điểm và sao do Backend xác nhận cho lượt có nhật ký hợp lệ.",
+            "Unity displays Backend-confirmed scores and stars for attempts with verified logs.")}
+        </p>
+        <dl className="text-sm">
+          <dt>{text("Phiên bản", "Version")}</dt>
+          <dd>{form.scoring.version ?? text("Mặc định", "Default")}</dd>
+          {form.scoring.updatedAt && <>
+            <dt>{text("Ngày cập nhật", "Updated at")}</dt>
+            <dd><time dateTime={form.scoring.updatedAt}>{new Date(form.scoring.updatedAt).toLocaleString()}</time></dd>
+          </>}
+          {form.scoring.updatedBy && <>
+            <dt>{text("ID người cập nhật", "Updated by (ID)")}</dt>
+            <dd>{form.scoring.updatedBy}</dd>
+          </>}
+        </dl>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            ["pointsPerStep", text("Điểm mỗi bước hợp lệ", "Points per valid move"), 1],
+            ["penaltyPerError", text("Điểm trừ mỗi lỗi", "Penalty per error"), 0],
+          ].map(([key, label, minimum]) => (
+            <label key={key}>
+              <span className="field-label">{label}</span>
+              <input className="field" type="number" min={minimum} max={10000} required value={form.scoring[key]}
+                onChange={(event) => setForm((previous) => ({
+                  ...previous, scoring: { ...previous.scoring, [key]: Number(event.target.value) },
+                }))} />
+            </label>
+          ))}
+        </div>
+      </fieldset>}
       {lesson.hasScoreThresholds && <fieldset>
         <legend className="field-label">{text("Ngưỡng điểm sao (tăng dần)")}</legend>
         <p className="mb-3 text-sm text-portal-muted">
@@ -130,6 +176,7 @@ export default function LessonConfigurationForm({ lesson, lessons, onSaved }) {
                 className="field"
                 type="number"
                 min={1}
+                max={form.scoring ? 1280000 : undefined}
                 required
                 value={value}
                 onChange={(e) =>
