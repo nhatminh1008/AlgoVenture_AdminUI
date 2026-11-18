@@ -46,6 +46,10 @@ export function lockUser(id) {
   return api("/admin/users/" + encodeURIComponent(id) + "/lock", { method: "PUT" });
 }
 
+export function deactivateUser(id) {
+  return api("/admin/users/" + encodeURIComponent(id) + "/deactivate", { method: "PUT" });
+}
+
 export function changeUserRole({ id, role }) {
   return api("/admin/users/" + encodeURIComponent(id) + "/role", {
     method: "PUT",

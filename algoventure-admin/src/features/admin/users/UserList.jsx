@@ -1,5 +1,5 @@
 import { useText } from "../../../preferences/preferencesContext";
-import { Eye, Lock, LockOpen, Pencil } from "lucide-react";
+import { Ban, Eye, Lock, LockOpen, Pencil } from "lucide-react";
 import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import RecordTable from "../../../shared/components/RecordTable";
@@ -9,10 +9,10 @@ import { roleLabels, statusLabels } from "../recordLabels.js";
 const accountStatusDescriptions = {
   Active: "Có thể đăng nhập.",
   Suspended: "Tạm thời bị chặn đăng nhập.",
-  Deactive: "Đã vô hiệu hóa, lịch sử tài khoản vẫn được lưu.",
+  Deactive: "Đã vô hiệu hóa, lịch sử tài khoản vẫn được lưu. Không thể mở bằng nút Mở khóa.",
 };
 
-export default function UserList({ rows, currentUserId, query, role, onQueryChange, onRoleChange, isSaving, onOpen, onLock }) {
+export default function UserList({ rows, currentUserId, query, role, onQueryChange, onRoleChange, isSaving, onOpen, onLock, onDeactivate }) {
   const text = useText();
   const pagination = usePagination(rows, query + role);
   const columns = [
@@ -34,6 +34,12 @@ export default function UserList({ rows, currentUserId, query, role, onQueryChan
             <button type="button" className="btn-row-action btn-row-action-danger"
               onClick={() => onLock(user, true)} disabled={isSaving}>
               <Lock aria-hidden="true" />{text("Khóa", "Lock")}
+            </button>
+          )}
+          {user.id !== currentUserId && ["Active", "Suspended"].includes(user.status) && (
+            <button type="button" className="btn-row-action btn-row-action-danger"
+              onClick={() => onDeactivate(user)} disabled={isSaving}>
+              <Ban aria-hidden="true" />{text("Vô hiệu hóa", "Deactivate")}
             </button>
           )}
           {user.id !== currentUserId && user.status === "Suspended" && (
