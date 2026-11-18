@@ -3,6 +3,7 @@ param(
     [switch]$SkipBuild,
     [switch]$PrepareOnly,
     [switch]$ExperimentalAi,
+    [switch]$Background,
     [ValidateRange(1024,65535)][int]$DatabasePort,
     [string]$DatabaseRuntimeDirectory
 )

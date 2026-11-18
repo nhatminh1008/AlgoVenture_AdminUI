@@ -24,7 +24,7 @@ test("instructor resolves lessons from the backend curriculum, including Matrix"
   const legacyIds = ["stack", "queue", "tree-traversal", "bst"];
   assert.deepEqual(topics, backend, "Portal must use the backend topic metadata, lesson labels and order");
   assert.equal(new Set(ids).size, ids.length);
-  assert.equal(ids.length, 34);
+  assert.equal(ids.length, 36);
   assert.deepEqual(ids.filter((id) => legacyIds.includes(id)), []);
   assert.deepEqual(topics.map(({ label }) => label), ["Array", "Linked List", "Stack", "Queue", "Tree", "Graph"]);
   assert.deepEqual(topics.find(({ id }) => id === "array").lessons.map(([id]) => id), [
@@ -33,7 +33,7 @@ test("instructor resolves lessons from the backend curriculum, including Matrix"
   ]);
   assert.equal(lessonName("matrix-bfs"), "BFS trên lưới");
   assert.equal(lessonName("stack"), "stack");
-  for (const id of ['stack-push', 'stack-pop', 'stack-peek', 'queue-enqueue', 'queue-dequeue', 'queue-peek', 'tree-dfs', 'tree-bfs'])
+  for (const id of ['stack-push', 'stack-pop', 'stack-peek', 'stack-mixed', 'queue-enqueue', 'queue-dequeue', 'queue-peek', 'queue-mixed', 'tree-dfs', 'tree-bfs'])
     assert.ok(ids.includes(id), `Missing curriculum lesson: ${id}`);
 });
 test("CSV escapes Unicode and quotes, neutralizes formulas and keeps missing scores empty", () => {

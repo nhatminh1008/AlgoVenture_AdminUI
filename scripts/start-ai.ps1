@@ -3,6 +3,7 @@ param(
     [string]$Registry,
     [switch]$Experimental,
     [switch]$TestArtifacts,
+    [switch]$Background,
     [int]$Port = 8000
 )
 $ErrorActionPreference = 'Stop'

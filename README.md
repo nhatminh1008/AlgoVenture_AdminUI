@@ -32,7 +32,7 @@ Có thể chạy Backend bằng terminal thay cho IDE:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1
 ```
 
-Hai script `start-backend.ps1` và `stop-dev-database.ps1` trong repo này chỉ chuyển tiếp tới repo Backend cùng cấp; chúng không tạo database hoặc mật khẩu riêng của Portal. Hỗ trợ `-PrepareOnly`, `-SkipBuild`, `-DatabasePort`, `-DatabaseRuntimeDirectory` theo script Backend. Nếu clone Backend ở vị trí khác:
+Hai script `start-backend.ps1` và `stop-dev-database.ps1` chuyển tiếp tới repo Backend cùng cấp. Launcher Backend hỗ trợ `-Background`, `-PrepareOnly`, `-SkipBuild`, `-DatabasePort` và `-DatabaseRuntimeDirectory`. Nếu clone Backend ở vị trí khác:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1 -BackendPath 'D:\Projects\AlgoVenture_Backend'

@@ -541,6 +541,8 @@ export const english = {
   "Xây dựng nền tảng, làm quen và thực hành từng bước.": "Build foundations and practice step by step.",
   "Củng cố kiến thức và luyện tập các tình huống phức tạp hơn.": "Build on existing knowledge and practice more complex scenarios.",
   "Duyệt theo hàng": "Row traversal",
+  "Stack · Tổng hợp": "Stack · Operations challenge",
+  "Queue · Tổng hợp": "Queue · Operations challenge",
   "Chuyển vị ma trận": "Matrix transpose",
   "Duyệt xoắn ốc": "Spiral traversal",
   "BFS trên lưới": "Grid BFS",

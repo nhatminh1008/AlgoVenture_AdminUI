@@ -10,6 +10,7 @@ import { TopicPicker } from "../../../shared/components/TopicPicker";
 import { useClassrooms } from "../workspace/useClassrooms";
 
 import { sortingLessons } from "../../../shared/curriculum/sortOrder.js";
+import { collectionOperations, collectionChallenges } from "../../../shared/curriculum/collectionLessons.js";
 
 const MAX_LESSONS = 25;
 const lessonsWithStartingValues = new Set([
@@ -71,7 +72,8 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
     setIsSubmitting(true);
     try {
       const lessonConfigs = structuredClone(Object.fromEntries(Object.entries(form.lessonConfigs ?? {}).filter(([id]) => form.lessonIds.includes(id))));
-      for (const config of Object.values(lessonConfigs)) {
+      for (const [id, config] of Object.entries(lessonConfigs)) {
+        if (collectionOperations.has(id)) config.difficulty = "easy";
         if (typeof config.input === "string") {
           if (!/^\s*-?\d+(?:[\s,]+-?\d+)*\s*$/.test(config.input)) throw new Error("Nhập chuỗi số nguyên, cách nhau bằng dấu phẩy hoặc khoảng trắng.");
           config.input = config.input.trim().split(/[\s,]+/).map(Number);
@@ -297,7 +299,14 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
               }} />{text("Tùy chỉnh cho bài giao này")}</label>
               {config && <>
                 <label className="block"><span className="field-label">{text("Thời gian làm bài (giây)")}</span><input className="field" type="number" min="30" max="3600" required value={config.timeLimitSeconds} onChange={e => configure("timeLimitSeconds", Number(e.target.value))} /></label>
-                <label className="block"><span className="field-label">{text("Độ khó")}</span><select className="field" value={config.difficulty} onChange={e => configure("difficulty", e.target.value)}><option value="easy">{text("Dễ")}</option><option value="medium">{text("Vừa")}</option><option value="hard">{text("Khó")}</option></select></label>
+                <label className="block">
+                  <span className="field-label">{text("Độ khó")}</span>
+                  <select className="field" disabled={collectionOperations.has(id)} value={collectionOperations.has(id) ? "easy" : config.difficulty}
+                    onChange={e => configure("difficulty", e.target.value)}>
+                    <option value="easy">{text("Dễ")}</option>
+                    {!collectionOperations.has(id) && <><option value="medium">{text("Vừa")}</option><option value="hard">{text("Khó")}</option></>}
+                  </select>
+                </label>
                 {sortingLessons.has(id) && <label className="block">
                   <span className="field-label">{text("Chiều sắp xếp", "Sort order")}</span>
                   <select className="field" value={config.sortOrder ?? ""} onChange={e => {
@@ -321,7 +330,7 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
                   {stack && <span className="mt-1 block text-xs text-slate-500">{id === "stack-push"
                     ? text("Thẻ được đưa vào ngăn xếp theo thứ tự nhập.", "Cards are pushed in the order entered.")
                     : text("Nhập từ đáy lên đỉnh. Số cuối cùng là đỉnh ngăn xếp.", "Enter values from bottom to top. The last value starts on top.")}</span>}
-                </label> : <p className="text-xs text-slate-500">{text(
+                </label> : (collectionOperations.has(id) || collectionChallenges.has(id)) ? null : <p className="text-xs text-slate-500">{text(
                   "Cấu hình được lưu cùng bài giao và đang chờ tích hợp vào mục Bài được giao trong Unity.",
                   "Settings are saved with the assignment. Support in Unity’s assignment area is pending.",
                 )}</p>}

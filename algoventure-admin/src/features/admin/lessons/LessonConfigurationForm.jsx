@@ -1,6 +1,7 @@
 import { useText } from "../../../preferences/preferencesContext";
 import { difficultyLabels } from "../recordLabels.js";
 import { sortingLessons } from "../../../shared/curriculum/sortOrder.js";
+import { collectionOperations } from "../../../shared/curriculum/collectionLessons.js";
 import { useState } from "react";
 import { updateLesson } from "./lessonService";
 import { validateInsertionScoring } from "./scoringConfiguration.js";
@@ -88,7 +89,14 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
           </select>
           <span className="mt-1 block text-sm text-portal-muted">{text("Ngẫu nhiên chọn chiều một lần khi bắt đầu mỗi lượt chơi.", "Random chooses the order once at the start of each attempt.")}</span>
         </label>}
-        {lesson.hasDifficultyPresets && <label>
+        {collectionOperations.has(lesson.id) && <div>
+          <span className="field-label">{text("Độ khó")}</span>
+          <p className="text-sm">{text("Dễ")}</p>
+          <p className="mt-1 text-sm text-portal-muted">
+            {text("Bài thao tác riêng có một mức.", "Single-operation lessons have one difficulty.")}
+          </p>
+        </div>}
+        {lesson.hasDifficultyPresets && !collectionOperations.has(lesson.id) && <label>
           <span id="lesson-difficulty-label" className="field-label">{text("Độ khó bắt đầu tối thiểu", "Minimum starting difficulty")}</span>
           <select
             className="field"
