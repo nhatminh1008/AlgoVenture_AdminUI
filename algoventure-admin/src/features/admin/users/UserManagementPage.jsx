@@ -1,7 +1,7 @@
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { changeUserRole, createUser, listUsers, saveMyProfile, setUserLocked } from "./userService";
+import { changeUserRole, createUser, deactivateUser, listUsers, saveMyProfile, setUserLocked } from "./userService";
 import { useAuth } from "../../../auth/useAuth";
 import { useApiData } from "../../../shared/hooks/useApiData";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
@@ -81,6 +81,26 @@ export default function UserManagementPage() {
     }
   }
 
+  async function deactivate(account) {
+    if (isSaving || !window.confirm(text(
+      `Vô hiệu hóa tài khoản “${account.email}”? Người dùng sẽ bị đăng xuất và không thể đăng nhập. Dữ liệu và lịch sử học tập được giữ lại. Tài khoản này không thể mở bằng nút Mở khóa.`,
+      `Deactivate “${account.email}”? The user will be signed out and unable to sign in. Learning data and history are retained. This account cannot be restored with Unlock.`,
+    ))) return;
+    setIsSaving(true);
+    setActionError("");
+    setMessage("");
+    try {
+      await deactivateUser(account.id);
+      await state.refresh();
+      setMessage(text("Đã vô hiệu hóa tài khoản. Dữ liệu và lịch sử học tập được giữ lại.",
+        "Account deactivated. Learning data and history are retained."));
+    } catch (failure) {
+      setActionError(failure.message);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   const field = (name, value) =>
     setForm((previous) => ({ ...previous, [name]: value }));
   return (
@@ -125,6 +145,7 @@ export default function UserManagementPage() {
         onRoleChange={setRole}
         isSaving={isSaving}
         onLock={changeLock}
+        onDeactivate={deactivate}
         onOpen={(account) => {
           setForm({ ...account });
           setActionError("");
