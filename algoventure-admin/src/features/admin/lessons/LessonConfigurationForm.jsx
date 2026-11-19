@@ -176,7 +176,7 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
           </button>
         </div>
       </fieldset>
-      <LessonScoringRules lesson={lesson} timeLimit={form.config.timeLimit} />
+      <LessonScoringRules />
     </form>
   );
 }
