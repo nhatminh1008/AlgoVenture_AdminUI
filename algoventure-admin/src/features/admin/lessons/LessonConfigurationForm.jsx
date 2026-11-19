@@ -1,5 +1,5 @@
 import { useActionToast } from "../../../shared/components/useActionToast";
-import { useText } from "../../../preferences/preferencesContext";
+import { useLocale, useText } from "../../../preferences/preferencesContext";
 import { difficultyLabels } from "../recordLabels.js";
 import { sortingLessons } from "../../../shared/curriculum/sortOrder.js";
 import { collectionOperations } from "../../../shared/curriculum/collectionLessons.js";
@@ -10,12 +10,19 @@ import LessonScoringRules from "./LessonScoringRules";
 
 export default function LessonConfigurationForm({ lesson, onSaved }) {
   const text = useText();
+  const locale = useLocale();
   const toast = useActionToast();
   const [form, setForm] = useState(() => structuredClone(lesson));
   const [isSaving, setIsSaving] = useState(false);
   const required = lesson.requiredPrerequisites ?? [];
   const hasTimeOverrides = lesson.hasDifficultyTimeLimits ?? lesson.hasDifficultyPresets;
   const usesStages = hasTimeOverrides && !lesson.hasDifficultyPresets;
+  const { timeLimit, timeLimitsByDifficulty } = form.config;
+  const overrides = timeLimitsByDifficulty ?? {};
+  const validDefaultLimit = Number.isInteger(timeLimit) && timeLimit >= 10 && timeLimit <= 86400;
+  const defaultLimitLabel = validDefaultLimit
+    ? text(`Dùng chung · ${timeLimit.toLocaleString(locale)} giây`, `Default · ${timeLimit.toLocaleString(locale)} sec`)
+    : text("Dùng giới hạn chung", "Uses the default limit");
   function config(key, value) {
     setForm((previous) => ({
       ...previous,
@@ -127,8 +134,8 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
           </div>
           <label className="lesson-config-default-limit">
             <span className="field-label">{text("Giới hạn thời gian chung (giây)")}</span>
-            <input className="field" type="number" min={10} max={86400} required value={form.config.timeLimit}
-              onChange={(e) => config("timeLimit", Number(e.target.value))} />
+            <input className="field" type="number" min={10} max={86400} required value={timeLimit}
+              onChange={(e) => config("timeLimit", e.target.value === "" ? "" : Number(e.target.value))} />
           </label>
           {hasTimeOverrides && <fieldset className="lesson-config-overrides" aria-describedby="lesson-overrides-note">
             <legend className="field-label">{usesStages ? text("Giới hạn theo chặng (giây)", "Time limits by stage (seconds)")
@@ -136,23 +143,27 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
             <div className="lesson-config-override-grid">
               {["Easy", "Medium", "Hard"].map((difficulty, index) => {
                 const key = difficulty.toLowerCase();
-                const limits = form.config.timeLimitsByDifficulty ?? {};
-                return <label key={key}>
-                  <span className="field-label">{usesStages ? text(`Chặng ${index + 1}`, `Stage ${index + 1}`)
-                    : text(difficultyLabels[difficulty], difficulty)}</span>
-                  <input className="field" type="number" min={10} max={86400}
-                    value={limits[key] ?? ""} placeholder={String(form.config.timeLimit)}
+                const limit = overrides[key];
+                return <div key={key}>
+                  <label className="field-label" htmlFor={`lesson-time-${key}`}>{usesStages ? text(`Chặng ${index + 1}`, `Stage ${index + 1}`)
+                    : text(difficultyLabels[difficulty], difficulty)}</label>
+                  <input id={`lesson-time-${key}`} className="field" type="number" min={10} max={86400}
+                    aria-describedby={`lesson-time-${key}-source`} value={limit ?? ""}
                     onChange={(event) => {
-                      const next = { ...limits };
+                      const next = { ...overrides };
                       if (event.target.value === "") delete next[key];
                       else next[key] = Number(event.target.value);
                       config("timeLimitsByDifficulty", next);
                     }} />
-                </label>;
+                  <span id={`lesson-time-${key}-source`} className="lesson-config-help">
+                    {limit == null ? defaultLimitLabel : text("Giới hạn riêng", "Override")}
+                  </span>
+                </div>;
               })}
             </div>
             <p id="lesson-overrides-note" className="lesson-config-help">{text(
-              "Ô trống dùng giới hạn chung của bài.", "Empty fields use the lesson's default limit.",
+              "Chỉ nhập số khi cần giới hạn riêng. Xóa số để dùng lại giới hạn chung.",
+              "Enter a value to set an override. Clear it to use the default limit again.",
             )}</p>
           </fieldset>}
         </section>
