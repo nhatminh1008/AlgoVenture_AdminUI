@@ -4,7 +4,6 @@ import { sortingLessons } from "../../../shared/curriculum/sortOrder.js";
 import { collectionOperations } from "../../../shared/curriculum/collectionLessons.js";
 import { useState } from "react";
 import { updateLesson } from "./lessonService";
-import { validateInsertionScoring } from "./scoringConfiguration.js";
 
 export default function LessonConfigurationForm({ lesson, onSaved }) {
   const text = useText();
@@ -22,26 +21,16 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
   async function save(e) {
     e.preventDefault();
     if (isSaving) return;
-    const validation = validateInsertionScoring(form.scoring, form.config.starThresholds);
-    if (validation) {
-      setMessage("");
-      setError(validation === "coefficients"
-        ? text("Hệ số điểm hoặc điểm phạt nằm ngoài giới hạn.", "Scoring coefficients are outside the allowed range.")
-        : text("Cần ba ngưỡng sao tăng dần từ 1 đến 1.280.000.", "Use three strictly increasing star thresholds between 1 and 1,280,000."));
-      return;
-    }
     setIsSaving(true);
     setMessage("");
     setError("");
     try {
       const { name, difficulty, status } = form;
+      const { sortOrder, timeLimit, timeLimitsByDifficulty, hintsAllowed, prerequisites } = form.config;
       const rows = await updateLesson(lesson.id, {
         name, difficulty, status,
-        ...(form.scoring && { scoring: {
-          pointsPerStep: form.scoring.pointsPerStep,
-          penaltyPerError: form.scoring.penaltyPerError,
-        } }),
-        config: { ...form.config, prerequisites: form.config.prerequisites.filter((id) => !required.includes(id)) },
+        config: { sortOrder, timeLimit, timeLimitsByDifficulty: timeLimitsByDifficulty ?? {}, hintsAllowed,
+          prerequisites: prerequisites.filter((id) => !required.includes(id)) },
       });
       onSaved(rows);
       const saved = rows.find((row) => row.id === lesson.id);
@@ -126,7 +115,7 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
           </select>
         </label>
         <label>
-          <span id="lesson-time-label" className="field-label">{text("Giới hạn thời gian (giây)")}</span>
+          <span id="lesson-time-label" className="field-label">{text("Giới hạn thời gian chung (giây)")}</span>
           <input
             className="field"
             type="number"
@@ -143,69 +132,38 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
           </span>
         </label>
       </div>
-      {form.scoring && <fieldset className="space-y-3">
-        <legend className="field-label">{text("Hệ số điểm Insertion Sort", "Insertion Sort scoring coefficients")}</legend>
-        <p className="text-sm text-portal-muted">
-          {text("Unity hiển thị điểm và sao do Backend xác nhận cho lượt có nhật ký hợp lệ.",
-            "Unity displays Backend-confirmed scores and stars for attempts with verified logs.")}
-        </p>
-        <dl className="text-sm">
-          <dt>{text("Phiên bản", "Version")}</dt>
-          <dd>{form.scoring.version ?? text("Mặc định", "Default")}</dd>
-          {form.scoring.updatedAt && <>
-            <dt>{text("Ngày cập nhật", "Updated at")}</dt>
-            <dd><time dateTime={form.scoring.updatedAt}>{new Date(form.scoring.updatedAt).toLocaleString()}</time></dd>
-          </>}
-          {form.scoring.updatedBy && <>
-            <dt>{text("ID người cập nhật", "Updated by (ID)")}</dt>
-            <dd>{form.scoring.updatedBy}</dd>
-          </>}
-        </dl>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {[
-            ["pointsPerStep", text("Điểm mỗi bước hợp lệ", "Points per valid move"), 1],
-            ["penaltyPerError", text("Điểm trừ mỗi lỗi", "Penalty per error"), 0],
-          ].map(([key, label, minimum]) => (
-            <label key={key}>
-              <span className="field-label">{label}</span>
-              <input className="field" type="number" min={minimum} max={10000} required value={form.scoring[key]}
-                onChange={(event) => setForm((previous) => ({
-                  ...previous, scoring: { ...previous.scoring, [key]: Number(event.target.value) },
-                }))} />
-            </label>
-          ))}
-        </div>
-      </fieldset>}
-      {lesson.hasScoreThresholds && <fieldset>
-        <legend className="field-label">{text("Ngưỡng điểm sao (tăng dần)")}</legend>
-        <p className="mb-3 text-sm text-portal-muted">
-          {text("Game dùng điểm trên màn kết quả để xét sao. Điểm dưới ngưỡng đầu tiên được 0 sao.",
-            "The game awards stars from the score shown on the results screen. Scores below the first threshold earn zero stars.")}
-        </p>
+      {(lesson.hasDifficultyTimeLimits ?? lesson.hasDifficultyPresets) && <fieldset>
+        <legend className="field-label">{text("Giới hạn theo độ khó (giây)", "Time limits by difficulty (seconds)")}</legend>
         <div className="grid gap-3 sm:grid-cols-3">
-          {form.config.starThresholds.map((value, i) => (
-            <label key={i}>
-              <span className="field-label">{text(`${i + 1} sao`, i === 0 ? "1 star" : `${i + 1} stars`)}</span>
-              <input
-                className="field"
-                type="number"
-                min={1}
-                max={form.scoring ? 1280000 : undefined}
-                required
-                value={value}
-                onChange={(e) =>
-                  config(
-                    "starThresholds",
-                    form.config.starThresholds.map((v, n) =>
-                      n === i ? Number(e.target.value) : v,
-                    ),
-                  )
-                }
-              />
-            </label>
-          ))}
+          {["Easy", "Medium", "Hard"].map((difficulty) => {
+            const key = difficulty.toLowerCase();
+            const limits = form.config.timeLimitsByDifficulty ?? {};
+            return <label key={key}>
+              <span className="field-label">{text(difficultyLabels[difficulty], difficulty)}</span>
+              <input className="field" type="number" min={10} max={86400}
+                value={limits[key] ?? ""} placeholder={String(form.config.timeLimit)}
+                onChange={(event) => {
+                  const next = { ...limits };
+                  if (event.target.value === "") delete next[key];
+                  else next[key] = Number(event.target.value);
+                  config("timeLimitsByDifficulty", next);
+                }} />
+            </label>;
+          })}
         </div>
+        <p className="mt-1 text-sm text-portal-muted">{text("Ô trống dùng giới hạn chung của bài.", "Empty fields use the lesson's default limit.")}</p>
       </fieldset>}
+      <section aria-labelledby="lesson-star-rules">
+        <h3 id="lesson-star-rules" className="field-label">{text("Cách tính sao chung", "Shared star rules")}</h3>
+        <p className="text-sm">{text(
+          "Thời gian tính sao bằng thời gian chơi cộng tiền phạt. Hoàn thành trong 20% đầu được 3 sao, trong 50% đầu được 2 sao, trước khi hết giờ được 1 sao. Hết giờ hoặc chưa hoàn thành được 0 sao.",
+          "Stars use active play time plus penalties. Finish within 20% for 3 stars, within 50% for 2 stars, or before time runs out for 1 star. A timeout or unfinished attempt earns 0 stars.",
+        )}</p>
+        <p className="mt-1 text-sm">{text(
+          "Năm lỗi đầu lần lượt trừ 5%, 10%, 20%, 40% và 80% giới hạn ban đầu.",
+          "The first five mistakes deduct 5%, 10%, 20%, 40%, and 80% of the original limit, respectively.",
+        )}</p>
+      </section>
       {lesson.hasHints && <label className="admin-check-option flex items-center gap-3">
         <input
           type="checkbox"

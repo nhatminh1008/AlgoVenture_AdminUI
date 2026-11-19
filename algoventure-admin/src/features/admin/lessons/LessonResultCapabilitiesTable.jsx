@@ -6,8 +6,6 @@ import { lessonResultCapabilities } from "./lessonResultCapabilities.js";
 export default function LessonResultCapabilitiesTable({ lessons }) {
   const text = useText();
   const page = usePagination(lessons, "lesson-result-capabilities");
-  const stars = { score: text("Theo điểm", "By score"), errors: text("Theo số lỗi", "By mistakes"),
-    time: text("Theo thời gian", "By time") };
   return (
     <section className="panel mt-6 p-6">
       <h2 className="text-xl font-bold">{text("Kết quả theo bài học", "Results by lesson")}</h2>
@@ -26,7 +24,7 @@ export default function LessonResultCapabilitiesTable({ lessons }) {
                 <tr key={lesson.id} className="border-t">
                   <th scope="row" className="p-2">{text(lesson.name)}</th>
                   <td className="p-2">{result.score ? text("Có", "Yes") : "—"}</td>
-                  <td className="p-2">{stars[result.stars]}</td>
+                  <td className="p-2">{text("Thời gian chơi + phạt", "Play time + penalties")}</td>
                   <td className="p-2">{result.official
                     ? result.score ? text("Điểm, sao và tiến độ", "Score, stars and progress") : text("Sao và tiến độ", "Stars and progress")
                     : text("Tiến độ", "Progress")}</td>
