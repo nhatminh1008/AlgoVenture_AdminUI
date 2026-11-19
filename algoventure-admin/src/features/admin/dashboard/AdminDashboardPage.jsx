@@ -1,6 +1,6 @@
 import { useLocale, useText } from "../../../preferences/preferencesContext";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, BookOpen, ClipboardList, GraduationCap, Library, Settings2, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { ArrowUpRight, BookOpen, ClipboardList, GraduationCap, Library, ShieldCheck, UserPlus, Users } from "lucide-react";
 import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import { AdminPageHeader } from "../AdminPageHeader";
@@ -33,7 +33,7 @@ export default function AdminDashboardPage() {
             {[
               { to: "/admin/users", icon: <ShieldCheck />, title: text("Quản lý tài khoản"), note: text("Xem hồ sơ và khóa tài khoản"), tone: "mint" },
               { to: "/admin/classes", icon: <GraduationCap />, title: text("Quản lý lớp học"), note: text("Xem lớp và thành viên, khóa hoặc mở khóa lớp"), tone: "peach" },
-              { to: "/admin/levels", icon: <Settings2 />, title: text("Cấu hình bài học"), note: text("Thiết lập độ khó và mục tiêu học tập"), tone: "lilac" },
+              { to: "/admin/content", icon: <BookOpen />, title: text("Thư viện bài học"), note: text("Tìm và cấu hình từng bài học", "Find and configure individual lessons"), tone: "lilac" },
             ].map((item) => <Link className="quick-action" to={item.to} key={item.to}><span className={`tone-${item.tone}`}>{item.icon}</span><div><strong>{item.title}</strong><small>{item.note}</small></div><ArrowUpRight /></Link>)}
           </div></section>
         </div>

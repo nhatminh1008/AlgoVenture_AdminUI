@@ -2,10 +2,34 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { lessonResultCapabilities } from "../src/features/admin/lessons/lessonResultCapabilities.js";
 
-test("lesson capabilities use shared timing for stars and preserve score availability", () => {
-  assert.deepEqual(lessonResultCapabilities({ id: "insertion", scoring: { version: 1 } }), { score: true, stars: "time", official: true });
-  assert.deepEqual(lessonResultCapabilities({ id: "quick", hasScoreThresholds: true }), { score: true, stars: "time", official: false });
-  assert.deepEqual(lessonResultCapabilities({ id: "queue-dequeue" }), { score: true, stars: "time", official: false });
-  assert.deepEqual(lessonResultCapabilities({ id: "bubble" }), { score: false, stars: "time", official: false });
-  assert.deepEqual(lessonResultCapabilities({ id: "matrix-bfs", hasOfficialResult: true }), { score: false, stars: "time", official: true });
+test("current points formulas are independent of legacy thresholds and scoring versions", () => {
+  const insertion = lessonResultCapabilities({
+    id: "insertion", scoring: { version: 1, pointsPerStep: 80 }, hasOfficialResult: true,
+  });
+  assert.match(insertion.pointRule[1], /100 × valid steps − 25 × verified errors/);
+  assert.equal(insertion.official, true);
+  assert.match(lessonResultCapabilities({ id: "quick" }).pointRule[1], /valid pivot selections/);
+  assert.match(lessonResultCapabilities({ id: "queue-dequeue" }).pointRule[1], /valid steps/);
+  assert.match(lessonResultCapabilities({ id: "bst-search" }).pointRule[1], /errors in the final stage/);
+  assert.match(lessonResultCapabilities({ id: "tree-bfs" }).pointRule[1], /nodes in the final stage/);
+});
+
+test("official stars can be returned even for lessons with no points formula", () => {
+  for (const id of ["bubble", "matrix", "matrix-transpose", "matrix-spiral", "matrix-bfs", "matrix-dfs",
+    "linked-list", "linked-traversal", "linked-search", "linked-insertion", "linked-deletion", "linked-reversal", "graph-basics"]) {
+    const result = lessonResultCapabilities({ id, hasOfficialResult: true, hasScoreThresholds: true });
+    assert.equal(result.pointRule, null, id);
+    assert.equal(result.official, true, id);
+    assert.equal(result.requiresAllMatrixStages, id.startsWith("matrix"), id);
+  }
+  assert.equal(lessonResultCapabilities({ id: "insertion", scoring: { version: 1 } }).official, false);
+});
+
+test("server elapsed-time fallback is limited to Selection, Linear and Tree DFS/BFS", () => {
+  for (const id of ["selection", "linear", "tree-dfs", "tree-bfs"]) {
+    assert.equal(lessonResultCapabilities({ id }).usesServerTimingFallback, true, id);
+  }
+  for (const id of ["insertion", "matrix-transpose", "bubble", "binary", "bst-search", "dfs", "bfs"]) {
+    assert.equal(lessonResultCapabilities({ id }).usesServerTimingFallback, false, id);
+  }
 });

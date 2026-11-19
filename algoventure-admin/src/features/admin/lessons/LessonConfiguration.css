@@ -1,0 +1,161 @@
+.lesson-config {
+  container-type: inline-size;
+  max-width: 1160px;
+  margin-inline: auto;
+}
+
+.lesson-config-heading { margin-bottom: 22px; }
+
+.lesson-config-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-bottom: 8px;
+  color: var(--portal-muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.lesson-config-back:hover { color: var(--portal-purple-strong); }
+
+.lesson-config-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(12px, 2.5cqi, 23px);
+  padding: clamp(15px, 3.5cqi, 34px);
+  background: linear-gradient(115deg, var(--portal-surface) 42%, var(--portal-info-bg));
+}
+
+.lesson-config-title { flex: 1 1 160px; min-width: 0; }
+.lesson-config-title p { margin-bottom: 4px; color: var(--portal-muted); font-size: 13px; font-weight: 600; }
+
+.lesson-config-title h1 {
+  font-size: clamp(25px, 4.5cqi, 38px);
+  line-height: 1.15;
+  letter-spacing: -.035em;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.lesson-config-icon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--portal-info-bg);
+  color: var(--portal-info-ink);
+}
+
+.lesson-config-hero-icon { width: 56px; height: 56px; border-radius: 16px; }
+.lesson-scoring-icon { background: var(--portal-warning-bg); color: var(--portal-warning-ink); }
+
+.lesson-config-grid, .lesson-config-settings { display: grid; align-content: start; gap: 16px; min-width: 0; }
+.lesson-config-card { min-width: 0; padding: clamp(17px, 2.2cqi, 26px); }
+
+.lesson-config-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 19px;
+}
+
+.lesson-config-card-head h2 { font-size: 17px; font-weight: 750; letter-spacing: -.012em; }
+.lesson-config-card-head p { margin-top: 3px; color: var(--portal-muted); font-size: 13px; line-height: 1.55; }
+
+.lesson-config-fields, .lesson-config-override-grid { display: grid; gap: 15px; }
+.lesson-config-fields > *, .lesson-config-override-grid > * { min-width: 0; }
+.lesson-config .field-label { margin-bottom: 6px; }
+.lesson-config-help { display: block; margin-top: 6px; color: var(--portal-muted); font-size: 12px; line-height: 1.5; }
+
+.lesson-config-default-limit { display: block; max-width: 250px; }
+.lesson-config .field[type="number"] { font-variant-numeric: tabular-nums; }
+
+.lesson-config-overrides {
+  min-width: 0;
+  margin-top: 18px;
+  padding: 0 12px 12px;
+  border: 1px solid var(--portal-line);
+  border-radius: 11px;
+  background: var(--portal-subtle);
+}
+
+.lesson-config-overrides legend { padding-inline: 4px; }
+.lesson-config-override-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.lesson-config-override-grid .field { padding-inline: 8px; }
+.lesson-config-override-grid .field-label { font-size: 12px; color: var(--portal-muted); }
+
+.lesson-config-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  color: var(--portal-ink);
+  font-size: 13px;
+}
+
+.lesson-config-check input { accent-color: var(--portal-purple); }
+.lesson-config-fixed { padding: 11px 13px; border-radius: 9px; background: var(--portal-subtle); color: var(--portal-muted); font-size: 14px; }
+
+.lesson-config-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.lesson-config-actions > button { gap: 8px; }
+
+.lesson-score-thresholds {
+  padding: 13px;
+  border-radius: 13px;
+  border: 1px solid var(--portal-line);
+  background: var(--portal-subtle);
+}
+
+.lesson-score-thresholds h3 { margin-bottom: 10px; font-size: 13px; font-weight: 700; }
+.lesson-score-thresholds > p { margin-top: 9px; color: var(--portal-muted); font-size: 12px; }
+.lesson-score-tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+
+.lesson-score-tier {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px 6px;
+  border-radius: 8px;
+  background: var(--portal-surface);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.lesson-score-tier:first-child { background: var(--portal-warning-bg); }
+
+.lesson-score-tier-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--portal-warning-ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.lesson-score-tier:first-child svg { fill: currentColor; }
+.lesson-score-tier strong { font-size: clamp(12px, 2.4cqi, 16px); font-weight: 750; letter-spacing: -.035em; overflow-wrap: anywhere; }
+.lesson-score-share { color: var(--portal-muted); font-size: 11px; }
+
+.lesson-score-details { margin-top: 17px; }
+.lesson-score-details > div + div { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--portal-line); }
+.lesson-score-details dt { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; }
+.lesson-score-details dt svg { flex: 0 0 auto; color: var(--portal-info-ink); }
+.lesson-score-details dd { margin: 4px 0 0 24px; color: var(--portal-muted); font-size: 13px; line-height: 1.58; }
+
+@container (min-width: 460px) {
+  .lesson-config-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@container (min-width: 780px) {
+  .lesson-config-grid { grid-template-columns: minmax(0, 1.28fr) minmax(0, 1fr); align-items: start; }
+}
+
+@container (max-width: 460px) {
+  .lesson-config-actions > button { flex: 1 1 auto; }
+}

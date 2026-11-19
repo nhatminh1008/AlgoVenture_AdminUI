@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Users,
   BookOpen,
-  Sliders,
   BarChart2,
   ToggleLeft,
   Settings,
@@ -33,11 +32,6 @@ const AdminLayout = () => {
       path: "/admin/content",
       name: text("Thư viện bài học"), group: text("Nội dung học tập"),
       icon: <BookOpen size={20} />,
-    },
-    {
-      path: "/admin/levels",
-      name: text("Cấu hình bài học"), group: text("Nội dung học tập"),
-      icon: <Sliders size={20} />,
     },
     {
       path: "/admin/achievements",

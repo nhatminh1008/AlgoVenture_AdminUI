@@ -4,7 +4,7 @@ import AdminLayout from "../layouts/AdminLayout";
 import AdminDashboardPage from "../features/admin/dashboard/AdminDashboardPage";
 import UserManagementPage from "../features/admin/users/UserManagementPage";
 import LessonLibraryPage from "../features/admin/lessons/LessonLibraryPage";
-import LessonConfigurationPage from "../features/admin/lessons/LessonConfigurationPage";
+import LessonConfigurationPage, { LegacyLessonConfiguration } from "../features/admin/lessons/LessonConfigurationPage";
 import SystemAnalyticsPage from "../features/admin/analytics/SystemAnalyticsPage";
 import FeatureFlagsPage from "../features/admin/feature-flags/FeatureFlagsPage";
 import PlatformSettingsPage from "../features/admin/settings/PlatformSettingsPage";
@@ -18,7 +18,8 @@ export const adminRoutes = (
       <Route path="users" element={<UserManagementPage />} />
       <Route path="classes" element={<AdminClassroomsPage />} />
       <Route path="content" element={<LessonLibraryPage />} />
-      <Route path="levels" element={<LessonConfigurationPage />} />
+      <Route path="content/:lessonId/configuration" element={<LessonConfigurationPage />} />
+      <Route path="levels" element={<LegacyLessonConfiguration />} />
       <Route path="achievements" element={<AchievementRulesPage />} />
       <Route path="analytics" element={<SystemAnalyticsPage />} />
       <Route path="features" element={<FeatureFlagsPage />} />

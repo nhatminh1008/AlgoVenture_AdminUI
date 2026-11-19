@@ -4,7 +4,9 @@ import { difficultyLabels } from "../recordLabels.js";
 import { sortingLessons } from "../../../shared/curriculum/sortOrder.js";
 import { collectionOperations } from "../../../shared/curriculum/collectionLessons.js";
 import { useState } from "react";
+import { Clock3, RotateCcw, Save, SlidersHorizontal } from "lucide-react";
 import { updateLesson } from "./lessonService";
+import LessonScoringRules from "./LessonScoringRules";
 
 export default function LessonConfigurationForm({ lesson, onSaved }) {
   const text = useText();
@@ -12,6 +14,8 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
   const [form, setForm] = useState(() => structuredClone(lesson));
   const [isSaving, setIsSaving] = useState(false);
   const required = lesson.requiredPrerequisites ?? [];
+  const hasTimeOverrides = lesson.hasDifficultyTimeLimits ?? lesson.hasDifficultyPresets;
+  const usesStages = hasTimeOverrides && !lesson.hasDifficultyPresets;
   function config(key, value) {
     setForm((previous) => ({
       ...previous,
@@ -41,141 +45,128 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
     }
   }
   return (
-    <form onSubmit={save} className="admin-form panel space-y-6 p-6">
-      <h2 className="text-xl font-bold">{text(lesson.name)}</h2>
-      <p className="text-sm">{text("Unity áp dụng cấu hình khi mở bài. Bài chưa công bố sẽ bị khóa và giữ tiến độ đã ghi nhận.",
-        "Unity applies these settings when opening the lesson. Unpublished lessons are locked and recorded progress is kept.")}</p>
-      <fieldset disabled={isSaving} className="space-y-6">
-        <div className="grid gap-5 sm:grid-cols-2">
-        <label>
-          <span className="field-label">{text("Tên hiển thị")}</span>
-          <input
-            className="field"
-            required
-            maxLength={100}
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-          />
-        </label>
-        {(lesson.hasSortOrder ?? sortingLessons.has(lesson.id)) && <label>
-          <span className="field-label">{text("Chiều sắp xếp", "Sort order")}</span>
-          <select className="field" value={form.config.sortOrder ?? "random"} onChange={e => config("sortOrder", e.target.value)}>
-            <option value="random">{text("Ngẫu nhiên 50/50", "Random 50/50")}</option>
-            <option value="ascending">{text("Tăng dần (nhỏ đến lớn)", "Ascending (small to large)")}</option>
-            <option value="descending">{text("Giảm dần (lớn đến nhỏ)", "Descending (large to small)")}</option>
-          </select>
-          <span className="mt-1 block text-sm text-portal-muted">{text("Ngẫu nhiên chọn chiều một lần khi bắt đầu mỗi lượt chơi.", "Random chooses the order once at the start of each attempt.")}</span>
-        </label>}
-        {collectionOperations.has(lesson.id) && <div>
-          <span className="field-label">{text("Độ khó")}</span>
-          <p className="text-sm">{text("Dễ")}</p>
-          <p className="mt-1 text-sm text-portal-muted">
-            {text("Bài thao tác riêng có một mức.", "Single-operation lessons have one difficulty.")}
-          </p>
-        </div>}
-        {lesson.hasDifficultyPresets && !collectionOperations.has(lesson.id) && <label>
-          <span id="lesson-difficulty-label" className="field-label">{text("Độ khó bắt đầu tối thiểu", "Minimum starting difficulty")}</span>
-          <select
-            className="field"
-            value={form.difficulty}
-            aria-labelledby="lesson-difficulty-label"
-            aria-describedby="lesson-difficulty-note"
-            onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
-          >
-            {["Easy", "Medium", "Hard"].map((v) => (
-              <option key={v} value={v}>{text(difficultyLabels[v], v)}</option>
-            ))}
-          </select>
-          <span id="lesson-difficulty-note" className="mt-1 block text-sm text-portal-muted">
-            {text("Người chơi có thể tiếp tục ở mức cao hơn theo tiến độ.", "Players can continue at a higher difficulty based on their progress.")}
-          </span>
-        </label>}
-        <label>
-          <span className="field-label">{text("Trạng thái")}</span>
-          <select
-            className="field"
-            value={form.status}
-            onChange={(e) => setForm({ ...form, status: e.target.value })}
-          >
-            {["Unpublished", "Publish"].map((v) => (
-              <option key={v} value={v}>{v === "Publish" ? text("Đã công bố", "Published") : text("Chưa công bố", "Unpublished")}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span id="lesson-time-label" className="field-label">{text("Giới hạn thời gian chung (giây)")}</span>
-          <input
-            className="field"
-            type="number"
-            min={10}
-            max={86400}
-            required
-            aria-labelledby="lesson-time-label"
-            aria-describedby="lesson-time-note"
-            value={form.config.timeLimit}
-            onChange={(e) => config("timeLimit", Number(e.target.value))}
-          />
-          <span id="lesson-time-note" className="mt-1 block text-sm text-portal-muted">
-            {text("Áp dụng cho thử thách. Giới hạn riêng của bài giao được ưu tiên khi có.", "Applies to challenges. An assignment-specific limit takes precedence when configured.")}
-          </span>
-        </label>
-      </div>
-      {(lesson.hasDifficultyTimeLimits ?? lesson.hasDifficultyPresets) && <fieldset>
-        <legend className="field-label">{text("Giới hạn theo độ khó (giây)", "Time limits by difficulty (seconds)")}</legend>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {["Easy", "Medium", "Hard"].map((difficulty) => {
-            const key = difficulty.toLowerCase();
-            const limits = form.config.timeLimitsByDifficulty ?? {};
-            return <label key={key}>
-              <span className="field-label">{text(difficultyLabels[difficulty], difficulty)}</span>
-              <input className="field" type="number" min={10} max={86400}
-                value={limits[key] ?? ""} placeholder={String(form.config.timeLimit)}
-                onChange={(event) => {
-                  const next = { ...limits };
-                  if (event.target.value === "") delete next[key];
-                  else next[key] = Number(event.target.value);
-                  config("timeLimitsByDifficulty", next);
-                }} />
-            </label>;
-          })}
+    <form onSubmit={save} className="lesson-config-grid">
+      <fieldset disabled={isSaving} className="lesson-config-settings">
+        <section className="panel lesson-config-card" aria-labelledby="lesson-general-title">
+          <div className="lesson-config-card-head">
+            <span className="lesson-config-icon" aria-hidden="true"><SlidersHorizontal size={19} /></span>
+            <div>
+              <h2 id="lesson-general-title">{text("Thông tin bài học", "Lesson settings")}</h2>
+              <p>{text("Unity áp dụng cấu hình khi mở bài.", "Unity applies these settings when opening the lesson.")}</p>
+            </div>
+          </div>
+          <div className="lesson-config-fields">
+            <label>
+              <span className="field-label">{text("Tên hiển thị")}</span>
+              <input className="field" required maxLength={100} value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            </label>
+            <label>
+              <span className="field-label">{text("Trạng thái")}</span>
+              <select className="field" value={form.status} aria-describedby="lesson-status-note"
+                onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                <option value="Publish">{text("Đã công bố", "Published")}</option>
+                <option value="Unpublished">{text("Chưa công bố", "Unpublished")}</option>
+              </select>
+              <span id="lesson-status-note" className="lesson-config-help">{text(
+                "Bài chưa công bố bị khóa. Tiến độ đã ghi nhận được giữ lại.",
+                "Unpublished lessons are locked. Recorded progress is kept.",
+              )}</span>
+            </label>
+            {(lesson.hasSortOrder ?? sortingLessons.has(lesson.id)) && <label>
+              <span className="field-label">{text("Chiều sắp xếp", "Sort order")}</span>
+              <select className="field" value={form.config.sortOrder ?? "random"} onChange={(e) => config("sortOrder", e.target.value)}
+                aria-describedby={form.config.sortOrder === "random" || !form.config.sortOrder ? "lesson-sort-note" : undefined}>
+                <option value="random">{text("Ngẫu nhiên 50/50", "Random 50/50")}</option>
+                <option value="ascending">{text("Tăng dần (nhỏ đến lớn)", "Ascending (small to large)")}</option>
+                <option value="descending">{text("Giảm dần (lớn đến nhỏ)", "Descending (large to small)")}</option>
+              </select>
+              {(form.config.sortOrder === "random" || !form.config.sortOrder) && <span id="lesson-sort-note" className="lesson-config-help">{text(
+                "Chiều được chọn một lần khi bắt đầu lượt.",
+                "The order is chosen once at the start of the attempt.",
+              )}</span>}
+            </label>}
+            {collectionOperations.has(lesson.id) && <div>
+              <span className="field-label">{text("Độ khó")}</span>
+              <p className="lesson-config-fixed">{text("Một mức · Dễ", "Single level · Easy")}</p>
+            </div>}
+            {lesson.hasDifficultyPresets && !collectionOperations.has(lesson.id) && <label>
+              <span className="field-label">{text("Độ khó bắt đầu tối thiểu", "Minimum starting difficulty")}</span>
+              <select className="field" value={form.difficulty} aria-describedby="lesson-difficulty-note"
+                onChange={(e) => setForm({ ...form, difficulty: e.target.value })}>
+                {["Easy", "Medium", "Hard"].map((v) => (
+                  <option key={v} value={v}>{text(difficultyLabels[v], v)}</option>
+                ))}
+              </select>
+              <span id="lesson-difficulty-note" className="lesson-config-help">{text(
+                "Có thể chơi mức cao hơn theo tiến độ.",
+                "Higher levels are available as players progress.",
+              )}</span>
+            </label>}
+          </div>
+          {lesson.hasHints && <label className="lesson-config-check admin-check-option">
+            <input type="checkbox" checked={form.config.hintsAllowed}
+              onChange={(e) => config("hintsAllowed", e.target.checked)} />
+            {text("Hiện gợi ý bước tiếp theo khi làm sai hoặc hết giờ", "Show a next-step hint after a mistake or timeout")}
+          </label>}
+        </section>
+
+        <section className="panel lesson-config-card" aria-labelledby="lesson-timing-title">
+          <div className="lesson-config-card-head">
+            <span className="lesson-config-icon" aria-hidden="true"><Clock3 size={19} /></span>
+            <div>
+              <h2 id="lesson-timing-title">{text("Thời gian thử thách", "Challenge timing")}</h2>
+              <p>{hasTimeOverrides ? text(
+                "Ưu tiên bài giao, sau đó đến độ khó hoặc chặng, rồi đến giới hạn chung.",
+                "The assignment takes priority, followed by the difficulty or stage, then the default.",
+              ) : text(
+                "Giới hạn riêng của bài giao được ưu tiên khi có.",
+                "An assignment-specific limit takes precedence when configured.",
+              )}</p>
+            </div>
+          </div>
+          <label className="lesson-config-default-limit">
+            <span className="field-label">{text("Giới hạn thời gian chung (giây)")}</span>
+            <input className="field" type="number" min={10} max={86400} required value={form.config.timeLimit}
+              onChange={(e) => config("timeLimit", Number(e.target.value))} />
+          </label>
+          {hasTimeOverrides && <fieldset className="lesson-config-overrides" aria-describedby="lesson-overrides-note">
+            <legend className="field-label">{usesStages ? text("Giới hạn theo chặng (giây)", "Time limits by stage (seconds)")
+              : text("Giới hạn theo độ khó (giây)", "Time limits by difficulty (seconds)")}</legend>
+            <div className="lesson-config-override-grid">
+              {["Easy", "Medium", "Hard"].map((difficulty, index) => {
+                const key = difficulty.toLowerCase();
+                const limits = form.config.timeLimitsByDifficulty ?? {};
+                return <label key={key}>
+                  <span className="field-label">{usesStages ? text(`Chặng ${index + 1}`, `Stage ${index + 1}`)
+                    : text(difficultyLabels[difficulty], difficulty)}</span>
+                  <input className="field" type="number" min={10} max={86400}
+                    value={limits[key] ?? ""} placeholder={String(form.config.timeLimit)}
+                    onChange={(event) => {
+                      const next = { ...limits };
+                      if (event.target.value === "") delete next[key];
+                      else next[key] = Number(event.target.value);
+                      config("timeLimitsByDifficulty", next);
+                    }} />
+                </label>;
+              })}
+            </div>
+            <p id="lesson-overrides-note" className="lesson-config-help">{text(
+              "Ô trống dùng giới hạn chung của bài.", "Empty fields use the lesson's default limit.",
+            )}</p>
+          </fieldset>}
+        </section>
+
+        <div className="lesson-config-actions">
+          <button type="button" className="btn-secondary" onClick={() => setForm(structuredClone(lesson))}>
+            <RotateCcw size={16} aria-hidden="true" />{text("Hoàn tác")}
+          </button>
+          <button type="submit" className="btn-primary">
+            <Save size={16} aria-hidden="true" />{isSaving ? text("Đang lưu…") : text("Lưu cấu hình")}
+          </button>
         </div>
-        <p className="mt-1 text-sm text-portal-muted">{text("Ô trống dùng giới hạn chung của bài.", "Empty fields use the lesson's default limit.")}</p>
-      </fieldset>}
-      <section aria-labelledby="lesson-star-rules">
-        <h3 id="lesson-star-rules" className="field-label">{text("Cách tính sao chung", "Shared star rules")}</h3>
-        <p className="text-sm">{text(
-          "Thời gian tính sao bằng thời gian chơi cộng tiền phạt. Hoàn thành trong 20% đầu được 3 sao, trong 50% đầu được 2 sao, trước khi hết giờ được 1 sao. Hết giờ hoặc chưa hoàn thành được 0 sao.",
-          "Stars use active play time plus penalties. Finish within 20% for 3 stars, within 50% for 2 stars, or before time runs out for 1 star. A timeout or unfinished attempt earns 0 stars.",
-        )}</p>
-        <p className="mt-1 text-sm">{text(
-          "Năm lỗi đầu lần lượt trừ 5%, 10%, 20%, 40% và 80% giới hạn ban đầu.",
-          "The first five mistakes deduct 5%, 10%, 20%, 40%, and 80% of the original limit, respectively.",
-        )}</p>
-      </section>
-      {lesson.hasHints && <label className="admin-check-option flex items-center gap-3">
-        <input
-          type="checkbox"
-          checked={form.config.hintsAllowed}
-          onChange={(e) => config("hintsAllowed", e.target.checked)}
-        />
-        {text("Hiện gợi ý bước tiếp theo khi làm sai hoặc hết giờ", "Show a next-step hint after a mistake or timeout")}
-      </label>}
       </fieldset>
-      <div className="admin-form-actions flex gap-3">
-        <button className="btn-primary" disabled={isSaving}>
-          {isSaving ? text("Đang lưu…") : text("Lưu cấu hình")}
-        </button>
-        <button
-          type="button"
-          className="btn-secondary"
-          disabled={isSaving}
-          onClick={() => {
-            setForm(structuredClone(lesson));
-          }}
-        >
-          {text("Hoàn tác")}
-        </button>
-      </div>
+      <LessonScoringRules lesson={lesson} timeLimit={form.config.timeLimit} />
     </form>
   );
 }
