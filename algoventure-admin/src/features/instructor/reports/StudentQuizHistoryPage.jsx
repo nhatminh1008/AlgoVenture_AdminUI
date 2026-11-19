@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
 import RecordTable from "../../../shared/components/RecordTable";
-import { useApiData } from "../../../shared/hooks/useApiData";
+import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import { useClassrooms } from "../workspace/useClassrooms";
 import InstructorLink from "../workspace/InstructorLink";
 import { progressResultsPath } from "../workspace/useInstructorNavigation";
@@ -29,7 +29,7 @@ function StudentQuizHistory({ classId, enrollmentId, quizId }) {
   const controls = useInstructorParams("attemptPage");
   const { page } = controls;
   const attemptId = controls.params.get("attemptId");
-  const request = useApiData(useCallback(() => getStudentQuiz(path, page), [path, page]), null);
+  const request = useApiDataWithErrorToast(useCallback(() => getStudentQuiz(path, page), [path, page]), null);
   const data = request.data;
   const columns = [
     { key: "submittedAt", title: text("Thời điểm nộp (UTC+7)"), layout: "primary", render: (attempt) => reportTime(attempt.submittedAt) },
@@ -77,7 +77,7 @@ function QuizAttemptReview({ path, attemptId }) {
   const text = useText();
   const controls = useInstructorParams("attemptPage");
   const needsReview = controls.params.get("answers") === "review";
-  const request = useApiData(useCallback(() => getQuizAttempt(path, attemptId), [path, attemptId]), null);
+  const request = useApiDataWithErrorToast(useCallback(() => getQuizAttempt(path, attemptId), [path, attemptId]), null);
   return <section className="mt-5">
     <ReportLoad request={request}>{(data) => {
       const rows = data.answers.map((answer, index) => ({ ...answer, number: index + 1 }))

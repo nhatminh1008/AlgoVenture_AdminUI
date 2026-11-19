@@ -1,8 +1,9 @@
+import { useActionToast } from "../../../shared/components/useActionToast";
 import Pagination from "../../../shared/components/Pagination";
 import RecordTable from "../../../shared/components/RecordTable";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { useText } from "../../../preferences/preferencesContext";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import InstructorLink from "../workspace/InstructorLink";
 import { progressResultsPath } from "../workspace/useInstructorNavigation";
 import { useInstructorParams } from "../workspace/useInstructorParams";
@@ -12,8 +13,8 @@ import { canEditQuiz, getQuizStatusLabel } from "./quizStatus";
 
 export default function ClassQuizzes({ classId }) {
   const text = useText();
+  const toast = useActionToast();
   const { classes, quizzes, removeQuiz } = useClassrooms();
-  const [error, setError] = useState("");
   const pendingRemovals = useRef(new Set());
   const rows = classId ? quizzes.filter((quiz) => quiz.classId === classId) : quizzes;
   const classroom = classes.find((item) => item.id === classId);
@@ -25,9 +26,9 @@ export default function ClassQuizzes({ classId }) {
     pendingRemovals.current.add(quiz.id);
     try {
       await removeQuiz(quiz.id);
-      setError("");
+      toast(text("Đã xóa bản nháp bộ câu hỏi.", "Quiz draft deleted."));
     } catch (failure) {
-      setError(failure.message);
+      toast(failure.message, true);
     } finally {
       pendingRemovals.current.delete(quiz.id);
     }
@@ -92,14 +93,6 @@ export default function ClassQuizzes({ classId }) {
           </InstructorLink>
         )}
       </div>
-      {error && (
-        <p
-          role="alert"
-          className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700"
-        >
-          {text(error)}
-        </p>
-      )}
       {rows.length ? (
         <div className="panel overflow-hidden">
           <RecordTable label={text("Bộ câu hỏi trắc nghiệm")} columns={columns} rows={pagination.items} />

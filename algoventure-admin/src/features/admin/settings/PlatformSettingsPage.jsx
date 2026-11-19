@@ -1,35 +1,33 @@
+import { useActionToast } from "../../../shared/components/useActionToast";
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { saveBlob } from "../../../api/apiClient";
 import { getPlatformSettings, getPortalExport, updatePlatformSettings } from "./platformSettingsService";
-import { useApiData } from "../../../shared/hooks/useApiData";
+import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import Appearance from "../../../preferences/Appearance";
 import { AdminPageHeader } from "../AdminPageHeader";
 export default function PlatformSettingsPage() {
   const text = useText();
-  const state = useApiData(getPlatformSettings, null);
+  const toast = useActionToast();
+  const state = useApiDataWithErrorToast(getPlatformSettings, null);
   const [draft, setDraft] = useState(null);
-  const [actionError, setActionError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const form = state.data && { ...state.data, ...draft };
 
   function updateField(name, value) {
     setDraft((previous) => ({ ...previous, [name]: value }));
   }
-  const [message, setMessage] = useState("");
   async function save(e) {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
-    setMessage("");
-    setActionError("");
     try {
       state.setData(await updatePlatformSettings(form));
       setDraft((current) => (current === draft ? null : current));
-      setMessage(text("Đã lưu cài đặt."));
+      toast(text("Đã lưu cài đặt."));
     } catch (failure) {
-      setActionError(failure.message);
+      toast(failure.message, true);
     } finally {
       setIsSubmitting(false);
     }
@@ -37,7 +35,6 @@ export default function PlatformSettingsPage() {
   async function download() {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    setActionError("");
     try {
       const data = await getPortalExport();
       saveBlob(
@@ -45,7 +42,7 @@ export default function PlatformSettingsPage() {
         "portal-export.json",
       );
     } catch (failure) {
-      setActionError(failure.message);
+      toast(failure.message, true);
     } finally {
       setIsSubmitting(false);
     }
@@ -54,7 +51,7 @@ export default function PlatformSettingsPage() {
     <div className="mx-auto max-w-3xl">
       <AdminPageHeader title="Settings" />
       <div className="mb-6"><Appearance /></div>
-      <ApiFeedback state={state} message={message} actionError={actionError} />
+      <ApiFeedback state={state} />
       {form && (
         <form onSubmit={save} className="admin-form panel space-y-6 p-6">
           <label className="block">

@@ -1,3 +1,4 @@
+import { useActionToast } from "../../../shared/components/useActionToast";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Send } from "lucide-react";
@@ -5,7 +6,7 @@ import { useAuth } from "../../../auth/useAuth";
 import { useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
 import RecordTable from "../../../shared/components/RecordTable";
-import { useApiData } from "../../../shared/hooks/useApiData";
+import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { PageHeader } from "../workspace/PageHeader";
 import InstructorBackLink from "../workspace/InstructorBackLink";
@@ -23,6 +24,7 @@ export default function AssignChallengePage() {
 
 function ChallengeDelivery({ classroomId }) {
   const text = useText();
+  const toast = useActionToast();
   const { user } = useAuth();
   const { classes, students, assignmentTemplates, lessonName, deliverAssignment } = useClassrooms();
   const classroom = classes.find((item) => item.id === classroomId);
@@ -35,11 +37,9 @@ function ChallengeDelivery({ classroomId }) {
   const [recipientUserIds, setRecipientUserIds] = useState(null);
   const [due, setDue] = useState("");
   const query = controls.params.get("q") ?? "";
-  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitting = useRef(false);
   const stepStart = useRef(null);
-  const errorNotice = useRef(null);
   const selected = assignmentTemplates.find((item) => item.id === assignmentTemplateId);
   const search = query.trim().toLocaleLowerCase("vi");
   const matchingTemplates = assignmentTemplates.filter((item) => item.title.toLocaleLowerCase("vi").includes(search));
@@ -49,7 +49,7 @@ function ChallengeDelivery({ classroomId }) {
     if (!showRecipients) return null;
     return { templateId: stepTemplate, userIds: await getDeliveredRecipientIds(classroomId, stepTemplate) };
   }, [classroomId, showRecipients, stepTemplate]);
-  const recipients = useApiData(loadRecipients, null);
+  const recipients = useApiDataWithErrorToast(loadRecipients, null);
   const recipientsReady = !recipients.loading && !recipients.error && recipients.data?.templateId === stepTemplate;
   const deliveredIds = new Set(recipientsReady ? recipients.data.userIds : []);
   const eligibleIds = recipientsReady ? roster.map((student) => student.userId).filter((id) => !deliveredIds.has(id)) : [];
@@ -60,12 +60,6 @@ function ChallengeDelivery({ classroomId }) {
   useEffect(() => {
     stepStart.current?.focus({ preventScroll: true });
   }, [stepTemplate]);
-
-  useEffect(() => {
-    if (error && window.matchMedia("(max-width: 600px)").matches) {
-      errorNotice.current?.scrollIntoView({ block: "center" });
-    }
-  }, [error]);
 
   const columns = [
     {
@@ -86,7 +80,6 @@ function ChallengeDelivery({ classroomId }) {
 
   function next() {
     setRecipientUserIds(null);
-    setError("");
     const params = new URLSearchParams(controls.params);
     params.set("template", assignmentTemplateId);
     open(`/instructor/classes/${classroomId}/assign?${params}`);
@@ -99,7 +92,6 @@ function ChallengeDelivery({ classroomId }) {
       else next.add(userId);
       return next;
     });
-    setError("");
   }
 
   async function deliver(event) {
@@ -108,7 +100,6 @@ function ChallengeDelivery({ classroomId }) {
     const values = { assignmentTemplateId, due, recipientUserIds: [...selectedUserIds].sort() };
     submitting.current = true;
     setIsSubmitting(true);
-    setError("");
     try {
       const intent = pendingDelivery(window.sessionStorage, user.id, classroomId, values);
       const assignment = await deliverAssignment(classroomId, { ...values, deliveryRequestId: intent.id });
@@ -117,7 +108,7 @@ function ChallengeDelivery({ classroomId }) {
         + assignment.recipientCount + " " + text("sinh viên", "students") + ".";
       finish({ message, levels: 2 });
     } catch (failure) {
-      setError(failure.message);
+      toast(failure.message, true);
       if (failure.status === 409) await recipients.refresh();
     } finally {
       submitting.current = false;
@@ -156,7 +147,6 @@ function ChallengeDelivery({ classroomId }) {
                 <label className="instructor-pick flex items-center gap-3 font-semibold">
                   <input type="checkbox" checked={allSelected} disabled={!eligibleIds.length} onChange={(event) => {
                     setRecipientUserIds(new Set(event.target.checked ? eligibleIds : []));
-                    setError("");
                   }} />
                   {text("Chọn tất cả sinh viên chưa nhận", "Select all students who have not received this set")}
                   <span className="text-sm font-normal text-portal-muted">{selectedUserIds.length}/{eligibleIds.length}</span>
@@ -189,7 +179,6 @@ function ChallengeDelivery({ classroomId }) {
               <span className="field-label">{text("Hạn hoàn thành")}</span>
               <input type="date" className="field" value={due} required onChange={(event) => setDue(event.target.value)} />
             </label>
-            {error && <p ref={errorNotice} role="alert" className="text-sm text-red-700">{text(error)}</p>}
             <div className="instructor-action-bar">
               <InstructorBackLink plain className="btn-secondary">{text("Hủy", "Cancel")}</InstructorBackLink>
               <button className="btn-primary" type="submit" disabled={!selectedUserIds.length}>

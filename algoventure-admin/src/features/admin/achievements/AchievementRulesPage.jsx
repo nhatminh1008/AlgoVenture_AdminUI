@@ -1,126 +1,98 @@
+import { Check, Pause } from "lucide-react";
+
+import { useActionToast } from "../../../shared/components/useActionToast";
 import { useState } from "react";
 import { useText } from "../../../preferences/preferencesContext";
-import { useApiData } from "../../../shared/hooks/useApiData";
-import { usePagination } from "../../../shared/hooks/usePagination";
-import Pagination from "../../../shared/components/Pagination";
+import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import { AdminPageHeader } from "../AdminPageHeader";
-import { listLessons } from "../lessons/lessonService";
-import { listAchievements, saveAchievement } from "./achievementService.js";
+import { listAchievements, setAchievementEnabled } from "./achievementService.js";
 
-const initial = { name: "", description: "", icon: "first", lessonId: "", round: "", minimumScore: "", minimumStars: "", enabled: true };
-const icons = { first: ["Bước đầu tiên", "First step"], region: ["Người chinh phục", "Conqueror"],
-  streak: ["Bền bỉ", "Persistent"], all: ["Nhà khám phá", "Explorer"] };
-const optionalNumber = (value) => value === "" || value == null ? null : Number(value);
+const art = import.meta.glob("./art/medal-*-v2.png", { eager: true, query: "?url", import: "default" });
+const groups = {
+  journey: ["Hành trình", "Journey"],
+  topics: ["Chủ đề học tập", "Learning topics"],
+  streaks: ["Chuỗi ngày chơi", "Streaks"],
+  classroom: ["Lớp học", "Classroom"],
+  practice: ["Luyện tập", "Practice"],
+};
 
 export default function AchievementRulesPage() {
   const text = useText();
-  const rules = useApiData(listAchievements, []);
-  const lessons = useApiData(listLessons, []);
-  const [draft, setDraft] = useState(initial);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [saving, setSaving] = useState(false);
-  const page = usePagination(rules.data, "achievement-rules");
-  const conditions = (rule) => [
-    rule.lessonId && text(lessons.data.find((lesson) => lesson.id === rule.lessonId)?.name ?? rule.lessonId),
-    rule.round && text(`Vòng ${rule.round}`, `Round ${rule.round}`),
-    rule.minimumScore && text(`Từ ${rule.minimumScore} điểm`, `At least ${rule.minimumScore} points`),
-    rule.minimumStars && text(`Từ ${rule.minimumStars} sao`, `At least ${rule.minimumStars} stars`),
-  ].filter(Boolean).join(" · ");
-  function edit(rule) {
-    setError("");
-    setNotice("");
-    setDraft(rule ?? initial);
-  }
-  async function save(event) {
-    event.preventDefault();
-    if (saving) return;
-    setError("");
-    setNotice("");
-    if (!conditions(draft) || !draft.name.trim() || !draft.description.trim()) {
-      setError(text("Nhập tên, mô tả và ít nhất một điều kiện.", "Enter a name, description and at least one condition."));
-      return;
-    }
-    const { name, description, icon, enabled } = draft;
-    const payload = { name, description, icon, enabled, lessonId: draft.lessonId || null,
-      round: optionalNumber(draft.round), minimumScore: optionalNumber(draft.minimumScore),
-      minimumStars: optionalNumber(draft.minimumStars) };
-    setSaving(true);
+  const toast = useActionToast();
+  const rules = useApiDataWithErrorToast(listAchievements, []);
+  const [savingId, setSavingId] = useState("");
+
+  async function toggle(rule) {
+    if (savingId) return;
+    setSavingId(rule.id);
     try {
-      const saved = await saveAchievement(draft.id, payload);
-      rules.setData((previous) => [saved, ...previous.filter((rule) => rule.id !== saved.id)]);
-      setDraft(saved);
-      setNotice(text("Đã lưu luật thành tựu.", "Achievement rule saved."));
+      const updated = await setAchievementEnabled(rule.id, !rule.enabled);
+      rules.setData((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
+      toast(updated.enabled
+        ? text("Đã cho phép nhận thành tựu.", "Achievement can now be earned.")
+        : text("Đã tắt khả năng nhận thành tựu.", "Achievement can no longer be earned."));
     } catch (failure) {
-      setError(failure.message);
+      toast(failure.message, true);
     } finally {
-      setSaving(false);
+      setSavingId("");
     }
   }
-  const bind = (key) => ({ value: draft[key] ?? "", onChange: (event) => setDraft({ ...draft, [key]: event.target.value }) });
+
   return (
-    <main className="mx-auto max-w-5xl space-y-6">
+    <main className="mx-auto max-w-4xl space-y-6">
       <AdminPageHeader title={text("Thành tựu", "Achievements")} />
-      <ApiFeedback state={rules} message={notice} actionError={error} />
-      <ApiFeedback state={lessons} />
-      <section className="panel p-6">
-        <button type="button" className="btn-secondary" disabled={saving} onClick={() => edit()}>
-          {text("Tạo luật thành tựu", "New achievement rule")}
-        </button>
-        <ul className="mt-4 space-y-3">
-          {page.items.map((rule) => (
-            <li key={rule.id} className="flex flex-wrap items-center justify-between gap-3 border-b pb-3">
-              <div>
-                <strong>{rule.name}</strong>
-                <p className="text-sm text-portal-muted">{conditions(rule)}</p>
-                <p className="text-sm">{rule.enabled ? text("Đang bật", "Enabled") : text("Đã tắt", "Disabled")}
-                  {" · "}{text("Phiên bản", "Version")} {rule.version}</p>
-              </div>
-              <button type="button" className="btn-secondary" disabled={saving} onClick={() => edit(rule)}>
-                {text("Chỉnh sửa", "Edit")}
-              </button>
-            </li>
-          ))}
-        </ul>
-        <Pagination pagination={page} />
-      </section>
-      <form className="admin-form panel space-y-4 p-6" onSubmit={save}>
-        <h2 className="text-xl font-bold">{draft.id ? text("Chỉnh sửa luật", "Edit rule") : text("Tạo luật", "New rule")}</h2>
-        <fieldset disabled={saving} className="grid gap-4 sm:grid-cols-2">
-          <label><span className="field-label">{text("Tên", "Name")}</span><input className="field" maxLength={100} required {...bind("name")} /></label>
-          <label><span className="field-label">{text("Mô tả", "Description")}</span><input className="field" maxLength={255} required {...bind("description")} /></label>
-          <label><span className="field-label">{text("Biểu tượng", "Icon")}</span>
-            <select className="field" {...bind("icon")}>{Object.entries(icons).map(([key, label]) =>
-              <option key={key} value={key}>{text(...label)}</option>)}</select>
-          </label>
-          <label><span className="field-label">{text("Bài học", "Lesson")}</span>
-            <select className="field" {...bind("lessonId")}>
-              <option value="">{text("Mọi bài đủ điều kiện", "Any eligible lesson")}</option>
-              {lessons.data.map((lesson) => <option key={lesson.id} value={lesson.id}>{text(lesson.name)}</option>)}
-            </select>
-          </label>
-          {[
-            ["round", text("Vòng", "Round"), 3],
-            ["minimumScore", text("Điểm tối thiểu", "Minimum score"), 1280000],
-            ["minimumStars", text("Sao tối thiểu", "Minimum stars"), 3],
-          ].map(([key, label, maximum]) => (
-            <label key={key}><span className="field-label">{label}</span>
-              <input className="field" type="number" min={1} max={maximum} {...bind(key)} />
-            </label>
-          ))}
-          <label className="admin-check-option flex gap-3">
-            <input type="checkbox" checked={draft.enabled} onChange={(event) => setDraft({ ...draft, enabled: event.target.checked })} />
-            {text("Bật luật", "Enable rule")}
-          </label>
-        </fieldset>
-        <p className="text-sm text-portal-muted" aria-live="polite">
-          {conditions(draft) || text("Chọn điều kiện để xem trước.", "Choose conditions to preview the rule.")}
+      <ApiFeedback state={rules} />
+      <section className="admin-feature-panel panel p-6">
+        <h2 className="text-lg font-bold">{text("Danh mục thành tựu", "Achievement catalog")}</h2>
+        <p className="mt-1 text-sm text-portal-muted">
+          {text("Bật hoặc tắt khả năng nhận từng thành tựu. Người chơi giữ các thành tựu đã nhận.",
+            "Control which achievements players can earn. Players keep achievements they have already earned.")}
         </p>
-        <p className="text-sm text-portal-muted">{text("Luật áp dụng từ lúc cấp đề. Điều kiện điểm chỉ áp dụng cho các bài có điểm chính thức.",
-          "Rules apply from issue time. Score requirements apply to lessons that award an official score.")}</p>
-        <button className="btn-primary" disabled={saving}>{text("Lưu luật", "Save rule")}</button>
-      </form>
+        {Object.entries(groups).map(([group, labels]) => {
+          const items = rules.data.filter((rule) => (rule.group ?? "journey") === group);
+          if (items.length === 0) return null;
+          return (
+            <section key={group} className="mt-5">
+              <h3 className="text-base font-semibold">{text(...labels)}</h3>
+              <ul className="mt-1">
+                {items.map((rule) => {
+                  const name = text(rule.name, rule.englishName);
+                  const medal = art[`./art/medal-${rule.id}-v2.png`];
+                  return (
+                    <li key={rule.id} className="admin-feature-row flex items-center justify-between gap-4 border-b border-slate-100 py-4 last:border-0">
+                      <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                        {medal && <img src={medal} alt="" width="56" height="56" loading="lazy" decoding="async" className="size-12 shrink-0 object-contain sm:size-14" />}
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <h4 className="font-semibold">{name}</h4>
+                            <span className="achievement-status" data-paused={!rule.enabled || undefined}>
+                              {rule.enabled ? <Check size={13} aria-hidden="true" /> : <Pause size={13} aria-hidden="true" />}
+                              {rule.enabled ? text("Có thể nhận", "Available") : text("Tạm ngưng trao", "Awards paused")}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm text-portal-muted">{text(rule.description, rule.englishDescription)}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={rule.enabled}
+                        aria-label={text(`Cho phép nhận ${name}`, `Allow earning ${name}`)}
+                        disabled={Boolean(savingId)}
+                        className="admin-feature-switch shrink-0"
+                        onClick={() => toggle(rule)}
+                      >
+                        <span aria-hidden="true" />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          );
+        })}
+      </section>
     </main>
   );
 }

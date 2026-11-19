@@ -20,6 +20,7 @@
   height: 24px;
   border-radius: 999px;
   background: var(--portal-control-line);
+  transition: background-color 180ms ease;
 }
 
 .admin-feature-switch[aria-checked="true"] span {
@@ -35,10 +36,21 @@
   height: 16px;
   border-radius: 50%;
   background: white;
+  transition: transform 220ms cubic-bezier(.2, .75, .25, 1), scale 120ms ease;
 }
 
 .admin-feature-switch[aria-checked="true"] span::after {
   transform: translateX(20px);
+}
+
+.admin-feature-switch:active:not(:disabled) span::after {
+  scale: .88;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-feature-switch span,
+  .admin-feature-switch span::after { transition: none; }
+  .admin-feature-switch:active:not(:disabled) span::after { scale: none; }
 }
 
 @media (max-width: 760px) {
@@ -157,4 +169,20 @@
     margin: 0;
     white-space: normal;
   }
+}
+
+.achievement-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: var(--portal-success-bg);
+  color: var(--portal-success-ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.achievement-status[data-paused] {
+  background: var(--portal-danger-bg);
+  color: var(--portal-danger-ink);
 }

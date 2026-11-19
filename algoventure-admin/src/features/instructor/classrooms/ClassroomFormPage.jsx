@@ -1,3 +1,4 @@
+import { useActionToast } from "../../../shared/components/useActionToast";
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
@@ -10,6 +11,7 @@ import { levels } from "../../../shared/curriculum/curriculumCatalog";
 
 export default function ClassroomFormPage() {
   const text = useText();
+  const toast = useActionToast();
   const { classId } = useParams();
   const { classes, saveClass } = useClassrooms();
   const existing = classes.find((item) => item.id === classId);
@@ -18,7 +20,6 @@ export default function ClassroomFormPage() {
     () =>
       existing ?? { name: "", description: "", level: "basic" },
   );
-  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   if (classId && !existing)
     return (
@@ -36,7 +37,6 @@ export default function ClassroomFormPage() {
     );
   function field(name, value) {
     setValues((previous) => ({ ...previous, [name]: value }));
-    setError("");
   }
   async function submit(event) {
     event.preventDefault();
@@ -50,7 +50,7 @@ export default function ClassroomFormPage() {
         message: existing ? text("Đã cập nhật thông tin lớp.") : text("Đã tạo lớp học."),
       });
     } catch (failure) {
-      setError(failure.message);
+      toast(failure.message, true);
     } finally {
       setIsSubmitting(false);
     }
@@ -126,14 +126,6 @@ export default function ClassroomFormPage() {
             {values.description.length}/500
           </p>
         </div>
-        {error && (
-          <p
-            role="alert"
-            className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
-          >
-            {text(error)}
-          </p>
-        )}
         <div className="flex justify-end gap-3 border-t border-slate-100 pt-5">
           <InstructorBackLink plain className="btn-secondary">{text("Hủy", "Cancel")}</InstructorBackLink>
           <button className="btn-primary" type="submit" disabled={isSubmitting}>

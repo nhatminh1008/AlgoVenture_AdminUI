@@ -1,3 +1,4 @@
+import { useActionToast } from "../../../shared/components/useActionToast";
 import { useText } from "../../../preferences/preferencesContext";
 import { Navigate, useLocation, useParams } from "react-router-dom";
 import { useState } from "react";
@@ -40,10 +41,9 @@ export default function QuizDetailPage() {
 }
 function QuizDetailContent({ classroom, quiz, showQuestions }) {
   const text = useText();
+  const toast = useActionToast();
   const { markQuizClosed } = useClassrooms();
   const [closing, setClosing] = useState(false);
-  const [closeError, setCloseError] = useState("");
-  const [closedHere, setClosedHere] = useState(false);
 
   async function close() {
     if (closing || !window.confirm(text(
@@ -51,12 +51,11 @@ function QuizDetailContent({ classroom, quiz, showQuestions }) {
       "Close this quiz? Learners will no longer be able to submit. Existing results are kept.",
     ))) return;
     setClosing(true);
-    setCloseError("");
     try {
       await markQuizClosed(quiz.id);
-      setClosedHere(true);
+      toast(text("Đã đóng bài trắc nghiệm.", "Quiz closed."));
     } catch (failure) {
-      setCloseError(failure.message);
+      toast(failure.message, true);
     } finally {
       setClosing(false);
     }
@@ -94,15 +93,6 @@ function QuizDetailContent({ classroom, quiz, showQuestions }) {
         )}
       </PageHeader>
       {showQuestions ? <QuizQuestionResults classId={classroom.id} quizId={quiz.id} /> : <>
-      {closeError && <p role="alert" className="mb-4 text-sm text-red-700">{text(closeError)}</p>}
-      {closedHere && (
-        <p
-          role="status"
-          className="mb-5 rounded-xl bg-portal-lavender p-4 text-sm text-portal-ink"
-        >
-          {text("Đã đóng bài trắc nghiệm.", "Quiz closed.")}
-        </p>
-      )}
       <section className="instructor-compact-panel panel mb-6 space-y-3 p-6">
         <div className="flex flex-wrap gap-3 text-xs text-slate-500">
           <span className="font-semibold text-portal-purple-strong">

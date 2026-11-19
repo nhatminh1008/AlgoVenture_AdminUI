@@ -4,7 +4,7 @@ import { ClipboardCheck, Layers } from "lucide-react";
 import { useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
 import RecordTable from "../../../shared/components/RecordTable";
-import { useApiData } from "../../../shared/hooks/useApiData";
+import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { useClassrooms } from "../workspace/useClassrooms";
 import InstructorLink from "../workspace/InstructorLink";
@@ -36,7 +36,7 @@ function StudentProgressDetail({ classId, enrollmentId }) {
   const { classes } = useClassrooms();
   const path = studentProgressPath(classId, enrollmentId);
   const quizId = useInstructorParams().params.get("quizId");
-  const request = useApiData(useCallback(() => getStudentProgress(path, quizId), [path, quizId]), null);
+  const request = useApiDataWithErrorToast(useCallback(() => getStudentProgress(path, quizId), [path, quizId]), null);
   const report = request.data;
   return <div className="progress-detail mx-auto max-w-6xl">
     <StudentReportHeader classId={classId}
@@ -145,7 +145,7 @@ function AssignmentPracticeTable({ assignments, assignmentItems, path, filter, a
   const reportTime = useReportTime();
   const { lessonName } = useClassrooms();
   const needsPracticeDetails = !assignmentItems && assignments.length > 0;
-  const request = useApiData(useCallback(async () => {
+  const request = useApiDataWithErrorToast(useCallback(async () => {
     if (!needsPracticeDetails) return null;
     const details = await Promise.all(assignments.map(({ id }) =>
       getStudentAssignment(`${path}/assignments/${encodeURIComponent(id)}`)));
@@ -191,7 +191,7 @@ function StudentAssignment({ classId, enrollmentId, assignmentId }) {
   const text = useText();
   const { classes, lessonName } = useClassrooms();
   const assignmentPath = studentAssignmentPath(classId, enrollmentId, assignmentId);
-  const request = useApiData(useCallback(() => getStudentAssignment(assignmentPath), [assignmentPath]), null);
+  const request = useApiDataWithErrorToast(useCallback(() => getStudentAssignment(assignmentPath), [assignmentPath]), null);
   const data = request.data;
   const columns = [
     { key: "item", title: text("Mục thực hành"), layout: "primary", render: (item) => <strong>{lessonName(item.lessonId)}</strong> },

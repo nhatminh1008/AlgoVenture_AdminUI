@@ -1,3 +1,4 @@
+import { useActionToast } from "../../../shared/components/useActionToast";
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { Download, FileDown, FileSpreadsheet, Braces } from "lucide-react";
@@ -8,41 +9,41 @@ import { downloadFile, exportStudentRows } from "./studentResultsExport";
 
 export default function ResultsExportPage() {
   const text = useText();
+  const toast = useActionToast();
   const scope = useClassroomScope();
   const [format, setFormat] = useState("CSV");
-  const [downloaded, setDownloaded] = useState(false);
 
-  function selectClass(classId) {
-    scope.select(classId);
-    setDownloaded(false);
-  }
 
   function handleExport() {
     if (!scope.rows.length) return;
-    if (format === "CSV")
-      downloadFile(
-        exportStudentRows(scope.rows, scope.classes, text),
-        "class-results.csv",
-      );
-    else
-      downloadFile(
-        JSON.stringify(
-          {
-            dataSource: "api",
-            classId: scope.classroom?.id ?? null,
-            students: scope.rows.map((row) => ({
-              ...row,
-              className: scope.classes.find((item) => item.id === row.classId)
-                .name,
-            })),
-          },
-          null,
-          2,
-        ),
-        "class-results.json",
-        "application/json",
-      );
-    setDownloaded(true);
+    try {
+      if (format === "CSV")
+        downloadFile(
+          exportStudentRows(scope.rows, scope.classes, text),
+          "class-results.csv",
+        );
+      else
+        downloadFile(
+          JSON.stringify(
+            {
+              dataSource: "api",
+              classId: scope.classroom?.id ?? null,
+              students: scope.rows.map((row) => ({
+                ...row,
+                className: scope.classes.find((item) => item.id === row.classId)
+                  .name,
+              })),
+            },
+            null,
+            2,
+          ),
+          "class-results.json",
+          "application/json",
+        );
+      toast(text("Đã tải báo cáo."));
+    } catch (failure) {
+      toast(failure.message, true);
+    }
   }
   return (
     <div className="mx-auto max-w-6xl">
@@ -51,7 +52,7 @@ export default function ResultsExportPage() {
         <section className="instructor-compact-panel panel space-y-6 p-6 sm:p-8">
           <div>
             <p className="field-label">{text("Lớp học")}</p>
-            <ClassroomFilter scope={{ ...scope, select: selectClass }} />
+            <ClassroomFilter scope={scope} />
           </div>
           <fieldset>
             <legend className="field-label">{text("Định dạng tệp")}</legend>
@@ -66,10 +67,7 @@ export default function ResultsExportPage() {
                     name="format"
                     className="accent-portal-purple"
                     checked={format === value}
-                    onChange={() => {
-                      setFormat(value);
-                      setDownloaded(false);
-                    }}
+                    onChange={() => setFormat(value)}
                   />
                   {value === "CSV" ? <FileSpreadsheet size={21} /> : <Braces size={21} />}{value}
                 </label>
@@ -86,11 +84,6 @@ export default function ResultsExportPage() {
             <Download size={17} />
             {text("Tải báo cáo ")} {format}
           </button>
-          {downloaded && (
-            <p role="status" className="text-sm text-portal-purple-strong">
-              {text("Đã tải báo cáo.")}
-            </p>
-          )}
         </section>
         <aside className="instructor-export-preview">
           <FileDown size={36} strokeWidth={1.5} />

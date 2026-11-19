@@ -1,0 +1,98 @@
+.action-toast-stack {
+  --toast-stack-top: max(16px, env(safe-area-inset-top));
+  position: fixed;
+  z-index: 100;
+  inset-inline-end: max(16px, env(safe-area-inset-right));
+  inset-block-start: var(--toast-stack-top);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(390px, calc(100vw - 32px));
+  max-height: calc(100dvh - var(--toast-stack-top) - max(16px, env(safe-area-inset-bottom)));
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.action-toast {
+  --toast-accent: var(--portal-success-ink);
+  position: relative;
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--portal-control-line);
+  border-inline-start: 4px solid var(--toast-accent);
+  border-radius: 12px;
+  background: var(--portal-surface);
+  color: var(--portal-ink);
+  box-shadow: 0 8px 32px #0003;
+  font-size: 0.875rem;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.action-toast[data-error] { --toast-accent: var(--portal-danger-ink); }
+.action-toast > svg { color: var(--toast-accent); }
+.action-toast button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+.action-toast button:hover { background: var(--portal-subtle); }
+
+.action-toast-progress {
+  position: absolute;
+  inset: auto 0 0;
+  height: 3px;
+  background: var(--toast-accent);
+  transform-origin: left;
+  animation: action-toast-countdown var(--toast-duration) linear both;
+}
+
+.action-toast[data-closing] {
+  animation: action-toast-exit var(--toast-motion-duration) ease-in both;
+  pointer-events: none;
+}
+
+.action-toast[data-closing] .action-toast-progress { animation-play-state: paused; }
+
+@media (hover: hover) {
+  .action-toast:hover .action-toast-progress { animation-play-state: paused; }
+}
+
+@keyframes action-toast-countdown {
+  to { transform: scaleX(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .action-toast:not([data-closing]) {
+    animation: action-toast-enter var(--toast-motion-duration) ease-out backwards;
+  }
+}
+
+@keyframes action-toast-enter {
+  from { opacity: 0; transform: translateX(24px); }
+}
+
+@keyframes action-toast-exit {
+  to { opacity: 0; transform: translateX(24px); }
+}
+
+@keyframes action-toast-fade {
+  to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .action-toast-progress {
+    animation-duration: var(--toast-duration) !important;
+    animation-timing-function: steps(5, end);
+  }
+  .action-toast[data-closing] {
+    animation-name: action-toast-fade;
+    animation-duration: var(--toast-motion-duration) !important;
+  }
+}

@@ -1,6 +1,5 @@
-import { useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { InstructorNoticeContext } from "./InstructorNoticeContext.js";
+import { useActionToast } from "../../../shared/components/useActionToast.js";
 
 const sections = new Set(["classes", "challenges", "quizzes", "progress", "analytics", "export"]);
 const root = "/instructor";
@@ -142,7 +141,7 @@ export function instructorChildState(location, index) {
 export function useInstructorNavigation() {
   const location = useLocation();
   const navigate = useNavigate();
-  const showNotice = useContext(InstructorNoticeContext);
+  const toast = useActionToast();
   // BrowserRouter records the entry index in history.state.
   const index = window.history.state?.idx;
   const activePath = instructorActivePath(location.pathname, location.search);
@@ -155,17 +154,17 @@ export function useInstructorNavigation() {
   function finish({ to, message, levels = 1 } = {}) {
     if (window.history.state?.idx !== index || window.location.pathname !== location.pathname) return;
     const destination = to ? { to: instructorDestination(to, activePath) } : instructorBack(location, index, levels);
+    if (message) toast(message);
     if (destination.delta) {
-      if (message) showNotice(destination.key, message);
       navigate(destination.delta);
     } else if (destination.replaceAfter) {
       const parentIndex = index + destination.replaceAfter;
       window.addEventListener("popstate", (event) => {
-        if (event.state?.idx === parentIndex) navigate(destination.to, { replace: true, state: { message } });
+        if (event.state?.idx === parentIndex) navigate(destination.to, { replace: true });
       }, { once: true });
       navigate(destination.replaceAfter);
     } else if (destination.to) {
-      navigate(destination.to, { replace: true, state: to ? { ...location.state, message } : { message } });
+      navigate(destination.to, { replace: true, state: to ? location.state : undefined });
     }
   }
 

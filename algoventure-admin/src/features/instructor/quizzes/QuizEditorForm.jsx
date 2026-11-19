@@ -1,7 +1,8 @@
+import { useActionToast } from "../../../shared/components/useActionToast";
 import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { useText } from "../../../preferences/preferencesContext";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useInstructorParams } from "../workspace/useInstructorParams";
 import { Eye, Plus, Save, Send } from "lucide-react";
 import { PageHeader } from "../workspace/PageHeader";
@@ -14,6 +15,7 @@ import QuizQuestionEditor from "./QuizQuestionEditor";
 
 export default function QuizEditorForm({ classroom, existing }) {
   const text = useText();
+  const toast = useActionToast();
   const { saveQuiz } = useClassrooms();
   const classPath = `/instructor/classes/${classroom.id}`;
   const { open, finish } = useInstructorNavigation();
@@ -32,20 +34,11 @@ export default function QuizEditorForm({ classroom, existing }) {
         },
   );
   const pagination = usePagination(form.questions, form.id, controls);
-  const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const preview = controls.params.get("preview") === "1" && !validateQuiz({ ...form, status: "Published" }, classroom);
-  const errorNotice = useRef(null);
-
-  useEffect(() => {
-    if (error && window.matchMedia("(max-width: 600px)").matches) {
-      errorNotice.current?.scrollIntoView({ block: "center" });
-    }
-  }, [error]);
 
   function update(field, value) {
     setForm((previous) => ({ ...previous, [field]: value }));
-    setError("");
   }
   function updateQuestion(id, values) {
     setForm((previous) => ({
@@ -54,7 +47,6 @@ export default function QuizEditorForm({ classroom, existing }) {
         question.id === id ? { ...question, ...values } : question,
       ),
     }));
-    setError("");
   }
   function move(index, direction) {
     const questions = [...form.questions];
@@ -69,11 +61,10 @@ export default function QuizEditorForm({ classroom, existing }) {
     const values = { ...form, status };
     const validation = validateQuiz(values, classroom);
     if (validation) {
-      setError(validation);
+      toast(translateQuizError(validation, text), true);
       return;
     }
     setIsSaving(true);
-    setError("");
     try {
       const quiz = await saveQuiz(values, existing?.id);
       const quizPath = `${classPath}/quizzes/${quiz.id}`;
@@ -82,7 +73,7 @@ export default function QuizEditorForm({ classroom, existing }) {
         message: status === "Published" ? text("Đã giao bộ câu hỏi cho lớp.") : text("Đã lưu bản nháp bộ câu hỏi."),
       });
     } catch (failure) {
-      setError(failure.message);
+      toast(translateQuizError(failure.message, text), true);
     } finally {
       setIsSaving(false);
     }
@@ -92,9 +83,8 @@ export default function QuizEditorForm({ classroom, existing }) {
       { ...form, status: "Published" },
       classroom,
     );
-    if (validation) setError(validation);
+    if (validation) toast(translateQuizError(validation, text), true);
     else {
-      setError("");
       const params = new URLSearchParams(controls.params);
       params.set("preview", "1");
       open(`${classPath}/quizzes/${existing ? `${existing.id}/edit` : "new"}?${params}`);
@@ -148,15 +138,6 @@ export default function QuizEditorForm({ classroom, existing }) {
           </div>
         )}
       </PageHeader>
-      {error && (
-        <p
-          ref={errorNotice}
-          role="alert"
-          className="mb-5 rounded-xl bg-red-50 p-4 text-sm text-red-700"
-        >
-          {translateQuizError(error, text)}
-        </p>
-      )}
       {preview ? (
         <QuizPreview quiz={form} />
       ) : (

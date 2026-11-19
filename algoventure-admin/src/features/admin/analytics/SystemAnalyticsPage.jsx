@@ -3,7 +3,7 @@ import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { useApiData } from "../../../shared/hooks/useApiData";
+import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import { AdminPageHeader } from "../AdminPageHeader";
 import RecordTable from "../../../shared/components/RecordTable";
@@ -50,7 +50,7 @@ function AuditAction({ row, text }) {
 export default function SystemAnalyticsPage() {
   const locale = useLocale();
   const text = useText();
-  const state = useApiData(getAdminAnalytics, null);
+  const state = useApiDataWithErrorToast(getAdminAnalytics, null);
   const { hash } = useLocation();
   const activity = useRef(null);
   const hasData = !!state.data;

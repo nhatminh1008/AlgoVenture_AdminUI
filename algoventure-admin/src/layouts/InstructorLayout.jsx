@@ -1,6 +1,5 @@
 import { useText } from "../preferences/preferencesContext";
 import { useAuth } from "../auth/useAuth";
-import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import {
   GraduationCap,
@@ -13,7 +12,6 @@ import {
 import { ClassroomProvider } from "../features/instructor/workspace/ClassroomContext";
 import { useClassrooms } from "../features/instructor/workspace/useClassrooms";
 import { instructorActivePath } from "../features/instructor/workspace/useInstructorNavigation";
-import { InstructorNoticeContext } from "../features/instructor/workspace/InstructorNoticeContext";
 import { useInstructorScroll } from "../features/instructor/workspace/useInstructorScroll";
 import PortalFrame from "./PortalFrame";
 import "./InstructorLayout.css";
@@ -21,9 +19,7 @@ import "./InstructorLayout.css";
 const InstructorLayout = () => {
   const text = useText();
   const { user, logout } = useAuth();
-  const { pathname, search, key, state } = useLocation();
-  const [notice, setNotice] = useState(null);
-  const message = notice?.key === key ? notice.message : state?.message;
+  const { pathname, search } = useLocation();
   const activePath = instructorActivePath(pathname, search);
   useInstructorScroll();
   const navItems = [
@@ -62,21 +58,23 @@ const InstructorLayout = () => {
   return (
     <PortalFrame user={user} logout={logout} navItems={navItems} activePath={activePath}
       pageTitle={activePath ? undefined : text("Trang không tồn tại", "Page not found")} className="instructor-shell">
-      {message && <p role="status" className="mb-5 rounded-xl bg-portal-lavender p-4 text-sm text-portal-ink">{message}</p>}
-      <InstructorNoticeContext.Provider value={(key, message) => setNotice({ key, message })}>
-        <ClassroomProvider>
-          <InstructorContent />
-        </ClassroomProvider>
-      </InstructorNoticeContext.Provider>
+      <ClassroomProvider>
+        <InstructorContent />
+      </ClassroomProvider>
     </PortalFrame>
   );
 };
 
 function InstructorContent() {
   const text = useText();
-  const { stateLoadError } = useClassrooms();
+  const { stateLoadError, refresh } = useClassrooms();
   return <>
-    {stateLoadError && <p role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{text(stateLoadError)}</p>}
+    {stateLoadError && (
+      <div role="alert" className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <span>{text(stateLoadError)}</span>
+        <button className="btn-secondary" type="button" onClick={refresh}>{text("Thử lại")}</button>
+      </div>
+    )}
     <Outlet />
   </>;
 }

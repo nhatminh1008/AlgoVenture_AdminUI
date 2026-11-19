@@ -4,7 +4,7 @@ import { usePagination } from "../../../shared/hooks/usePagination";
 import { Link } from "react-router-dom";
 import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
-import { useApiData } from "../../../shared/hooks/useApiData";
+import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import { AdminPageHeader } from "../AdminPageHeader";
 import RecordTable from "../../../shared/components/RecordTable";
@@ -13,7 +13,7 @@ import { difficultyLabels } from "../recordLabels.js";
 import { listLessons } from "./lessonService";
 export default function LessonLibraryPage() {
   const text = useText();
-  const state = useApiData(listLessons, []);
+  const state = useApiDataWithErrorToast(listLessons, []);
   const [query, setQuery] = useState("");
   const rows = state.data.filter((a) =>
     `${a.name} ${text(a.name)} ${a.topicId}`.toLowerCase().includes(query.toLowerCase()),

@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
 import RecordTable from "../../../shared/components/RecordTable";
-import { useApiData } from "../../../shared/hooks/useApiData";
+import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import { getQuizQuestionResults } from "../reports/progressService";
 import { ReportLoad } from "../reports/ProgressReporting";
@@ -10,7 +10,7 @@ import { useInstructorParams } from "../workspace/useInstructorParams";
 
 export default function QuizQuestionResults({ classId, quizId }) {
   const text = useText();
-  const request = useApiData(useCallback(() => getQuizQuestionResults(classId, quizId), [classId, quizId]), null);
+  const request = useApiDataWithErrorToast(useCallback(() => getQuizQuestionResults(classId, quizId), [classId, quizId]), null);
   const pagination = usePagination(request.data?.questions ?? [], quizId, useInstructorParams("questionPage"));
   const columns = [
     { key: "question", title: text("Câu hỏi"), layout: "primary", render: (question) => <strong>{question.prompt ?? question.questionId}</strong> },

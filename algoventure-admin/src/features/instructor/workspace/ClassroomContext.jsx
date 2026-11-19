@@ -3,7 +3,7 @@ import { useEffect, useMemo } from "react";
 import { ClassroomContext } from "./useClassrooms";
 import { useAuth } from "../../../auth/useAuth";
 import { createCurriculum } from "../../../shared/curriculum/curriculumCatalog";
-import { useApiData } from "../../../shared/hooks/useApiData";
+import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import {
   closeQuiz,
   deleteAssignmentTemplate,
@@ -21,7 +21,7 @@ import {
 export function ClassroomProvider({ children }) {
   const text = useText();
   const { user } = useAuth();
-  const { data, setData, error: stateLoadError, refresh } = useApiData(getInstructorState, null);
+  const { data, setData, error: stateLoadError, refresh } = useApiDataWithErrorToast(getInstructorState, null);
   const topics = data?.topics;
   const curriculum = useMemo(() => topics && createCurriculum(topics), [topics]);
   useEffect(() => {

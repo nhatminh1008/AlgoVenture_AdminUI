@@ -1,7 +1,7 @@
 import { useLocale, useText } from "../../../preferences/preferencesContext";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, BookOpen, ClipboardList, GraduationCap, Library, Settings2, ShieldCheck, UserPlus, Users } from "lucide-react";
-import { useApiData } from "../../../shared/hooks/useApiData";
+import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import { AdminPageHeader } from "../AdminPageHeader";
 import { WorkspaceStats } from "../../../shared/components/WorkspaceStats";
@@ -11,7 +11,7 @@ import { getAdminAnalytics } from "../analytics/adminAnalyticsService";
 export default function AdminDashboardPage() {
   const locale = useLocale();
   const text = useText();
-  const state = useApiData(getAdminAnalytics, null);
+  const state = useApiDataWithErrorToast(getAdminAnalytics, null);
   const counts = state.data?.counts;
   return (
     <div className="mx-auto max-w-6xl">

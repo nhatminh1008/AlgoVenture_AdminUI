@@ -3,7 +3,7 @@ import { AlertCircle, Search } from "lucide-react";
 import { useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
 import RecordTable from "../../../shared/components/RecordTable";
-import { useApiData } from "../../../shared/hooks/useApiData";
+import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import { usePagination } from "../../../shared/hooks/usePagination";
 import ClassroomFilter from "../classrooms/ClassroomFilter";
 import { useClassroomScope } from "../classrooms/useClassroomScope";
@@ -111,7 +111,7 @@ function WorkRows({ work, kind, page, setPage, query, tableSearch }) {
   const text = useText();
   const { classId, id } = work;
   const getResults = kind === "quizzes" ? getQuizResults : getAssignmentResults;
-  const request = useApiData(useCallback(() => getResults(classId, id, page, query),
+  const request = useApiDataWithErrorToast(useCallback(() => getResults(classId, id, page, query),
     [getResults, classId, id, page, query]), null);
   return <ReportLoad request={request}>{(data) => <>
     <ProgressTable rows={data.items.map(({ student, assignment, quiz }) => ({

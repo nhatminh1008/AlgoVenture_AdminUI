@@ -1,7 +1,7 @@
 import { useText } from "../../../preferences/preferencesContext";
 import { useSearchParams } from "react-router-dom";
 import { listLessons } from "./lessonService";
-import { useApiData } from "../../../shared/hooks/useApiData";
+import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import { AdminPageHeader } from "../AdminPageHeader";
 import LessonConfigurationForm from "./LessonConfigurationForm";
@@ -9,7 +9,7 @@ import LessonResultCapabilitiesTable from "./LessonResultCapabilitiesTable";
 
 export default function LessonConfigurationPage() {
   const text = useText();
-  const state = useApiData(listLessons, []);
+  const state = useApiDataWithErrorToast(listLessons, []);
   const [params, setParams] = useSearchParams();
   const selected =
     state.data.find((a) => a.id === params.get("lessonId")) || state.data[0];

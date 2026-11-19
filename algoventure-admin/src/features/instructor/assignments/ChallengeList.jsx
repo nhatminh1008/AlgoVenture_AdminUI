@@ -1,3 +1,4 @@
+import { useActionToast } from "../../../shared/components/useActionToast";
 import InstructorBackLink from "../workspace/InstructorBackLink";
 import { useInstructorParams } from "../workspace/useInstructorParams";
 import { Plus, Trash2 } from "lucide-react";
@@ -12,9 +13,9 @@ import InstructorLink from "../workspace/InstructorLink";
 
 export default function ChallengeList() {
   const text = useText();
+  const toast = useActionToast();
   const { assignmentTemplates, lessonName, removeAssignmentTemplate } = useClassrooms();
   const [deletingId, setDeletingId] = useState(null);
-  const [error, setError] = useState("");
   const controls = useInstructorParams("page");
   const query = controls.params.get("q") ?? "";
   const search = query.trim().toLocaleLowerCase("vi");
@@ -24,11 +25,11 @@ export default function ChallengeList() {
   async function remove(item) {
     if (deletingId || !window.confirm(text(`Xóa bản nháp “${item.title}”?`, `Delete draft “${item.title}”?`))) return;
     setDeletingId(item.id);
-    setError("");
     try {
       await removeAssignmentTemplate(item.id);
+      toast(text("Đã xóa bản nháp bộ thử thách.", "Challenge draft deleted."));
     } catch (failure) {
-      setError(failure.message);
+      toast(failure.message, true);
     } finally {
       setDeletingId(null);
     }
@@ -73,7 +74,6 @@ export default function ChallengeList() {
           <Plus size={17} aria-hidden="true" />{text("Tạo bộ thử thách")}
         </InstructorLink>
       </PageHeader>
-      {error && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">{text(error)}</p>}
       <section className="panel overflow-hidden" aria-label={text("Danh sách bộ thử thách")}>
         <div className="instructor-compact-panel border-b border-portal-line p-5">
           <input className="field sm:max-w-sm" type="search" value={query} onChange={(event) => controls.set("q", event.target.value, true)}

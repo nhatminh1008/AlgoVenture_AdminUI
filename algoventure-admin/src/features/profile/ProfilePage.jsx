@@ -1,10 +1,11 @@
+import { useActionToast } from "../../shared/components/useActionToast";
 import { useState } from "react";
-import { CircleCheck, Info, KeyRound, Save, UserRound } from "lucide-react";
+import { Info, KeyRound, Save, UserRound } from "lucide-react";
 import { saveMyProfile as saveAdminProfile } from "../admin/users/userService";
 import { api } from "../../api/apiClient";
 import { useAuth } from "../../auth/useAuth";
 import { resetPasswordErrors, usernameError } from "../../auth/authValidation";
-import { useApiData } from "../../shared/hooks/useApiData";
+import { useApiDataWithErrorToast } from "../../shared/hooks/useApiDataWithErrorToast";
 import { ApiFeedback } from "../../shared/components/ApiFeedback";
 import { useText } from "../../preferences/preferencesContext";
 import "./ProfilePage.css";
@@ -28,11 +29,10 @@ export default function ProfilePage() {
 
 function ProfileForm({ user, onSaved, onPasswordChange }) {
   const text = useText();
-  const state = useApiData(load, null);
+  const toast = useActionToast();
+  const state = useApiDataWithErrorToast(load, null, user.role === "admin" || user.role === "instructor");
   const [draft, setDraft] = useState({});
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
   const form = state.data && { ...state.data, ...draft };
   const fields = user.role === "learner" ? [...personalFields, displayNameField] : personalFields;
   const account = state.data ?? user;
@@ -45,22 +45,20 @@ function ProfileForm({ user, onSaved, onPasswordChange }) {
     if (!changed || saving) return;
     const invalidUsername = form.username?.trim() && usernameError(form.username);
     if (invalidUsername) {
-      setError(invalidUsername);
+      toast(invalidUsername, true);
       return;
     }
     setSaving(true);
-    setError("");
-    setSaved(false);
     try {
       const body = Object.fromEntries(fields.map(([key]) => [key, form[key]?.trim() || null]));
       const updated = await (readOnlyEmail ? saveAdminProfile(body) : api("/profile", { method: "PUT", body }));
       if (await onSaved(updated)) {
         state.setData(updated);
         setDraft({});
-        setSaved(true);
+        toast(text("Đã lưu hồ sơ cá nhân.", "Profile saved."));
       }
     } catch (failure) {
-      setError(failure.message);
+      toast(failure.message, true);
     } finally {
       setSaving(false);
     }
@@ -101,8 +99,6 @@ function ProfileForm({ user, onSaved, onPasswordChange }) {
                     aria-describedby={key === "email" ? "profile-email-note" : undefined} value={form[key] ?? ""}
                     onChange={(event) => {
                       setDraft((current) => ({ ...current, [key]: event.target.value }));
-                      setError("");
-                      setSaved(false);
                     }} />
                 </label>
               ))}
@@ -112,12 +108,6 @@ function ProfileForm({ user, onSaved, onPasswordChange }) {
               <span>{readOnlyEmail ? text("Email chỉ để xem.", "Email is read-only.") : text("Nếu đổi email, bạn cần đăng nhập lại bằng email mới.", "After changing your email, sign in again with the new address.")}</span>
             </p>
             <div className="profile-card-footer">
-              {saved && (
-                <p role="status" className="profile-saved">
-                  <CircleCheck size={17} aria-hidden="true" />
-                  {text("Đã lưu hồ sơ cá nhân.", "Profile saved.")}
-                </p>
-              )}
               <button type="submit" className="btn-primary" disabled={saving || !changed}>
                 <Save size={16} aria-hidden="true" />
                 {saving ? text("Đang lưu…", "Saving…") : text("Lưu hồ sơ", "Save profile")}
@@ -126,7 +116,7 @@ function ProfileForm({ user, onSaved, onPasswordChange }) {
           </form>
         )}
         <div className="profile-feedback">
-          <ApiFeedback state={state} actionError={error} />
+          <ApiFeedback state={state} />
         </div>
       </section>
       <ChangePasswordForm onChangePassword={onPasswordChange} />
@@ -136,30 +126,29 @@ function ProfileForm({ user, onSaved, onPasswordChange }) {
 
 function ChangePasswordForm({ onChangePassword }) {
   const text = useText();
+  const toast = useActionToast();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
 
   async function submit(event) {
     event.preventDefault();
     if (saving) return;
     const validation = resetPasswordErrors(newPassword, confirmation);
     if (validation) {
-      setError(Object.values(validation.fields)[0]);
+      toast(Object.values(validation.fields)[0], true);
       return;
     }
     if (currentPassword === newPassword) {
-      setError("Mật khẩu mới phải khác mật khẩu hiện tại.");
+      toast("Mật khẩu mới phải khác mật khẩu hiện tại.", true);
       return;
     }
-    setError("");
     setSaving(true);
     try {
       await onChangePassword(currentPassword, newPassword);
     } catch (failure) {
-      setError(failure.message);
+      toast(failure.message, true);
     } finally {
       setSaving(false);
     }
@@ -174,7 +163,7 @@ function ChangePasswordForm({ onChangePassword }) {
           <p>{text("Bạn sẽ cần đăng nhập lại sau khi đổi mật khẩu.", "You'll need to sign in again after changing your password.")}</p>
         </div>
       </div>
-      <form onSubmit={submit} onChange={() => setError("")}>
+      <form onSubmit={submit}>
         <fieldset disabled={saving} className="profile-fields">
           <label className="profile-field-wide">
             <span className="field-label">{text("Mật khẩu hiện tại", "Current password")}</span>
@@ -198,7 +187,6 @@ function ChangePasswordForm({ onChangePassword }) {
           <span>{text("Ít nhất 6 ký tự, có chữ hoa và ký tự đặc biệt. Tối đa 72 byte UTF-8.",
             "At least 6 characters, including an uppercase letter and a special character. Maximum 72 UTF-8 bytes.")}</span>
         </p>
-        {error && <p role="alert" className="profile-feedback rounded-xl bg-red-50 p-4 text-sm text-red-700">{text(error)}</p>}
         <div className="profile-card-footer">
           <button type="submit" className="btn-primary" disabled={saving}>
             {saving ? text("Đang lưu…", "Saving…") : text("Đổi mật khẩu", "Change password")}

@@ -1,7 +1,8 @@
+import { useActionToast } from "../../../shared/components/useActionToast";
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { listFeatureFlags, updateFeatureFlag } from "./featureFlagService";
-import { useApiData } from "../../../shared/hooks/useApiData";
+import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import { AdminPageHeader } from "../AdminPageHeader";
 const effects = {
@@ -17,20 +18,17 @@ const effects = {
 
 export default function FeatureFlagsPage() {
   const text = useText();
-  const state = useApiData(listFeatureFlags, []);
+  const toast = useActionToast();
+  const state = useApiDataWithErrorToast(listFeatureFlags, []);
   const [updatingFeatureId, setUpdatingFeatureId] = useState("");
-  const [message, setMessage] = useState("");
-  const [actionError, setActionError] = useState("");
   async function toggle(feature) {
     if (updatingFeatureId) return;
     setUpdatingFeatureId(feature.id);
-    setMessage("");
-    setActionError("");
     try {
       state.setData(await updateFeatureFlag(feature.id, !feature.enabled));
-      setMessage(feature.enabled ? text("Tính năng đã tắt.") : text("Tính năng đã bật."));
+      toast(feature.enabled ? text("Tính năng đã tắt.") : text("Tính năng đã bật."));
     } catch (failure) {
-      setActionError(failure.message);
+      toast(failure.message, true);
     } finally {
       setUpdatingFeatureId("");
     }
@@ -38,7 +36,7 @@ export default function FeatureFlagsPage() {
   return (
     <div className="mx-auto max-w-4xl">
       <AdminPageHeader title="Feature Toggles" />
-      <ApiFeedback state={state} message={message} actionError={actionError} />
+      <ApiFeedback state={state} />
       <p className="mb-5 text-sm text-slate-500">
         {text("Unity kiểm tra các thay đổi khi mở game, khi quay lại cửa sổ và định kỳ khi đang chơi.", "Unity checks for changes on launch, on focus, and periodically during play.")}
       </p>

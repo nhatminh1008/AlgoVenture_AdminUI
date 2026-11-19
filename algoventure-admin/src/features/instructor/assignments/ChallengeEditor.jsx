@@ -1,3 +1,4 @@
+import { useActionToast } from "../../../shared/components/useActionToast";
 import { useText } from "../../../preferences/preferencesContext";
 import { useId, useState } from "react";
 import InstructorLink from "../workspace/InstructorLink";
@@ -19,6 +20,7 @@ const lessonsWithStartingValues = new Set([
 
 export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, initialClassId, existing, templateMode = false }) {
   const text = useText();
+  const toast = useActionToast();
   const { topics, lessonName, duplicateAssignmentTemplate } = useClassrooms();
   const { finish } = useInstructorNavigation();
   const [form, setForm] = useState(
@@ -32,7 +34,6 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
         lessonIds: [],
       },
   );
-  const [error, setError] = useState("");
   const [titleError, setTitleError] = useState("");
   const titleErrorId = useId();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,20 +51,17 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
   function update(field, value) {
     setForm((previous) => ({ ...previous, [field]: value }));
     if (field === "title") setTitleError("");
-    setError("");
   }
   function selectTopics(ids) {
     setTopicIds(ids);
     const allowed = new Set(topics.filter((topic) => ids.includes(topic.id))
       .flatMap((topic) => topic.lessons.map(([id]) => id)));
     setForm((previous) => ({ ...previous, lessonIds: previous.lessonIds.filter((id) => allowed.has(id)) }));
-    setError("");
   }
   async function save(event) {
     event.preventDefault();
     if (readOnly || isSubmitting || !form.lessonIds.length) return;
     const title = form.title.trim();
-    setError("");
     setTitleError("");
     if (!title) {
       setTitleError("Hãy nhập tên bộ thử thách.");
@@ -84,23 +82,24 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
         title, description: form.description, algorithmIds: form.lessonIds, algorithmConfigs: lessonConfigs,
       }, existing?.id);
       const message = text("Đã lưu bản nháp.");
-      setError("");
       finish({ message });
     } catch (failure) {
       if (failure.fields?.title) setTitleError(failure.fields.title);
-      else setError(failure.message);
+      toast(failure.fields?.title ?? failure.message, true);
     } finally {
       setIsSubmitting(false);
     }
   }
   async function duplicate() {
     setIsSubmitting(true);
-    setError("");
     try {
       const template = await duplicateAssignmentTemplate(existing.id);
-      finish({ to: `/instructor/challenges?assignmentTemplateId=${encodeURIComponent(template.id)}` });
+      finish({
+        to: `/instructor/challenges?assignmentTemplateId=${encodeURIComponent(template.id)}`,
+        message: text("Đã nhân bản bộ thử thách.", "Challenge set duplicated."),
+      });
     } catch (failure) {
-      setError(failure.message);
+      toast(failure.message, true);
     } finally {
       setIsSubmitting(false);
     }
@@ -157,7 +156,6 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
               onChange={e => {
                 setForm(previous => ({ ...previous, classId: e.target.value, lessonIds: [], lessonConfigs: {} }));
                 setTopicIds([]);
-                setError("");
               }}
             >
               <option value="" disabled>
@@ -222,14 +220,6 @@ export default function ChallengeEditor({ classes = [], saveAssignmentTemplate, 
                 : classroom?.archivedAt ? text("Lớp học đã lưu trữ.")
                   : existing?.status === "Closed" ? text("Bộ thử thách đã đóng.")
                     : text("Bộ bài đã công bố. Không thể chỉnh sửa nội dung.")}
-            </p>
-          )}
-          {error && (
-            <p
-              role="alert"
-              className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
-            >
-              {text(error)}
             </p>
           )}
           {!readOnly && (

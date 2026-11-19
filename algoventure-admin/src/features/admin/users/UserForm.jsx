@@ -1,10 +1,9 @@
 import { useId } from "react";
 import { useLocale, useText } from "../../../preferences/preferencesContext";
-import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import AdminDetailsDialog from "../AdminDetailsDialog";
 import { roleLabels, statusLabels } from "../recordLabels.js";
 
-export default function UserForm({ form, isOwnProfile, viewing, editableRoles, roleChanged, isSaving, actionError, onSubmit, onFieldChange, onCancel }) {
+export default function UserForm({ form, isOwnProfile, viewing, editableRoles, roleChanged, isSaving, onSubmit, onFieldChange, onCancel }) {
   const text = useText();
   const locale = useLocale();
   const formId = useId();
@@ -29,7 +28,6 @@ export default function UserForm({ form, isOwnProfile, viewing, editableRoles, r
   const fields = (
     <form id={formId} onSubmit={onSubmit} className={creating ? "admin-form panel mb-6 space-y-4 p-6" : "admin-form space-y-4"}>
       {creating && <h2 className="text-lg font-bold">{title}</h2>}
-      {!creating && <ApiFeedback actionError={actionError} />}
       <div className="grid gap-4 sm:grid-cols-2">
         <label data-view-only={viewing || undefined}>
           <span className="field-label">{text("Họ tên")}{creating && <span aria-hidden="true"> *</span>}</span>

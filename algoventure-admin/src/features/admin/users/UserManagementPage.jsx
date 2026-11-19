@@ -1,9 +1,10 @@
+import { useActionToast } from "../../../shared/components/useActionToast";
 import { useText } from "../../../preferences/preferencesContext";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { changeUserRole, createUser, deactivateUser, listUsers, saveMyProfile, setUserLocked } from "./userService";
 import { useAuth } from "../../../auth/useAuth";
-import { useApiData } from "../../../shared/hooks/useApiData";
+import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
 import { AdminPageHeader } from "../AdminPageHeader";
 import UserForm from "./UserForm";
@@ -20,14 +21,13 @@ const INITIAL_USER_FORM = {
 };
 export default function UserManagementPage() {
   const text = useText();
+  const toast = useActionToast();
   const { user, updateSessionProfile } = useAuth();
-  const state = useApiData(listUsers, []);
+  const state = useApiDataWithErrorToast(listUsers, []);
   const [query, setQuery] = useState("");
   const [role, setRole] = useState("all");
   const [form, setForm] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [actionError, setActionError] = useState("");
-  const [message, setMessage] = useState("");
   const isOwnProfile = form?.id === user.id;
   const viewing = !!form?.id && !isOwnProfile;
   const savedAccount = viewing ? state.data.find((account) => account.id === form.id) : null;
@@ -42,8 +42,6 @@ export default function UserManagementPage() {
     event.preventDefault();
     if (isSaving || (viewing && !roleChanged)) return;
     setIsSaving(true);
-    setMessage("");
-    setActionError("");
     try {
       if (isOwnProfile) {
         const updated = await saveMyProfile(form);
@@ -55,9 +53,9 @@ export default function UserManagementPage() {
       }
       setForm((current) => (current === form ? null : current));
       await state.refresh();
-      setMessage(isOwnProfile ? text("Đã lưu hồ sơ cá nhân.") : text("Đã lưu tài khoản."));
+      toast(isOwnProfile ? text("Đã lưu hồ sơ cá nhân.") : text("Đã lưu tài khoản."));
     } catch (failure) {
-      setActionError(failure.message);
+      toast(failure.message, true);
     } finally {
       setIsSaving(false);
     }
@@ -68,14 +66,12 @@ export default function UserManagementPage() {
       locked ? `Lock “${account.email}”? The user will be signed out.` : `Unlock “${account.email}”?`,
     ))) return;
     setIsSaving(true);
-    setActionError("");
-    setMessage("");
     try {
       await setUserLocked(account, locked);
       await state.refresh();
-      setMessage(locked ? text("Đã khóa tài khoản.", "Account locked.") : text("Đã mở khóa tài khoản.", "Account unlocked."));
+      toast(locked ? text("Đã khóa tài khoản.", "Account locked.") : text("Đã mở khóa tài khoản.", "Account unlocked."));
     } catch (failure) {
-      setActionError(failure.message);
+      toast(failure.message, true);
     } finally {
       setIsSaving(false);
     }
@@ -87,15 +83,13 @@ export default function UserManagementPage() {
       `Deactivate “${account.email}”? The user will be signed out and unable to sign in. Learning data and history are retained. This account cannot be restored with Unlock.`,
     ))) return;
     setIsSaving(true);
-    setActionError("");
-    setMessage("");
     try {
       await deactivateUser(account.id);
       await state.refresh();
-      setMessage(text("Đã vô hiệu hóa tài khoản. Dữ liệu và lịch sử học tập được giữ lại.",
+      toast(text("Đã vô hiệu hóa tài khoản. Dữ liệu và lịch sử học tập được giữ lại.",
         "Account deactivated. Learning data and history are retained."));
     } catch (failure) {
-      setActionError(failure.message);
+      toast(failure.message, true);
     } finally {
       setIsSaving(false);
     }
@@ -111,14 +105,12 @@ export default function UserManagementPage() {
           className="btn-primary"
           onClick={() => {
             setForm({ ...INITIAL_USER_FORM });
-            setMessage("");
-            setActionError("");
           }}
         >
           {text("+ Thêm tài khoản")}
         </button>
       </AdminPageHeader>
-      <ApiFeedback state={state} message={message} actionError={isOwnProfile ? undefined : actionError} />
+      <ApiFeedback state={state} />
       {form && (
         <UserForm
           form={form}
@@ -127,12 +119,10 @@ export default function UserManagementPage() {
           editableRoles={canEditRole ? EDITABLE_ROLES : []}
           roleChanged={roleChanged}
           isSaving={isSaving}
-          actionError={actionError}
           onSubmit={save}
           onFieldChange={field}
           onCancel={() => {
             setForm(null);
-            setActionError("");
           }}
         />
       )}
@@ -148,8 +138,6 @@ export default function UserManagementPage() {
         onDeactivate={deactivate}
         onOpen={(account) => {
           setForm({ ...account });
-          setActionError("");
-          setMessage("");
         }}
       />
     </div>

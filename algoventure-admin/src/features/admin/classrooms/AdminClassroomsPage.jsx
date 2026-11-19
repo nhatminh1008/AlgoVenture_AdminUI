@@ -1,3 +1,4 @@
+import { useActionToast } from "../../../shared/components/useActionToast";
 import { useText } from "../../../preferences/preferencesContext";
 import Pagination from "../../../shared/components/Pagination";
 import { usePagination } from "../../../shared/hooks/usePagination";
@@ -9,17 +10,16 @@ import { listUsers } from "../users/userService";
 import { AdminPageHeader } from "../AdminPageHeader";
 import RecordTable from "../../../shared/components/RecordTable";
 import { ApiFeedback } from "../../../shared/components/ApiFeedback";
-import { useApiData } from "../../../shared/hooks/useApiData";
+import { useApiDataWithErrorToast } from "../../../shared/hooks/useApiDataWithErrorToast";
 import { getLevel } from "../../../shared/curriculum/curriculumCatalog";
 
 export default function AdminClassroomsPage() {
   const text = useText();
-  const classes = useApiData(listClassrooms, []);
-  const users = useApiData(listUsers, []);
+  const toast = useActionToast();
+  const classes = useApiDataWithErrorToast(listClassrooms, []);
+  const users = useApiDataWithErrorToast(listUsers, []);
   const [selectedClassId, setSelectedClassId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
   const usersById = new Map(users.data.map((user) => [user.id, user]));
   const selected = classes.data.find(({ id }) => id === selectedClassId);
 
@@ -31,14 +31,12 @@ export default function AdminClassroomsPage() {
       : text(`Mở khóa lớp “${classroom.name}”?`, `Unlock “${classroom.name}”?`);
     if (isSubmitting || !window.confirm(confirmation)) return;
     setIsSubmitting(true);
-    setError("");
-    setMessage("");
     try {
       const updated = await setClassroomLocked(classroom.id, locked);
       classes.setData((rows) => rows.map((row) => row.id === updated.id ? updated : row));
-      setMessage(locked ? text("Đã khóa lớp học.", "Classroom locked.") : text("Đã mở khóa lớp học.", "Classroom unlocked."));
+      toast(locked ? text("Đã khóa lớp học.", "Classroom locked.") : text("Đã mở khóa lớp học.", "Classroom unlocked."));
     } catch (failure) {
-      setError(failure.message);
+      toast(failure.message, true);
     } finally {
       setIsSubmitting(false);
     }
@@ -79,9 +77,8 @@ export default function AdminClassroomsPage() {
   return (
     <div className="mx-auto max-w-6xl">
       <AdminPageHeader title="Classroom Management" />
-      <ApiFeedback state={classes} message={message} />
+      <ApiFeedback state={classes} />
       <ApiFeedback state={users} />
-      {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
       {!classes.loading && !classes.error && (
         <div className="panel overflow-hidden">
           <RecordTable label={text("Lớp học")} columns={columns} rows={pagination.items}

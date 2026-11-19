@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export function useApiData(loadData, initial) {
+export function useApiData(loadData, initial, onError) {
   const [data, setQueryData] = useState(initial);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -16,11 +16,14 @@ export function useApiData(loadData, initial) {
         setError("");
       }
     } catch (failure) {
-      if (id === requestId.current) setError(failure.message);
+      if (id === requestId.current) {
+        setError(failure.message);
+        onError?.(failure.message);
+      }
     } finally {
       if (id === requestId.current) setLoading(false);
     }
-  }, [loadData]);
+  }, [loadData, onError]);
 
   const setData = useCallback((value) => {
     // A successful write supersedes any read already in flight.

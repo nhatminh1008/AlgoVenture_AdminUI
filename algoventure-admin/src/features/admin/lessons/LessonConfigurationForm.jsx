@@ -1,3 +1,4 @@
+import { useActionToast } from "../../../shared/components/useActionToast";
 import { useText } from "../../../preferences/preferencesContext";
 import { difficultyLabels } from "../recordLabels.js";
 import { sortingLessons } from "../../../shared/curriculum/sortOrder.js";
@@ -7,9 +8,8 @@ import { updateLesson } from "./lessonService";
 
 export default function LessonConfigurationForm({ lesson, onSaved }) {
   const text = useText();
+  const toast = useActionToast();
   const [form, setForm] = useState(() => structuredClone(lesson));
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const required = lesson.requiredPrerequisites ?? [];
   function config(key, value) {
@@ -22,8 +22,6 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
     e.preventDefault();
     if (isSaving) return;
     setIsSaving(true);
-    setMessage("");
-    setError("");
     try {
       const { name, difficulty, status } = form;
       const { sortOrder, timeLimit, timeLimitsByDifficulty, hintsAllowed, prerequisites } = form.config;
@@ -35,9 +33,9 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
       onSaved(rows);
       const saved = rows.find((row) => row.id === lesson.id);
       if (saved) setForm(structuredClone(saved));
-      setMessage(text("Đã lưu cấu hình."));
+      toast(text("Đã lưu cấu hình."));
     } catch (f) {
-      setError(f.message);
+      toast(f.message, true);
     } finally {
       setIsSaving(false);
     }
@@ -45,16 +43,6 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
   return (
     <form onSubmit={save} className="admin-form panel space-y-6 p-6">
       <h2 className="text-xl font-bold">{text(lesson.name)}</h2>
-      {error && (
-        <p role="alert" className="text-red-700">
-          {error}
-        </p>
-      )}
-      {message && (
-        <p role="status" className="text-portal-purple-strong">
-          {message}
-        </p>
-      )}
       <p className="text-sm">{text("Unity áp dụng cấu hình khi mở bài. Bài chưa công bố sẽ bị khóa và giữ tiến độ đã ghi nhận.",
         "Unity applies these settings when opening the lesson. Unpublished lessons are locked and recorded progress is kept.")}</p>
       <fieldset disabled={isSaving} className="space-y-6">
@@ -183,8 +171,6 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
           disabled={isSaving}
           onClick={() => {
             setForm(structuredClone(lesson));
-            setError("");
-            setMessage("");
           }}
         >
           {text("Hoàn tác")}
