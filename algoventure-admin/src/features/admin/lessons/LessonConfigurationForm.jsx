@@ -59,7 +59,6 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
             <span className="lesson-config-icon" aria-hidden="true"><SlidersHorizontal size={19} /></span>
             <div>
               <h2 id="lesson-general-title">{text("Thông tin bài học", "Lesson settings")}</h2>
-              <p>{text("Unity áp dụng cấu hình khi mở bài.", "Unity applies these settings when opening the lesson.")}</p>
             </div>
           </div>
           <div className="lesson-config-fields">
@@ -76,8 +75,8 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
                 <option value="Unpublished">{text("Chưa công bố", "Unpublished")}</option>
               </select>
               <span id="lesson-status-note" className="lesson-config-help">{text(
-                "Bài chưa công bố bị khóa. Tiến độ đã ghi nhận được giữ lại.",
-                "Unpublished lessons are locked. Recorded progress is kept.",
+                "Chưa công bố sẽ khóa bài và giữ tiến độ.",
+                "Unpublishing locks the lesson and keeps progress.",
               )}</span>
             </label>
             {(lesson.hasSortOrder ?? sortingLessons.has(lesson.id)) && <label>
@@ -124,11 +123,11 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
             <div>
               <h2 id="lesson-timing-title">{text("Thời gian thử thách", "Challenge timing")}</h2>
               <p>{hasTimeOverrides ? text(
-                "Ưu tiên bài giao, sau đó đến độ khó hoặc chặng, rồi đến giới hạn chung.",
-                "The assignment takes priority, followed by the difficulty or stage, then the default.",
+                "Ưu tiên bài giao → mức hoặc chặng → giới hạn chung.",
+                "Limit priority goes from assignment to level or stage to default.",
               ) : text(
-                "Giới hạn riêng của bài giao được ưu tiên khi có.",
-                "An assignment-specific limit takes precedence when configured.",
+                "Bài giao dùng giới hạn riêng nếu có.",
+                "Assignments use their own limit when set.",
               )}</p>
             </div>
           </div>
@@ -162,8 +161,8 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
               })}
             </div>
             <p id="lesson-overrides-note" className="lesson-config-help">{text(
-              "Chỉ nhập số khi cần giới hạn riêng. Xóa số để dùng lại giới hạn chung.",
-              "Enter a value to set an override. Clear it to use the default limit again.",
+              "Để trống để dùng giới hạn chung.",
+              "Leave blank to use the default limit.",
             )}</p>
           </fieldset>}
         </section>

@@ -111,7 +111,6 @@
 }
 
 .lesson-score-thresholds h3 { margin-bottom: 10px; font-size: 13px; font-weight: 700; }
-.lesson-score-thresholds > p { margin-top: 9px; color: var(--portal-muted); font-size: 12px; }
 .lesson-score-tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 
 .lesson-score-tier {
@@ -147,6 +146,24 @@
 .lesson-score-details dt { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; }
 .lesson-score-details dt svg { flex: 0 0 auto; color: var(--portal-info-ink); }
 .lesson-score-details dd { margin: 4px 0 0 24px; color: var(--portal-muted); font-size: 13px; line-height: 1.58; }
+
+.lesson-score-disclosure { margin-top: 15px; border-top: 1px solid var(--portal-line); }
+.lesson-score-disclosure summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 2px 0;
+  color: var(--portal-info-ink);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+}
+.lesson-score-disclosure summary::-webkit-details-marker { display: none; }
+.lesson-score-disclosure[open] summary svg { transform: rotate(180deg); }
+.lesson-score-disclosure .lesson-score-details { margin-top: 8px; }
 
 @container (min-width: 460px) {
   .lesson-config-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }

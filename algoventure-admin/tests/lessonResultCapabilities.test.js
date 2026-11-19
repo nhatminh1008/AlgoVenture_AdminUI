@@ -20,9 +20,21 @@ test("official stars can be returned even for lessons with no points formula", (
     const result = lessonResultCapabilities({ id, hasOfficialResult: true, hasScoreThresholds: true });
     assert.equal(result.pointRule, null, id);
     assert.equal(result.official, true, id);
-    assert.equal(result.requiresAllMatrixStages, id.startsWith("matrix"), id);
+    assert.equal(result.usesFinalStageTiming, id.startsWith("matrix"), id);
   }
   assert.equal(lessonResultCapabilities({ id: "insertion", scoring: { version: 1 } }).official, false);
+});
+
+test("all tree courses use final-stage timing, while mixed challenges retain their legacy formula", () => {
+  for (const id of ["tree-basics", "bst-search", "bst-insert", "bst-delete", "tree-dfs", "tree-bfs"]) {
+    assert.equal(lessonResultCapabilities({ id }).usesFinalStageTiming, true, id);
+  }
+  for (const id of ["stack-mixed", "queue-mixed"]) {
+    const result = lessonResultCapabilities({ id });
+    assert.equal(result.usesFinalStageTiming, false, id);
+    assert.match(result.pointRule[1], /300 \/ 500 \/ 1,200/);
+    assert.match(result.legacyPointRule[1], /100 × valid steps/);
+  }
 });
 
 test("server elapsed-time fallback is limited to Selection, Linear and Tree DFS/BFS", () => {
