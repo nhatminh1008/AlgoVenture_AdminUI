@@ -17,6 +17,7 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
   const required = lesson.requiredPrerequisites ?? [];
   const hasTimeOverrides = lesson.hasDifficultyTimeLimits ?? lesson.hasDifficultyPresets;
   const usesStages = hasTimeOverrides && !lesson.hasDifficultyPresets;
+  const mapStageTimes = lesson.hasMapStageTimeLimits;
   const { timeLimit, timeLimitsByDifficulty } = form.config;
   const overrides = timeLimitsByDifficulty ?? {};
   const validDefaultLimit = Number.isInteger(timeLimit) && timeLimit >= 10 && timeLimit <= 86400;
@@ -122,7 +123,10 @@ export default function LessonConfigurationForm({ lesson, onSaved }) {
             <span className="lesson-config-icon" aria-hidden="true"><Clock3 size={19} /></span>
             <div>
               <h2 id="lesson-timing-title">{text("Thời gian thử thách", "Challenge timing")}</h2>
-              <p>{hasTimeOverrides ? text(
+              <p>{mapStageTimes ? text(
+                "Giới hạn riêng từng chặng áp dụng khi chơi trên bản đồ.",
+                "Stage overrides apply to map challenges.",
+              ) : hasTimeOverrides ? text(
                 "Ưu tiên bài giao → mức hoặc chặng → giới hạn chung.",
                 "Limit priority goes from assignment to level or stage to default.",
               ) : text(
