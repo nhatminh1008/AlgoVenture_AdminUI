@@ -101,3 +101,6 @@ npm test
 Test Backend chạy trong repo Backend với PostgreSQL test riêng theo hướng dẫn của repo. Kiểm tra frontend ở trên không tự chứng minh cả luồng Unity–Backend–Portal đã chạy thành công.
 
 [Swagger](http://127.0.0.1:8081/swagger-ui/index.html) và [OpenAPI](http://127.0.0.1:8081/v3/api-docs) mô tả hợp đồng HTTP hiện hành. Production cần HTTPS, reverse proxy `/api` cùng origin với Portal và SPA fallback; Vite dev proxy không nằm trong bundle production.
+
+## Redis integration
+See [redis.md](redis.md) for Portal → Backend → Redis behavior and the opt-in contract test. Redis credentials stay on the Backend.
