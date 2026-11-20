@@ -1,6 +1,6 @@
 # Redis — tích hợp ADMIN_UI
 
-Cập nhật 20/11/2026, source main e2661fb trước khi xuất bản origin/dev. Đã pull fast-forward, không có conflict Portal.
+Cập nhật 20/11/2026. Đã hợp nhất bản Redis từ dev vào main bằng fast-forward, không có conflict Portal. Source nền là main e2661fb; code/test giữ nguyên bản dev đã nghiệm thu, chỉ cập nhật trạng thái trong báo cáo này.
 
 ## Vai trò Portal
 
@@ -15,7 +15,7 @@ Redis không cache quyền Admin/Instructor hoặc session Portal. Tài khoản 
 - Thêm tests/redisContract.test.js: dùng service login/settings thật qua HTTP proxy, có cookie/CSRF thật; warm view Game, lưu tên hệ thống, xác nhận Game đọc ngay tên mới, rồi khôi phục settings và logout.
 - Test mặc định bỏ qua. Chỉ chạy khi cung cấp URL loopback, tài khoản fixture và xác nhận rõ database riêng.
 - Giữ giao diện và hợp đồng API hiện tại; README dẫn đến báo cáo này.
-- Báo cáo Backend [redis.md](https://github.com/nhatminh1008/AlgoVenture_Backend/blob/dev/redis.md) mô tả outbox, ZSET, worker, V49, failure và vận hành.
+- Báo cáo Backend [redis.md](https://github.com/nhatminh1008/AlgoVenture_Backend/blob/main/redis.md) mô tả outbox, ZSET, worker, V49, failure và vận hành.
 
 ## Chạy test tích hợp
 
